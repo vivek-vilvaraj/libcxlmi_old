@@ -139,16 +139,13 @@ static int sanity_check_rsp(struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp
 	uint32_t pl_length;
 
 	if (len < sizeof(rsp)) {
-		assert(false);
 		return -1;
 	}
 
 	if (rsp->category != CXL_MCTP_CATEGORY_RSP) {
-		assert(false);
 		return -1;
 	}
 	if (rsp->tag != req->tag) {
-		assert(false);
 		return -1;
 	}
 	if ((rsp->command != req->command) ||
@@ -166,14 +163,12 @@ static int sanity_check_rsp(struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp
 		}
 	} else {
 		if (len < min_length) {
-			assert(false);
 			return -1;
 		}
 	}
 	pl_length = rsp->pl_length[0] | (rsp->pl_length[1] << 8) |
 		((rsp->pl_length[2] & 0xf) << 16);
 	if (len - sizeof(*rsp) != pl_length) {
-		assert(false);
 		return -1;
 	}
 
@@ -224,13 +219,11 @@ int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
 
 	rc = send_mctp_direct(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc) {
-		assert(false);
 		goto free_rsp;
 	}
 
 	if (rsp->return_code) {
 		rc = rsp->return_code;
-		assert(false);
 		goto free_rsp;
 	}
 	pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
