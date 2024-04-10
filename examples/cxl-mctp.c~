@@ -1,0 +1,18 @@
+#include <stdio.h>
+
+#include <libcxlmi.h>
+
+int main(int argc, char **argv)
+{
+	struct cxlmi_ctx ctx;
+	struct cxlmi_endpoint *ep;
+
+	ep = cxlmi_open_mctp(&ctx, nid, eid);
+	if (!ep)
+		return EXIT_FAILURE;
+
+	cxlmi_close(ep);
+	cxlmi_free_ctx(root);
+
+	return 0;
+}
