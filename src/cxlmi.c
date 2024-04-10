@@ -142,52 +142,42 @@ static int sanity_check_rsp(struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp
 
 	if (len < sizeof(rsp)) {
 		assert(false);
-		/* printf("Too short to read error code\n"); */
 		return -1;
 	}
 
 	if (rsp->category != CXL_MCTP_CATEGORY_RSP) {
 		assert(false);
-		/* printf("Message not a response\n"); */
 		return -1;
 	}
 	if (rsp->tag != req->tag) {
 		assert(false);
-		/* printf("Reply has wrong tag %d %d\n", rsp->tag, req->tag); */
 		return -1;
 	}
 	if ((rsp->command != req->command) ||
 		(rsp->command_set != req->command_set)) {
-		/* printf("Response to wrong command\n"); */
 		assert(false);
 		return -1;
 	}
 
 	if (rsp->return_code != 0) {
-		/* printf("Error code in response %d\n", rsp->return_code); */
 		assert(false);
 		return -1;
 	}
 
 	if (fixed_length) {
 		if (len != min_length) {
-			/* printf("Not expected fixed length of response. %ld %ld\n", */
-			/*        len, min_length); */
 			assert(false);
 			return -1;
 		}
 	} else {
 		if (len < min_length) {
 			assert(false);
-			/* printf("Not expected minimum length of response\n"); */
 			return -1;
 		}
 	}
 	pl_length = rsp->pl_length[0] | (rsp->pl_length[1] << 8) |
 		((rsp->pl_length[2] & 0xf) << 16);
 	if (len - sizeof(*rsp) != pl_length) {
-		/* printf("Payload length not matching expected part of full message %ld %d\n", */
-		/*        len - sizeof(*rsp), pl_length); */
 		assert(false);
 		return -1;
 	}
@@ -239,14 +229,14 @@ int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
 		return -1;
 
 	rc = send_mctp_direct(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	assert(rc == 0);
 	if (rc) {
-		/* printf("trans fun failed\n"); */
+		assert(false);
 		goto free_rsp;
 	}
 
 	if (rsp->return_code) {
 		rc = rsp->return_code;
+		assert(false);
 		goto free_rsp;
 	}
 	pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
@@ -330,8 +320,8 @@ struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 	mctp->addr = cci_addr;
 
 	mctp->sd = socket(AF_MCTP, SOCK_DGRAM, 0);
-	assert(mctp->sd >= 0);
 	if (mctp->sd < 0) {
+		assert(false);
 		errno_save = errno;
 		goto err_free_rspbuf;
 	}
