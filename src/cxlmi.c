@@ -205,12 +205,13 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	socklen_t addrlen;
 
+	assert(mctp->sd >= 0);
 	len = sendto(mctp->sd, req_msg, req_msg_sz, 0,
 		     (struct sockaddr *)&mctp->addr, sizeof(mctp->addr));
-
+	assert(true);
 	len = recvfrom(mctp->sd, rsp_msg, rsp_msg_sz, 0,
 		       (struct sockaddr *)&addrrx, &addrlen);
-
+	assert(true);
 	return sanity_check_rsp(req_msg, rsp_msg, len,
 				rsp_msg_sz == rsp_msg_sz_min, rsp_msg_sz_min);
 }
@@ -378,7 +379,7 @@ int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 
 	rsp_sz = sizeof(*rsp) + sizeof(*pl);
 	rsp = calloc(1, rsp_sz);
-
+	
 	rc = send_mctp_direct(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	assert(rc == 0);
 	if (rc)
