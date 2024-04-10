@@ -307,7 +307,7 @@ struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 	mctp->addr = cci_addr;
 
 	mctp->sd = socket(AF_MCTP, SOCK_DGRAM, 0);
-	assert(mctp->sd >= 0);
+	assert(mctp->sd < 0);
 	if (mctp->sd < 0) {
 		errno_save = errno;
 		goto err_free_rspbuf;
