@@ -208,7 +208,7 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 	assert(mctp->sd >= 0);
 	len = sendto(mctp->sd, req_msg, req_msg_sz, 0,
 		     (struct sockaddr *)&mctp->addr, sizeof(mctp->addr));
-	assert(false);
+
 	len = recvfrom(mctp->sd, rsp_msg, rsp_msg_sz, 0,
 		       (struct sockaddr *)&addrrx, &addrlen);
 	assert(false);
