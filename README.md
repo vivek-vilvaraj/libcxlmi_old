@@ -39,7 +39,7 @@ to how the libnvme counterpart works. Commands that are read-only take the prefi
 
    rc = cxlmi_query_cci_timestamp(ep, &ts);
    if (rc == 0) {
-		   /* do something with ts.timestamp */
+	  /* do something with ts.timestamp */
    }
    ```
 
