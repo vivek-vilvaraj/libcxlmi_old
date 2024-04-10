@@ -211,7 +211,6 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 
 	len = recvfrom(mctp->sd, rsp_msg, rsp_msg_sz, 0,
 		       (struct sockaddr *)&addrrx, &addrlen);
-	assert(false);
 	return sanity_check_rsp(req_msg, rsp_msg, len,
 				rsp_msg_sz == rsp_msg_sz_min, rsp_msg_sz_min);
 }
