@@ -27,6 +27,22 @@ Component discovery:
 
 - Enumerate all endpoints with`cxlmi_open_scan()` (auto-scan dbus: TODO).
 
+Sending commands:
+Once an endpoint is opened, commands may be sent to the device. The provided
+API is very command-specific (as in payloads defined in the CXL specification),
+and the user is expected to know what to look for in the output. This is similar
+to how the libnvme counterpart works. Commands that are read-only take the prefix
+`cxlmi_query_cci_`. For example, to get the timestamp of the device:
+
+   ```
+   struct cxlmi_cci_get_timestamp ts;
+
+   rc = cxlmi_query_cci_timestamp(ep, &ts);
+   if (rc == 0) {
+		   /* do something with ts.timestamp */
+   }
+   ```
+
 Requirements
 ============
 1. arm64 or x86-64 architecture.
