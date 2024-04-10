@@ -82,6 +82,11 @@ Optionally, to install:
 meson install -C build
 ```
 
+Linking
+=======
+
+Programs making use of this library must include `libcxlmi.h` and link with `-lcxlmi`.
+
 References
 ==========
 - CXL 3.1 Specification.
