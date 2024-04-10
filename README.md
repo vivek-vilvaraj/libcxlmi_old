@@ -8,22 +8,34 @@ construct, send and decode commands and payloads over an out-of-band
 link, typically MCTP-based CCIs over I2C or VDM. As such, target users
 will mostly be BMC and/or firmware.
 
-API
-===
-`struct cxlmi_ctx`: library context object.
+Two abstractions:
+- `struct cxlmi_ctx`: library context object - this holds general information
+about opened/tracked endpoints as well as library settings. Before discovery,
+or anything else for that matter, a new context is created via `cxlmi_new_ctx()`,
 
-`struct cxlmi_endpoint`: an MI endpoint - mechanism of communication with a
-CXL-MI subsystem. For MCTP, an endpoint will be the component that
-holds the MCTP address (EID), and receives request messages.
+- `struct cxlmi_endpoint`: an MI endpoint - mechanism of communication with
+a CXL-MI subsystem. For MCTP, an endpoint will be the component that holds
+the MCTP address (EID), and receives request messages. Endpoint creation
+is done by opening an mctp endpoint throught `cxlmi_open_mctp()`.
+
+Component discovery:
+- Single, specific `nid:eid` endpoint by using `cxlmi_open_mctp()`. This will
+  setup the path for CCI commands to be sent. It will also probe the endpoint to
+  see what kind of CXL component this belongs to: either a switch or a type3
+  device.
+
+- Enumerate all endpoints with`cxlmi_open_scan()` (auto-scan dbus: TODO).
 
 Requirements
 ============
-1. Linux kernel v5.1+ for mctp/i2c support
+1. arm64 or x86-64 architecture.
 
-2. Enabling use of aspeed-i2c with ACPI **out-of-tree** series
+2. Linux kernel v5.1+ for mctp/i2c support.
+
+3. Enabling use of aspeed-i2c with ACPI **out-of-tree** series
    https://lore.kernel.org/all/20230531100600.13543-1-Jonathan.Cameron@huawei.com/
 
-3. The following kernel configuration enabled:
+4. The following kernel configuration enabled:
    ```
    CONFIG_MCTP_TRANSPORT_I2C=y
    CONFIG_MCTP=y
@@ -55,6 +67,6 @@ meson install -C build
 
 References
 ==========
-CXL 3.1 Specification.
-CXL Type3 Device Component Command Interface over MCTP Binding Specification (DSP0281).
-CXL Fabric Manager API over MCTP Binding Specification (DSP0324).
+- CXL 3.1 Specification.
+- CXL Type3 Device Component Command Interface over MCTP Binding Specification (DSP0281).
+- CXL Fabric Manager API over MCTP Binding Specification (DSP0324).
