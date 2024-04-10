@@ -141,31 +141,31 @@ static int sanity_check_rsp(struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp
 	uint32_t pl_length;
 
 	if (len < sizeof(rsp)) {
-		assert(true);
+		assert(false);
 		/* printf("Too short to read error code\n"); */
 		return -1;
 	}
 
 	if (rsp->category != CXL_MCTP_CATEGORY_RSP) {
-		assert(true);
+		assert(false);
 		/* printf("Message not a response\n"); */
 		return -1;
 	}
 	if (rsp->tag != req->tag) {
-		assert(true);
+		assert(false);
 		/* printf("Reply has wrong tag %d %d\n", rsp->tag, req->tag); */
 		return -1;
 	}
 	if ((rsp->command != req->command) ||
 		(rsp->command_set != req->command_set)) {
 		/* printf("Response to wrong command\n"); */
-		assert(true);
+		assert(false);
 		return -1;
 	}
 
 	if (rsp->return_code != 0) {
 		/* printf("Error code in response %d\n", rsp->return_code); */
-		assert(true);
+		assert(false);
 		return -1;
 	}
 
@@ -173,12 +173,12 @@ static int sanity_check_rsp(struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp
 		if (len != min_length) {
 			/* printf("Not expected fixed length of response. %ld %ld\n", */
 			/*        len, min_length); */
-			assert(true);
+			assert(false);
 			return -1;
 		}
 	} else {
 		if (len < min_length) {
-			assert(true);
+			assert(false);
 			/* printf("Not expected minimum length of response\n"); */
 			return -1;
 		}
@@ -188,7 +188,7 @@ static int sanity_check_rsp(struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp
 	if (len - sizeof(*rsp) != pl_length) {
 		/* printf("Payload length not matching expected part of full message %ld %d\n", */
 		/*        len - sizeof(*rsp), pl_length); */
-		assert(true);
+		assert(false);
 		return -1;
 	}
 
@@ -208,10 +208,10 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 	assert(mctp->sd >= 0);
 	len = sendto(mctp->sd, req_msg, req_msg_sz, 0,
 		     (struct sockaddr *)&mctp->addr, sizeof(mctp->addr));
-	assert(true);
+	assert(false);
 	len = recvfrom(mctp->sd, rsp_msg, rsp_msg_sz, 0,
 		       (struct sockaddr *)&addrrx, &addrlen);
-	assert(true);
+	assert(false);
 	return sanity_check_rsp(req_msg, rsp_msg, len,
 				rsp_msg_sz == rsp_msg_sz_min, rsp_msg_sz_min);
 }
