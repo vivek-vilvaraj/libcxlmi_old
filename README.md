@@ -5,10 +5,11 @@ CXL Management Interface library (libcxlmi).
 CXL Management Interface utility library, which provides type definitions
 for CXL specification structures, enumerations and helper functions to
 construct, send and decode commands and payloads over an out-of-band
-link, typically MCTP-based CCIs over I2C or VDM. As such, target users
-will mostly be BMC and/or firmware.
+link, typically MCTP-based CCIs over I2C or VDM. As such, users will mostly
+be BMC and/or firmware, targetting: Type3 SLD, Type3 MLD (FM owned) or
+a Switch.
 
-Two abstractions:
+Two abstractions (opaque data structures):
 - `struct cxlmi_ctx`: library context object - this holds general information
 about opened/tracked endpoints as well as library settings. Before discovery,
 or anything else for that matter, a new context is created via `cxlmi_new_ctx()`,
@@ -20,9 +21,9 @@ is done by opening an mctp endpoint throught `cxlmi_open_mctp()`.
 
 Component discovery:
 - Single, specific `nid:eid` endpoint by using `cxlmi_open_mctp()`. This will
-  setup the path for CCI commands to be sent. It will also probe the endpoint to
-  see what kind of CXL component this belongs to: either a switch or a type3
-  device.
+  setup the path for CCI commands to be sent. By default, it will also probe
+  the endpoint to get the CXL component this belongs to: either a Switch or a
+  Type3 device. This auto-probing can by disabled with `cxlmi_set_probe_enabled()`.
 
 - Enumerate all endpoints with`cxlmi_open_scan()` (auto-scan dbus: TODO).
 
