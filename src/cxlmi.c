@@ -30,9 +30,9 @@ struct cxlmi_transport_mctp {
 	int tag;
 };
 
-static const int default_timeout = 1000; /* milliseconds; endpoints may
-					    override */
+static const int default_timeout_ms = 1000;
 
+/* see endpoint_probe() */
 enum cxl_component_type {
 	cxl_switch,
 	cxl_type3,
@@ -45,10 +45,9 @@ struct cxlmi_ctx {
 
 struct cxlmi_endpoint {
 	struct cxlmi_ctx *ctx;
-	/* const struct cxlmi_transport *transport; */
 	void *transport_data;
 	struct list_node entry;
-	unsigned int timeout;
+	unsigned int timeout_ms;
 	enum cxl_component_type type;
 	struct cxlmi_cci_infostat_identify id_info;
 };
@@ -109,7 +108,7 @@ static struct cxlmi_endpoint *init_endpoint(struct cxlmi_ctx *ctx)
 
 	list_node_init(&ep->entry);
 	ep->ctx = ctx;
-	ep->timeout = default_timeout;
+	ep->timeout_ms = default_timeout_ms;
 	list_add(&ctx->endpoints, &ep->entry);
 
 	return ep;
@@ -155,7 +154,6 @@ static int sanity_check_rsp(struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp
 	}
 	if ((rsp->command != req->command) ||
 		(rsp->command_set != req->command_set)) {
-		assert(false);
 		return -1;
 	}
 
@@ -190,10 +188,10 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 			    struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
 			    size_t rsp_msg_sz_min)
 {
-	struct sockaddr_mctp addrrx;
 	int len;
-	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	socklen_t addrlen;
+	struct sockaddr_mctp addrrx;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 
 	assert(mctp->sd >= 0);
 	len = sendto(mctp->sd, req_msg, req_msg_sz, 0,
@@ -222,7 +220,6 @@ int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
 		.vendor_ext_status = 0xabcd,
 	};
 
-	/* printf("Information and Status: Identify Request...\n"); */
 	rsp_sz = sizeof(*rsp) + sizeof(*pl);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
@@ -368,7 +365,9 @@ int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 
 	rsp_sz = sizeof(*rsp) + sizeof(*pl);
 	rsp = calloc(1, rsp_sz);
-	
+	if (!rsp)
+		return -1;
+
 	rc = send_mctp_direct(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	assert(rc == 0);
 	if (rc)
