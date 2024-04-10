@@ -30,9 +30,10 @@ Component discovery:
 Sending commands:
 Once an endpoint is opened, commands may be sent to the device. The provided
 API is very command-specific (as in payloads defined in the CXL specification),
-and the user is expected to know what to look for in the output. This is similar
-to how the libnvme counterpart works. Commands that are read-only take the prefix
-`cxlmi_query_cci_`. For example, to get the timestamp of the device:
+and the user is expected to know what to look for in the stack-allocated return
+output. This is similar to how the libnvme counterpart works. Commands that are
+read-only take the prefix `cxlmi_query_cci_`. For example, to get the timestamp
+of the device:
 
    ```
    struct cxlmi_cci_get_timestamp ts;
