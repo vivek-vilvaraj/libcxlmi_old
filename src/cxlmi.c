@@ -359,7 +359,6 @@ int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 		return -1;
 
 	rc = send_mctp_direct(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	assert(rc == 0);
 	if (rc)
 		goto free_rsp;
 
