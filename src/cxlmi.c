@@ -134,8 +134,7 @@ void cxlmi_close(struct cxlmi_endpoint *ep)
 }
 
 static int sanity_check_rsp(struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp,
-			    size_t len, bool fixed_length,
-			    size_t min_length)
+			    size_t len, bool fixed_length, size_t min_length)
 {
 	uint32_t pl_length;
 
@@ -158,13 +157,11 @@ static int sanity_check_rsp(struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp
 	}
 
 	if (rsp->return_code != 0) {
-		assert(false);
 		return -1;
 	}
 
 	if (fixed_length) {
 		if (len != min_length) {
-			assert(false);
 			return -1;
 		}
 	} else {
