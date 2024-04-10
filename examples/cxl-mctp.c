@@ -42,8 +42,10 @@ int main(int argc, char **argv)
 		goto exit;
 	}
 
-	eid = strtol(argv[1], NULL, 10);
-	nid = strtol(argv[2], NULL, 10);
+	nid = strtol(argv[1], NULL, 10);
+	eid = strtol(argv[2], NULL, 10);
+
+	printf("ep %d:%d\n", nid, eid);
 
 	if (cxlmi_new_ctx(&ctx)) {
 		fprintf(stderr, "cannot create new context object\n");
