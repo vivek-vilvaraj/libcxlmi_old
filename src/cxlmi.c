@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -214,10 +215,8 @@ int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	/* TODO: tunneling */
 	rc = send_mctp_direct(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	/* rc = trans_func(sd, addr, tag, port, id, &req, sizeof(req), rsp, rsp_sz, */
-	/*		rsp_sz); */
+	assert(rc == 0);
 	if (rc) {
 		/* printf("trans fun failed\n"); */
 		goto free_rsp;
@@ -308,12 +307,14 @@ struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 	mctp->addr = cci_addr;
 
 	mctp->sd = socket(AF_MCTP, SOCK_DGRAM, 0);
+	assert(mctp->sd >= 0);
 	if (mctp->sd < 0) {
 		errno_save = errno;
 		goto err_free_rspbuf;
 	}
 	if (bind(mctp->sd,
 		 (struct sockaddr *)&cci_addr, sizeof(cci_addr))) {
+		assert(false);
 		errno_save = errno;
 		goto err_free_rspbuf;
 	}
@@ -352,12 +353,11 @@ int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 		.vendor_ext_status = 0xabcd,
 	};
 
-	/* printf("Timestamp: Get Request...\n"); */
 	rsp_sz = sizeof(*rsp) + sizeof(*pl);
 	rsp = calloc(1, rsp_sz);
 
 	rc = send_mctp_direct(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	/* rc = trans_func(&req, sizeof(req), rsp, rsp_sz, sizeof(*rsp) + sizeof(*pl)); */
+	assert(rc == 0);
 	if (rc)
 		goto free_rsp;
 
