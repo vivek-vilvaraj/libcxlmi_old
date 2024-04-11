@@ -57,7 +57,7 @@ Requirements
 ============
 1. arm64 or x86-64 architecture.
 
-2. Linux kernel v5.1+ for mctp/i2c support.
+2. Linux kernel v5.15+ for mctp support (as well as header files).
 
 3. Enabling use of aspeed-i2c with ACPI **out-of-tree** series
    https://lore.kernel.org/all/20230531100600.13543-1-Jonathan.Cameron@huawei.com/
