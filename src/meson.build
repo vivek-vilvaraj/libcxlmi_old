@@ -1,10 +1,14 @@
-mi_deps = [ ]
+deps = [ ]
 
-cxlmi_sources = ['cxlmi.c']
-cxlmi = library('cxlmi',
-		cxlmi_sources,
+sources = [
+	'cxlmi/log.c',
+	'cxlmi/cxlmi.c'
+]
+
+cxlmi = library('cxlmi', # defaults to shared lib
+		sources,
 		include_directories : inc,
-		dependencies : mi_deps,
+		dependencies : deps,
 		install : true)
 
 libcxlmi_dep = declare_dependency(

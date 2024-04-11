@@ -1,9 +1,8 @@
 #ifndef __LIBCXLMI_H__
 #define __LIBCXLMI_H__
 
-#include <linux/types.h>
-
-#include "types.h"
+#include "cxlmi/types.h"
+#include "cxlmi/log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,7 +22,7 @@ struct cxlmi_endpoint;
  *
  * See &cxlmi_free_ctx.
  */
-int cxlmi_new_ctx(struct cxlmi_ctx **ctx);
+struct cxlmi_ctx * cxlmi_new_ctx(FILE *fp, int loglvl);
 
 /**
  * cxlmi_free_ctx() - Free context object.

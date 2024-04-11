@@ -6,16 +6,22 @@
 #include <unistd.h>
 #include <assert.h>
 
-#include <sys/types.h>
+#include <poll.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 #include <linux/types.h>
+
+/* #if HAVE_LINUX_MCTP_H */
 #include <linux/mctp.h>
+/* #endif */
 
 #include <ccan/list/list.h>
 
 #include <libcxlmi.h>
+
+#include "private.h"
 
 #define CXL_MCTP_CATEGORY_REQ 0
 #define CXL_MCTP_CATEGORY_RSP 1
@@ -31,26 +37,6 @@ struct cxlmi_transport_mctp {
 };
 
 static const int default_timeout_ms = 1000;
-
-/* see endpoint_probe() */
-enum cxl_component_type {
-	cxl_switch,
-	cxl_type3,
-};
-
-struct cxlmi_ctx {
-	struct list_head endpoints; /* all opened mctp-endpoints */
-	bool probe_enabled; /* probe upon open, default yes */
-};
-
-struct cxlmi_endpoint {
-	struct cxlmi_ctx *ctx;
-	void *transport_data;
-	struct list_node entry;
-	unsigned int timeout_ms;
-	enum cxl_component_type type;
-	struct cxlmi_cci_infostat_identify id_info;
-};
 
 /* CXL r3.1 Figure 7-19: CCI Message Format */
 struct cxlmi_cci_msg {
@@ -78,19 +64,18 @@ static bool cxlmi_probe_enabled_default(void)
 		strncasecmp(val, "disable", 7);
 }
 
-int cxlmi_new_ctx(struct cxlmi_ctx **ctx)
+struct cxlmi_ctx * cxlmi_new_ctx(FILE *fp, int loglvl)
 {
-	struct cxlmi_ctx *c;
+	struct cxlmi_ctx *ctx;
 
-	c = calloc(1, sizeof(struct cxlmi_ctx));
-	if (!c)
-		return -ENOMEM;
+	ctx = calloc(1, sizeof(struct cxlmi_ctx));
+	if (!ctx)
+		return NULL;
 
-	c->probe_enabled = cxlmi_probe_enabled_default();
-	list_head_init(&c->endpoints);
-	*ctx = c;
+	ctx->probe_enabled = cxlmi_probe_enabled_default();
+	list_head_init(&ctx->endpoints);
 
-	return 0;
+	return ctx;
 }
 
 void cxlmi_free_ctx(struct cxlmi_ctx *ctx)
@@ -254,7 +239,7 @@ static void endpoint_probe(struct cxlmi_endpoint *ep)
 	switch (id.component_type) {
 	case 0x00:
 		/* TODO: tunneling from an OoB switch mailbox CCI */
-		ep->type = cxl_switch;
+		ep->type = CXLMI_SWITCH;
 		break;
 	case 0x03:
 		/*
@@ -262,7 +247,7 @@ static void endpoint_probe(struct cxlmi_endpoint *ep)
 		 *   - type3 SLD
 		 *   - type3 MLD - FM owned LD (TODO)
 		 */
-		ep->type = cxl_type3;
+		ep->type = CXLMI_TYPE3;
 		break;
 	default:
 		break;

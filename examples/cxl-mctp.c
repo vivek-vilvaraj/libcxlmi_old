@@ -47,7 +47,8 @@ int main(int argc, char **argv)
 
 	printf("ep %d:%d\n", nid, eid);
 
-	if (cxlmi_new_ctx(&ctx)) {
+	ctx = cxlmi_new_ctx(stderr, 1);
+	if (!ctx) {
 		fprintf(stderr, "cannot create new context object\n");
 		goto exit;
 	}
