@@ -118,42 +118,58 @@ void cxlmi_close(struct cxlmi_endpoint *ep)
 	free(ep);
 }
 
-static int sanity_check_rsp(struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp,
+static int sanity_check_rsp(struct cxlmi_ctx *ctx,
+			    struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp,
 			    size_t len, bool fixed_length, size_t min_length)
 {
 	uint32_t pl_length;
 
 	if (len < sizeof(rsp)) {
+		cxlmi_msg(ctx, LOG_ERR, "Too short to read error code\n");
 		return -1;
 	}
 
 	if (rsp->category != CXL_MCTP_CATEGORY_RSP) {
+		cxlmi_msg(ctx, LOG_ERR, "Message not a response\n");
 		return -1;
 	}
 	if (rsp->tag != req->tag) {
+		cxlmi_msg(ctx, LOG_ERR, "Reply has wrong tag %d %d\n",
+			  rsp->tag, req->tag);
 		return -1;
 	}
 	if ((rsp->command != req->command) ||
-		(rsp->command_set != req->command_set)) {
+	    (rsp->command_set != req->command_set)) {
+		cxlmi_msg(ctx, LOG_ERR, "Response to wrong command\n");
 		return -1;
 	}
 
 	if (rsp->return_code != 0) {
+		cxlmi_msg(ctx, LOG_ERR, "Error code in response %d\n",
+			  rsp->return_code);
 		return -1;
 	}
 
 	if (fixed_length) {
 		if (len != min_length) {
+			cxlmi_msg(ctx, LOG_ERR,
+				  "Not expected fixed length of response. %ld %ld\n",
+				  len, min_length);
 			return -1;
 		}
 	} else {
 		if (len < min_length) {
+			cxlmi_msg(ctx, LOG_ERR,
+				  "Not expected minimum length of response\n");
 			return -1;
 		}
 	}
 	pl_length = rsp->pl_length[0] | (rsp->pl_length[1] << 8) |
 		((rsp->pl_length[2] & 0xf) << 16);
 	if (len - sizeof(*rsp) != pl_length) {
+		cxlmi_msg(ctx, LOG_ERR,
+			  "Payload length not matching expected part of full message %ld %d\n",
+			  len - sizeof(*rsp), pl_length);
 		return -1;
 	}
 
@@ -176,7 +192,7 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 
 	len = recvfrom(mctp->sd, rsp_msg, rsp_msg_sz, 0,
 		       (struct sockaddr *)&addrrx, &addrlen);
-	return sanity_check_rsp(req_msg, rsp_msg, len,
+	return sanity_check_rsp(ep->ctx, req_msg, rsp_msg, len,
 				rsp_msg_sz == rsp_msg_sz_min, rsp_msg_sz_min);
 }
 
