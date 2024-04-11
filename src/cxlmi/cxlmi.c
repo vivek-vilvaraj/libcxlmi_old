@@ -4,7 +4,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <assert.h>
 
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -38,19 +37,6 @@ struct cxlmi_transport_mctp {
 
 static const int default_timeout_ms = 1000;
 
-/* CXL r3.1 Figure 7-19: CCI Message Format */
-struct cxlmi_cci_msg {
-	uint8_t category;
-	uint8_t tag;
-	uint8_t rsv1;
-	uint8_t command;
-	uint8_t command_set;
-	uint8_t pl_length[3]; /* 20 bit little endian, BO bit at bit 23 */
-	uint16_t return_code;
-	uint16_t vendor_ext_status;
-	uint8_t payload[];
-} __attribute__ ((packed));
-
 static bool cxlmi_probe_enabled_default(void)
 {
 	char *val;
@@ -64,7 +50,7 @@ static bool cxlmi_probe_enabled_default(void)
 		strncasecmp(val, "disable", 7);
 }
 
-struct cxlmi_ctx *cxlmi_new_ctx(FILE *fp, int loglvl)
+CXLMI_EXPORT struct cxlmi_ctx *cxlmi_new_ctx(FILE *fp, int loglvl)
 {
 	struct cxlmi_ctx *ctx;
 
@@ -79,7 +65,7 @@ struct cxlmi_ctx *cxlmi_new_ctx(FILE *fp, int loglvl)
 	return ctx;
 }
 
-void cxlmi_free_ctx(struct cxlmi_ctx *ctx)
+CXLMI_EXPORT void cxlmi_free_ctx(struct cxlmi_ctx *ctx)
 {
 	free(ctx);
 }
@@ -110,7 +96,7 @@ static void mctp_close(struct cxlmi_endpoint *ep)
 	free(ep->transport_data);
 }
 
-void cxlmi_close(struct cxlmi_endpoint *ep)
+CXLMI_EXPORT void cxlmi_close(struct cxlmi_endpoint *ep)
 {
 	if (ep->transport_data)
 		mctp_close(ep);
@@ -187,6 +173,8 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 	struct sockaddr_mctp addrrx;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 
+	memset(rsp_msg, 0, rsp_msg_sz);
+
 	len = sendto(mctp->sd, req_msg, req_msg_sz, 0,
 		     (struct sockaddr *)&mctp->addr, sizeof(mctp->addr));
 
@@ -209,8 +197,8 @@ int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
 	struct cxlmi_cci_msg req = {
 		.category = CXL_MCTP_CATEGORY_REQ,
 		.tag = mctp->tag++,
-		.command = 1,
-		.command_set = 0,
+		.command = IS_IDENTIFY,
+		.command_set = INFOSTAT,
 		.vendor_ext_status = 0xabcd,
 	};
 
@@ -237,7 +225,7 @@ free_rsp:
 	return rc;
 }
 
-void cxlmi_set_probe_enabled(struct cxlmi_ctx *ctx, bool enabled)
+CXLMI_EXPORT void cxlmi_set_probe_enabled(struct cxlmi_ctx *ctx, bool enabled)
 {
 	ctx->probe_enabled = enabled;
 }
@@ -271,8 +259,8 @@ static void endpoint_probe(struct cxlmi_endpoint *ep)
 	}
 }
 
-struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
-				       unsigned int netid, uint8_t eid)
+CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
+					    unsigned int netid, uint8_t eid)
 {
 	struct cxlmi_endpoint *ep;
 	struct cxlmi_transport_mctp *mctp;
@@ -353,8 +341,8 @@ int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 	struct cxlmi_cci_msg req = {
 		.category = CXL_MCTP_CATEGORY_REQ,
 		.tag = mctp->tag++,
-		.command = 0,
-		.command_set = 3,
+		.command = GET,
+		.command_set = TIMESTAMP,
 		.vendor_ext_status = 0xabcd,
 	};
 
@@ -375,12 +363,13 @@ free_rsp:
 	return rc;
 }
 
-struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m)
+CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m)
 {
 	return list_top(&m->endpoints, struct cxlmi_endpoint, entry);
 }
 
-struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m, struct cxlmi_endpoint * ep)
+CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
+						struct cxlmi_endpoint * ep)
 {
 	return ep ? list_next(&m->endpoints, ep, entry) : NULL;
 }
