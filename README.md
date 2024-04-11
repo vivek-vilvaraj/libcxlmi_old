@@ -36,7 +36,7 @@ Component discovery:
   or with the `$LIBNVME_PROBE_ENABLED` environment variable.
 
 
-- Enumerate all endpoints with`cxlmi_open_scan()` (auto-scan dbus: TODO).
+- Enumerate all endpoints with`cxlmi_open_scan_mctp()` (auto-scan dbus: TODO).
 
 Sending commands:
 Once an endpoint is opened, commands may be sent to the device. The provided
