@@ -4,26 +4,35 @@ CXL Management Interface library (libcxlmi).
 
 CXL Management Interface utility library, which provides type definitions
 for CXL specification structures, enumerations and helper functions to
-construct, send and decode commands and payloads over an out-of-band
+construct, send and decode commands and payloads over an out-of-band (OoB)
 link, typically MCTP-based CCIs over I2C or VDM. As such, users will mostly
-be BMC and/or firmware, targetting: Type3 SLD, Type3 MLD (FM owned) or
-a Switch.
+be BMC and/or firmware, targeting: Type3 SLD, Type3 MLD (FM owned) or a Switch.
+
+Keeping in mind the lack of safety provided by the in-band (OS driver) equivalent,
+benefits for OoB management include:
+- Single development environment (BMC).
+- Works on any host OS.
+- Does not require an OS (pre-boot).
 
 Two abstractions (opaque data structures):
 - `struct cxlmi_ctx`: library context object - this holds general information
-about opened/tracked endpoints as well as library settings. Before discovery,
-or anything else for that matter, a new context is created via `cxlmi_new_ctx()`,
+about opened/tracked endpoints as well as library settings. Before discovery
+a new context must be created via `cxlmi_new_ctx()`, and once done, the
+`cxlmi_free_ctx()` counterpart must be called.
 
 - `struct cxlmi_endpoint`: an MI endpoint - mechanism of communication with
 a CXL-MI subsystem. For MCTP, an endpoint will be the component that holds
 the MCTP address (EID), and receives request messages. Endpoint creation
-is done by opening an mctp endpoint throught `cxlmi_open_mctp()`.
+is done by opening an mctp endpoint through `cxlmi_open_mctp()`. The respective
+housekeeping is done with the `cxlmi_close()` counterpart.
 
 Component discovery:
 - Single, specific `nid:eid` endpoint by using `cxlmi_open_mctp()`. This will
   setup the path for CCI commands to be sent. By default, it will also probe
   the endpoint to get the CXL component this belongs to: either a Switch or a
-  Type3 device. This auto-probing can by disabled with `cxlmi_set_probe_enabled()`.
+  Type3 device. This auto-probing can by disabled with `cxlmi_set_probe_enabled()`
+  or with the `$LIBNVME_PROBE_ENABLED` environment variable.
+
 
 - Enumerate all endpoints with`cxlmi_open_scan()` (auto-scan dbus: TODO).
 
@@ -86,10 +95,12 @@ meson install -C build
 Linking
 =======
 
-Programs making use of this library must include `libcxlmi.h` and link with `-lcxlmi`.
+Programs making use of this library must include the `libcxlmi.h` header file
+and link with `-lcxlmi`.
 
 References
 ==========
+- This library has been influenced by cxl-fmapi-tests, libnvme and libcxl (ndctl).
 - CXL 3.1 Specification.
 - CXL Type3 Device Component Command Interface over MCTP Binding Specification (DSP0281).
 - CXL Fabric Manager API over MCTP Binding Specification (DSP0324).
