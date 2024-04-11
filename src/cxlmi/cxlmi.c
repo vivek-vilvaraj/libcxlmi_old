@@ -64,14 +64,15 @@ static bool cxlmi_probe_enabled_default(void)
 		strncasecmp(val, "disable", 7);
 }
 
-struct cxlmi_ctx * cxlmi_new_ctx(FILE *fp, int loglvl)
+struct cxlmi_ctx *cxlmi_new_ctx(FILE *fp, int loglvl)
 {
 	struct cxlmi_ctx *ctx;
 
-	ctx = calloc(1, sizeof(struct cxlmi_ctx));
+	ctx = calloc(1, sizeof(*ctx));
 	if (!ctx)
 		return NULL;
 
+	ctx->fp = fp ? fp : stderr;
 	ctx->probe_enabled = cxlmi_probe_enabled_default();
 	list_head_init(&ctx->endpoints);
 
@@ -186,12 +187,12 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 	struct sockaddr_mctp addrrx;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 
-	assert(mctp->sd >= 0);
 	len = sendto(mctp->sd, req_msg, req_msg_sz, 0,
 		     (struct sockaddr *)&mctp->addr, sizeof(mctp->addr));
 
 	len = recvfrom(mctp->sd, rsp_msg, rsp_msg_sz, 0,
 		       (struct sockaddr *)&addrrx, &addrlen);
+
 	return sanity_check_rsp(ep->ctx, req_msg, rsp_msg, len,
 				rsp_msg_sz == rsp_msg_sz_min, rsp_msg_sz_min);
 }
@@ -309,13 +310,16 @@ struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 
 	mctp->sd = socket(AF_MCTP, SOCK_DGRAM, 0);
 	if (mctp->sd < 0) {
-		assert(false);
+		cxlmi_msg(ctx, LOG_ERR,
+			  "cannot open socket for mctp endpoint %d:%d\n",
+			  netid, eid);
 		errno_save = errno;
 		goto err_free_rspbuf;
 	}
 	if (bind(mctp->sd,
 		 (struct sockaddr *)&cci_addr, sizeof(cci_addr))) {
-		assert(false);
+		cxlmi_msg(ctx, LOG_ERR,
+			  "cannot bind for mctp endpoint %d:%d\n", netid, eid);
 		errno_save = errno;
 		goto err_free_rspbuf;
 	}
