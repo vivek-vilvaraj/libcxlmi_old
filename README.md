@@ -24,7 +24,8 @@ a new context must be created via `cxlmi_new_ctx()`, and once done, the
 a CXL-MI subsystem. For MCTP, an endpoint will be the component that holds
 the MCTP address (EID), and receives request messages. Endpoint creation
 is done by opening an mctp endpoint through `cxlmi_open_mctp()`. The respective
-housekeeping is done with the `cxlmi_close()` counterpart.
+housekeeping is done with the `cxlmi_close()` counterpart. Endpoints maybe
+iterated with the `struct cxlmi_for_each_endpoint() family of calls.
 
 Component discovery:
 - Single, specific `nid:eid` endpoint by using `cxlmi_open_mctp()`. This will
