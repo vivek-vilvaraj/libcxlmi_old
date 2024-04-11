@@ -5,7 +5,7 @@
 project(
     'libcxlmi', ['c'],
     meson_version: '>= 0.50.0',
-    version: '0.1',
+    version: '0.0.1',
     license: 'LGPL-2.1-or-later',
     default_options: [
         'c_std=gnu99',
