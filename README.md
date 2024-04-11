@@ -15,15 +15,15 @@ benefits for OoB management include:
 - Does not require an OS (pre-boot).
 
 Two abstractions (opaque data structures):
-- `struct cxlmi_ctx`: library context object - this holds general information
-about opened/tracked endpoints as well as library settings. Before discovery
-a new context must be created via `cxlmi_new_ctx()`, and once done, the
-`cxlmi_free_ctx()` counterpart must be called.
+- `struct cxlmi_ctx`: library context object - holds general information
+common to all opened/tracked endpoints as well as library settings. Before
+discovery a new context must be created via `cxlmi_new_ctx()`, and once finished
+with it, the `cxlmi_free_ctx()` counterpart must be called.
 
 - `struct cxlmi_endpoint`: an MI endpoint - mechanism of communication with
-a CXL-MI subsystem. For MCTP, an endpoint will be the component that holds
+a CXL-MI. For MCTP, an endpoint will be the component that holds
 the MCTP address (EID), and receives request messages. Endpoint creation
-is done by opening an mctp endpoint through `cxlmi_open_mctp()`. The respective
+is done by opening an MCTP endpoint through `cxlmi_open_mctp()`. The respective
 housekeeping is done with the `cxlmi_close()` counterpart. Given a context,
 all tracked endpoints in the system can be iterated with the `cxlmi_for_each_endpoint()`
 (and similar) iterator.
@@ -59,7 +59,7 @@ Requirements
 ============
 1. arm64 or x86-64 architecture.
 
-2. Linux kernel v5.15+ for mctp support (as well as header files).
+2. Linux kernel v5.15+ for MCTP support (as well as header files).
 
 3. Enabling use of aspeed-i2c with ACPI **out-of-tree** series
    https://lore.kernel.org/all/20230531100600.13543-1-Jonathan.Cameron@huawei.com/
