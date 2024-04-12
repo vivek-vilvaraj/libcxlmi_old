@@ -86,7 +86,7 @@ change, such as Conventional Resets.
 generic command set - these can be issued to either a switch or a type 3 device.
 The assumption here is that for those command either smctp_type is fine.
 
-- FMAPI command set (used to manage CXL Switches) is TODO.
+- FMAPI command set (used to manage/tunnel CXL Switches) is TODO.
 
 Requirements
 ============
