@@ -66,6 +66,23 @@ void cxlmi_close(struct cxlmi_endpoint *ep);
 void cxlmi_set_probe_enabled(struct cxlmi_ctx *ctx, bool enabled);
 
 /**
+ * cxlmi_endpoint_get_timeout - get the current timeout value for CXL-MI
+ * responses
+ * @ep: MI endpoint object
+ *
+ * Returns the current timeout value, in milliseconds, for this endpoint.
+ */
+unsigned int cxlmi_endpoint_get_timeout(struct cxlmi_endpoint *ep);
+
+/**
+ * cxlmi_endpoint_set_timeout - set a timeout for CXL-MI responses
+ * @ep: MI endpoint object
+ * @timeout_ms: Timeout for MI responses, given in milliseconds
+ */
+int cxlmi_endpoint_set_timeout(struct cxlmi_endpoint *ep,
+			       unsigned int timeout_ms);
+
+/**
  * cxlmi_first_endpoint - Start endpoint iterator
  * @m: &cxlmi_ctx object
  *
@@ -115,7 +132,6 @@ int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
 			     struct cxlmi_cci_infostat_identify *ret);
 int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 			      struct cxlmi_cci_get_timestamp *ret);
-
 
 #ifdef __cplusplus
 }

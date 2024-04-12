@@ -64,11 +64,24 @@ enum {
     DCD_MANAGEMENT = 0x56
 	#define GET_DCD_INFO 0x0
 	#define GET_HOST_DC_REGION_CONFIG 0x1
-	#define SET_DC_REGION_CONFIG 0x2
+	#define SET_DC_REGION_CONFIG 0x2 /* Why not host? huh...*/
 	#define GET_DC_REGION_EXTENT_LIST 0x3
 	#define INITIATE_DC_ADD 0x4
 	#define INITIATE_DC_RELEASE 0x5
 };
+
+/* CXL r3.1 Figure 7-19: CCI Message Format */
+struct cxlmi_cci_msg {
+	uint8_t category;
+	uint8_t tag;
+	uint8_t rsv1;
+	uint8_t command;
+	uint8_t command_set;
+	uint8_t pl_length[3]; /* 20 bit little endian, BO bit at bit 23 */
+	uint16_t return_code;
+	uint16_t vendor_ext_status;
+	uint8_t payload[];
+} __attribute__ ((packed));
 
 enum cxlmi_component_type {
 	CXLMI_SWITCH,
@@ -80,15 +93,17 @@ struct cxlmi_ctx {
 	int log_level;
 	bool log_pid;
 	bool log_timestamp;
-	struct list_head endpoints; /* all opened mctp-endpoints */
+	struct list_head endpoints; /* all opened endpoints */
 	bool probe_enabled; /* probe upon open, default yes */
 };
 
 struct cxlmi_endpoint {
 	struct cxlmi_ctx *ctx;
+	struct cxlmi_transport *transport;
 	void *transport_data;
 	struct list_node entry;
 	unsigned int timeout_ms;
+	uint8_t tag;
 	enum cxlmi_component_type type;
 };
 
@@ -108,17 +123,4 @@ __cxlmi_msg(struct cxlmi_ctx *c, int lvl, const char *func, const char *format, 
 				   format, ##__VA_ARGS__);		\
 	} while (0)
 
-/* CXL r3.1 Figure 7-19: CCI Message Format */
-struct cxlmi_cci_msg {
-	uint8_t category;
-	uint8_t tag;
-	uint8_t rsv1;
-	uint8_t command;
-	uint8_t command_set;
-	uint8_t pl_length[3]; /* 20 bit little endian, BO bit at bit 23 */
-	uint16_t return_code;
-	uint16_t vendor_ext_status;
-	uint8_t payload[];
-} __attribute__ ((packed));
-
-#endif
+#endif /* _LIBCXLMI_PRIVATE_H */

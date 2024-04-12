@@ -35,7 +35,7 @@ struct cxlmi_transport_mctp {
 	int tag;
 };
 
-static const int default_timeout_ms = 1000;
+static const int max_mctp_timeout_ms = 2000;
 
 static bool cxlmi_probe_enabled_default(void)
 {
@@ -80,10 +80,22 @@ static struct cxlmi_endpoint *init_endpoint(struct cxlmi_ctx *ctx)
 
 	list_node_init(&ep->entry);
 	ep->ctx = ctx;
-	ep->timeout_ms = default_timeout_ms;
+	ep->timeout_ms = max_mctp_timeout_ms;
 	list_add(&ctx->endpoints, &ep->entry);
 
 	return ep;
+}
+
+CXLMI_EXPORT int cxlmi_endpoint_set_timeout(struct cxlmi_endpoint *ep,
+					    unsigned int timeout_ms)
+{
+	ep->timeout_ms = timeout_ms;
+	return 0;
+}
+
+CXLMI_EXPORT unsigned int cxlmi_endpoint_get_timeout(struct cxlmi_endpoint *ep)
+{
+	return ep->timeout_ms;
 }
 
 static void mctp_close(struct cxlmi_endpoint *ep)
@@ -168,15 +180,36 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 			    struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
 			    size_t rsp_msg_sz_min)
 {
-	int len;
+	int rc, errno_save, len;
 	socklen_t addrlen;
 	struct sockaddr_mctp addrrx;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct pollfd pollfds[1];
+	int timeout = ep->timeout_ms ?: -1;
 
 	memset(rsp_msg, 0, rsp_msg_sz);
 
 	len = sendto(mctp->sd, req_msg, req_msg_sz, 0,
 		     (struct sockaddr *)&mctp->addr, sizeof(mctp->addr));
+
+	pollfds[0].fd = mctp->sd;
+	pollfds[0].events = POLLIN;
+	while (1) {
+		rc = poll(pollfds, 1, timeout);
+		if (rc > 0)
+			break;
+		else if (rc == 0) {
+			cxlmi_msg(ep->ctx, LOG_DEBUG, "Timeout on MCTP socket");
+			errno = ETIMEDOUT;
+			return -1;
+		} else if (errno != EINTR) {
+			errno_save = errno;
+			cxlmi_msg(ep->ctx, LOG_ERR,
+				  "Failed polling on MCTP socket");
+			errno = errno_save;
+
+		}
+	}
 
 	len = recvfrom(mctp->sd, rsp_msg, rsp_msg_sz, 0,
 		       (struct sockaddr *)&addrrx, &addrlen);
@@ -185,43 +218,17 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 				rsp_msg_sz == rsp_msg_sz_min, rsp_msg_sz_min);
 }
 
-/* CXL r3.0 Section 8.2.9.1.1: Identify (Opcode 0001h) */
-int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
-			     struct cxlmi_cci_infostat_identify *ret)
+static int send_cmd_cci(struct cxlmi_endpoint *ep,
+			struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
+			struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
+			size_t rsp_msg_sz_min)
 {
 	int rc;
-	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	ssize_t rsp_sz;
-	struct cxlmi_cci_infostat_identify *pl;
-	struct cxlmi_cci_msg *rsp;
-	struct cxlmi_cci_msg req = {
-		.category = CXL_MCTP_CATEGORY_REQ,
-		.tag = mctp->tag++,
-		.command = IS_IDENTIFY,
-		.command_set = INFOSTAT,
-		.vendor_ext_status = 0xabcd,
-	};
 
-	rsp_sz = sizeof(*rsp) + sizeof(*pl);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
+	/* TODO: rc = ep->transport->submit(ep, ...); ? */
+	rc = send_mctp_direct(ep, req_msg, req_msg_sz,
+			      rsp_msg, rsp_msg_sz, rsp_msg_sz);
 
-	rc = send_mctp_direct(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc) {
-		goto free_rsp;
-	}
-
-	if (rsp->return_code) {
-		rc = rsp->return_code;
-		goto free_rsp;
-	}
-	pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
-
-	*ret = *pl;
-
-free_rsp:
-	free(rsp);
 	return rc;
 }
 
@@ -313,7 +320,6 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 	}
 
 	ep->transport_data = mctp;
-
 	endpoint_probe(ep);
 
 	return ep;
@@ -328,11 +334,59 @@ err_close_ep:
 	return NULL;
 }
 
-/* CXL r3.0 Section 8.2.9.4.1: Get Timestamp (Opcode 0300h) */
+CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m)
+{
+	return list_top(&m->endpoints, struct cxlmi_endpoint, entry);
+}
+
+CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
+						struct cxlmi_endpoint * ep)
+{
+	return ep ? list_next(&m->endpoints, ep, entry) : NULL;
+}
+
+int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
+			     struct cxlmi_cci_infostat_identify *ret)
+{
+	int rc;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	ssize_t rsp_sz;
+	struct cxlmi_cci_infostat_identify *pl;
+	struct cxlmi_cci_msg *rsp;
+	struct cxlmi_cci_msg req = {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = IS_IDENTIFY,
+		.command_set = INFOSTAT,
+		.vendor_ext_status = 0xabcd,
+	};
+
+	rsp_sz = sizeof(*rsp) + sizeof(*pl);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	if (rc) {
+		goto free_rsp;
+	}
+
+	if (rsp->return_code) {
+		rc = rsp->return_code;
+		goto free_rsp;
+	}
+	pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
+
+	*ret = *pl;
+
+free_rsp:
+	free(rsp);
+	return rc;
+}
+
 int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 			      struct cxlmi_cci_get_timestamp *ret)
 {
-
 	struct cxlmi_cci_get_timestamp *pl;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	int rc;
@@ -351,7 +405,7 @@ int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	rc = send_mctp_direct(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto free_rsp;
 
@@ -361,15 +415,4 @@ int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 free_rsp:
 	free(rsp);
 	return rc;
-}
-
-CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m)
-{
-	return list_top(&m->endpoints, struct cxlmi_endpoint, entry);
-}
-
-CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
-						struct cxlmi_endpoint * ep)
-{
-	return ep ? list_next(&m->endpoints, ep, entry) : NULL;
 }

@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 #
-# This file is part of libnvme.
-# Copyright (c) 2021 Dell Inc.
-#
-# Authors: Martin Belanger <Martin.Belanger@dell.com>
+# This file is part of libcxl.
 #
 
 sources = [

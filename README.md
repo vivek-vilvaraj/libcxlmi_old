@@ -25,7 +25,7 @@ equivalent, benefits for OoB management include:
 - Works on any host OS.
 - Does not require an OS (pre-boot).
 
-Provided abstractions (opaque data structures):
+1. Provided abstractions (opaque data structures):
 - `struct cxlmi_ctx`: library context object - holds general information
 common to all opened/tracked endpoints as well as library settings. Before
 discovery a new context must be created via `cxlmi_new_ctx()`, and once finished
@@ -39,18 +39,20 @@ housekeeping is done with the `cxlmi_close()` counterpart. Given a context,
 all tracked endpoints in the system can be iterated with the `cxlmi_for_each_endpoint()`
 (and similar) iterator.
 
-Component discovery:
+2. Component discovery:
 - Single, specific `nid:eid` endpoint by using `cxlmi_open_mctp()`. This will
   setup the path for CCI commands to be sent. By default, it will also probe
   the endpoint to get the CXL component this belongs to: either a Switch or a
   Type3 device. This auto-probing can by disabled with `cxlmi_set_probe_enabled()`
   or with the `$LIBNVME_PROBE_ENABLED` environment variable.
 
-
 - Enumerate all endpoints with`cxlmi_open_scan_mctp()` (auto-scan dbus: TODO).
 
-Sending commands:
-Once an endpoint is opened, commands may be sent to the device. The provided
+3. Sending commands:
+Once an endpoint is opened, commands may be sent to the device, and timeouts
+are configurable through . Defaults are per-transport and can be updated by
+calling `cxlmi_endpoint_set_timeout()`.
+
 API is very command-specific (as in payloads defined in the CXL specification),
 and the user is expected to know what to look for in the stack-allocated return
 output. This is similar to how the libnvme counterpart works. Commands that are
