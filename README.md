@@ -29,8 +29,9 @@ Abstractions (opaque data structures)
 -------------------------------------
 - `struct cxlmi_ctx`: library context object - holds general information
 common to all opened/tracked endpoints as well as library settings. Before
-discovery a new context must be created via `cxlmi_new_ctx()`, and once finished
-with it, the `cxlmi_free_ctx()` counterpart must be called.
+discovery a new context must be created via `cxlmi_new_ctx()`, providing
+basic logging information. And once finished with it, the `cxlmi_free_ctx()`
+counterpart must be called.
 
 - `struct cxlmi_endpoint`: an MI endpoint - mechanism of communication with
 a CXL-MI. For MCTP, an endpoint will be the component that holds
@@ -51,7 +52,7 @@ Component discovery
 - Enumerate all endpoints with`cxlmi_open_scan_mctp()` (scan dbus: TODO).
 
 Issuing CCI commands
----------------------
+--------------------
 Once an endpoint is open, commands may be sent to the CXL device, for which
 response timeouts are configurable through `cxlmi_endpoint_set_timeout()`,
 taking into account any maximum values defined by the transport. For example,
@@ -72,9 +73,16 @@ of the device:
    }
    ```
 
+Logging
+-------
+Logging to a user defined file upon context creation is done via  `cxlmi_msg()`
+which uses `stderr` by default. Logging levels are standard syslog.
+
 Considerations
 --------------
 A few considerations users should keep in mind when evaluating using this library:
+
+- APIs are influenced by libnvme.
 
 - The library leaves any and all serialization up to the user - libs should not
 hold locks.
