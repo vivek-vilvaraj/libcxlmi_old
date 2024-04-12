@@ -25,7 +25,8 @@ equivalent, benefits for OoB management include:
 - Works on any host OS.
 - Does not require an OS (pre-boot).
 
-1. Provided abstractions (opaque data structures):
+Abstractions (opaque data structures)
+-------------------------------------
 - `struct cxlmi_ctx`: library context object - holds general information
 common to all opened/tracked endpoints as well as library settings. Before
 discovery a new context must be created via `cxlmi_new_ctx()`, and once finished
@@ -36,22 +37,25 @@ a CXL-MI. For MCTP, an endpoint will be the component that holds
 the MCTP address (EID), and receives request messages. Endpoint creation
 is done by opening an MCTP endpoint through `cxlmi_open_mctp()`. The respective
 housekeeping is done with the `cxlmi_close()` counterpart. Given a context,
-all tracked endpoints in the system can be iterated with the `cxlmi_for_each_endpoint()`
-(and similar) iterator.
+all tracked endpoints in the system can be reached with the (and related)
+`cxlmi_for_each_endpoint()` iterator.
 
-2. Component discovery:
+Component discovery
+-------------------
 - Single, specific `nid:eid` endpoint by using `cxlmi_open_mctp()`. This will
   setup the path for CCI commands to be sent. By default, it will also probe
   the endpoint to get the CXL component this belongs to: either a Switch or a
   Type3 device. This auto-probing can by disabled with `cxlmi_set_probe_enabled()`
   or with the `$LIBNVME_PROBE_ENABLED` environment variable.
 
-- Enumerate all endpoints with`cxlmi_open_scan_mctp()` (auto-scan dbus: TODO).
+- Enumerate all endpoints with`cxlmi_open_scan_mctp()` (scan dbus: TODO).
 
-3. Sending commands:
-Once an endpoint is opened, commands may be sent to the device, and timeouts
-are configurable through . Defaults are per-transport and can be updated by
-calling `cxlmi_endpoint_set_timeout()`.
+Issuing CCI commands
+---------------------
+Once an endpoint is open, commands may be sent to the CXL device, for which
+response timeouts are configurable through `cxlmi_endpoint_set_timeout()`,
+taking into account any maximum values defined by the transport. For example,
+for MCTP-based that is 2 seconds.
 
 API is very command-specific (as in payloads defined in the CXL specification),
 and the user is expected to know what to look for in the stack-allocated return
