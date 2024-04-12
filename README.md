@@ -72,6 +72,22 @@ of the device:
    }
    ```
 
+Considerations
+--------------
+A few considerations users should keep in mind when evaluating using this library:
+
+- The library leaves any and all serialization up to the user - libs should not
+hold locks.
+
+- Commands initiated on MCTP-based CCIs are not tracked across any component state
+change, such as Conventional Resets.
+
+- CXL r3.1 + DMTF binding specs are not clear on what Message type is used for the
+generic command set - these can be issued to either a switch or a type 3 device.
+The assumption here is that for those command either smctp_type is fine.
+
+- FMAPI command set (used to manage CXL Switches) is TODO.
+
 Requirements
 ============
 1. arm64 or x86-64 architecture.
