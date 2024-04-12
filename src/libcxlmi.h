@@ -1,7 +1,7 @@
 #ifndef __LIBCXLMI_H__
 #define __LIBCXLMI_H__
 
-#include "cxlmi/types.h"
+#include "cxlmi/api-types.h"
 #include "cxlmi/log.h"
 
 #ifdef __cplusplus
