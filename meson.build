@@ -19,6 +19,14 @@ project(
 
 cc = meson.get_compiler('c')
 cxx_available = add_languages('cpp', required: false)
+
+add_project_arguments(
+    [
+        '-fomit-frame-pointer',
+        '-D_GNU_SOURCE',
+    ],
+    language : 'c',
+)
 inc = include_directories(['ccan', 'src'])
 
 subdir('ccan')
