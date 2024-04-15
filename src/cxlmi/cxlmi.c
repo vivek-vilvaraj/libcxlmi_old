@@ -200,7 +200,7 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 	struct pollfd pollfds[1];
 	int timeout = ep->timeout_ms ? ep->timeout_ms : -1;
 
-	memset(rsp_msg, 0, rsp_msg_sz);
+	/* memset(rsp_msg, 0, rsp_msg_sz); */
 
 	len = sendto(mctp->sd, req_msg, req_msg_sz, 0,
 		     (struct sockaddr *)&mctp->addr, sizeof(mctp->addr));
@@ -590,7 +590,7 @@ free_rsp:
  /* 	struct cci_get_log_req *req_pl; */
  /* 	struct cci_msg *req, *rsp; */
  /* 	size_t req_sz, rsp_sz; */
-	int rc = 0;
+	/* int rc = 0; */
  /* 	int i; */
 
  /* 	req_sz = sizeof(*req) + sizeof(*req_pl); */
