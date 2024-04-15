@@ -19,6 +19,10 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 			break;
 		printf("device type: %s\n",
 		       id.component_type == 0x03 ? "type3":"switch");
+		printf("serial number: 0x%lx\n", (uint64_t)id.serial_num);
+		printf("\tVID:%04x DID:%04x SubsysVID:%04x SubsysID:%04x\n",
+		       id.vendor_id, id.device_id,
+		       id.subsys_vendor_id, id.subsys_id);
 
 		rc = cxlmi_query_cci_timestamp(ep, &ts);
 		if (rc)
