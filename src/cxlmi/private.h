@@ -19,7 +19,7 @@ enum {
 	#define BACKGROUND_OPERATION_STATUS    0x2
 	#define BACKGROUND_OPERATION_ABORT     0x5
     EVENTS      = 0x01,
-	#define GET_RECORDS   0x0
+	#define GET_RECORDS     0x0
 	#define CLEAR_RECORDS   0x1
 	#define GET_INTERRUPT_POLICY   0x2
 	#define SET_INTERRUPT_POLICY   0x3
@@ -64,7 +64,7 @@ enum {
     DCD_MANAGEMENT = 0x56
 	#define GET_DCD_INFO 0x0
 	#define GET_HOST_DC_REGION_CONFIG 0x1
-	#define SET_DC_REGION_CONFIG 0x2 /* Why not host? huh...*/
+	#define SET_DC_REGION_CONFIG 0x2
 	#define GET_DC_REGION_EXTENT_LIST 0x3
 	#define INITIATE_DC_ADD 0x4
 	#define INITIATE_DC_RELEASE 0x5

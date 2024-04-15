@@ -12,13 +12,14 @@ struct cxlmi_ctx;
 struct cxlmi_endpoint;
 
 /**
- * cxlmi_new_ctx() - Create top-level MI (ctx) handle.
- * @ctx: new context object, or NULL on failure.
+ * cxlmi_new_ctx() - Create top-level MI context handle.
+ * @fp:		File descriptor for logging messages
+ * @log_level:	Logging level to use (standard syslog)
  *
- * Create the top-level (library) handle for creating subsequent endpoint
- * objects.
+ * Create the top-level library handle for creating subsequent
+ * endpointobjects.
  *
- * Return: 0 on success, otherwise failure.
+ * Return: new context object, or NULL on failure.
  *
  * See &cxlmi_free_ctx.
  */
@@ -121,15 +122,18 @@ struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m);
  * @e: &cxlmi_endpoint object, set on each iteration
  * @_e: &cxlmi_endpoint object used as temporary storage
  */
-#define cxlmi_for_each_endpoint_safe(m, e, _e)			      \
+#define cxlmi_for_each_endpoint_safe(m, e, _e)				\
 	for (e = cxlmi_first_endpoint(m), _e = cxlmi_next_endpoint(m, e); \
-	     e != NULL;							      \
+	     e != NULL;							\
 	     e = _e, _e = cxlmi_next_endpoint(m, e))
 
-
-/* CMDS */
+/*
+ * Definitions for Generic Component Commands, per CXL r3.1 Table 8-37.
+ */
 int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
 			     struct cxlmi_cci_infostat_identify *ret);
+int cxlmi_request_bg_operation_abort(struct cxlmi_endpoint *ep);
+
 int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 			      struct cxlmi_cci_get_timestamp *ret);
 

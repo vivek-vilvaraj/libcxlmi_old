@@ -1,7 +1,4 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
-/*
- * Copyright (c) 2021 Martin Wilck, SUSE LLC
- */
 #ifndef _LOG_H
 #define _LOG_H
 

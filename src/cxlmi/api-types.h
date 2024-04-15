@@ -47,4 +47,9 @@ struct cxlmi_cci_get_timestamp {
 	uint64_t timestamp;
 } __attribute__((packed));
 
+/* CXL r3.0 Section 8.2.9.4.2: Set Timestamp (Opcode 0301h) */
+struct cxlmi_cci_set_timestamp {
+	uint64_t timestamp;
+} __attribute__((packed));
+
 #endif

@@ -75,8 +75,8 @@ of the device:
 
 Logging
 -------
-Logging to a user defined file upon context creation is done via  `cxlmi_msg()`
-which uses `stderr` by default. Logging levels are standard syslog.
+Library internal logging inforation is set upon context creation, using `stderr`
+by default. Logging levels are standard syslog.
 
 Considerations
 --------------

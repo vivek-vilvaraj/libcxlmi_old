@@ -35,7 +35,8 @@ struct cxlmi_transport_mctp {
 	int tag;
 };
 
-static const int max_mctp_timeout_ms = 2000;
+/* 2 secs, see CXL r3.1 Section 9.20.2 */
+#define MAX_TIMEOUT_MCTP 2000
 
 static bool cxlmi_probe_enabled_default(void)
 {
@@ -80,15 +81,28 @@ static struct cxlmi_endpoint *init_endpoint(struct cxlmi_ctx *ctx)
 
 	list_node_init(&ep->entry);
 	ep->ctx = ctx;
-	ep->timeout_ms = max_mctp_timeout_ms;
+	ep->timeout_ms = 5000;
 	list_add(&ctx->endpoints, &ep->entry);
 
 	return ep;
 }
 
+static int mctp_check_timeout(struct cxlmi_endpoint *ep,
+			      unsigned int timeout_ms)
+{
+	return timeout_ms > MAX_TIMEOUT_MCTP;
+}
+
 CXLMI_EXPORT int cxlmi_endpoint_set_timeout(struct cxlmi_endpoint *ep,
 					    unsigned int timeout_ms)
 {
+	if (ep->transport_data) {
+		int rc;
+
+		rc = mctp_check_timeout(ep, timeout_ms);
+		if (rc)
+			return rc;
+	}
 	ep->timeout_ms = timeout_ms;
 	return 0;
 }
@@ -100,9 +114,8 @@ CXLMI_EXPORT unsigned int cxlmi_endpoint_get_timeout(struct cxlmi_endpoint *ep)
 
 static void mctp_close(struct cxlmi_endpoint *ep)
 {
-	struct cxlmi_transport_mctp *mctp;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 
-	mctp = ep->transport_data;
 	close(mctp->sd);
 	free(mctp->resp_buf);
 	free(ep->transport_data);
@@ -207,7 +220,7 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 			cxlmi_msg(ep->ctx, LOG_ERR,
 				  "Failed polling on MCTP socket");
 			errno = errno_save;
-
+			return -1;
 		}
 	}
 
@@ -320,6 +333,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 	}
 
 	ep->transport_data = mctp;
+	ep->timeout_ms = MAX_TIMEOUT_MCTP;
 	endpoint_probe(ep);
 
 	return ep;
@@ -382,6 +396,37 @@ int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
 free_rsp:
 	free(rsp);
 	return rc;
+}
+
+int cxlmi_request_bg_operation_abort(struct cxlmi_endpoint *ep)
+{
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	int rc;
+	ssize_t rsp_sz;
+	struct cxlmi_cci_msg *rsp;
+	struct cxlmi_cci_msg req = {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = BACKGROUND_OPERATION_ABORT,
+		.command_set = INFOSTAT,
+		.vendor_ext_status = 0xabcd,
+	};
+
+	rsp_sz = sizeof(*rsp);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+
+	free(rsp);
+	return rc;
+}
+
+int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
+			    struct cxlmi_cci_set_timestamp *in)
+{
+	return 0;
 }
 
 int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
