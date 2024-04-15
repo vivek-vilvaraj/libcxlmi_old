@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <libcxlmi.h>
 
@@ -64,10 +65,18 @@ static int modify_timestamp(struct cxlmi_endpoint *ep)
 	sleep(1);
 
 	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
-	if (rc)
-		return rc;
+	/* if (rc) */
+	/* 	return rc; */
 	printf("new device timestamp: %lu\n", set_ts.timestamp);
 
+	memset(&get_ts, 0, sizeof(get_ts));
+	rc = cxlmi_query_cci_timestamp(ep, &get_ts);
+	if (rc)
+		return rc;
+	printf("device timestamp: %lu\n", get_ts.timestamp);
+	set_ts.timestamp = get_ts.timestamp * 2;
+
+	
 	return 0;
 }
 
