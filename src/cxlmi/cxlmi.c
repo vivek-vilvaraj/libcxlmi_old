@@ -118,14 +118,14 @@ static void mctp_close(struct cxlmi_endpoint *ep)
 
 	close(mctp->sd);
 	free(mctp->resp_buf);
-	free(ep->transport_data);
 }
 
 CXLMI_EXPORT void cxlmi_close(struct cxlmi_endpoint *ep)
 {
-	if (ep->transport_data)
+	if (ep->transport_data) {
 		mctp_close(ep);
-
+		free(ep->transport_data);
+	}
 	list_del(&ep->entry);
 	free(ep);
 }
@@ -423,16 +423,10 @@ int cxlmi_request_bg_operation_abort(struct cxlmi_endpoint *ep)
 	return rc;
 }
 
-int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
-			    struct cxlmi_cci_set_timestamp *in)
-{
-	return 0;
-}
-
 int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 			      struct cxlmi_cci_get_timestamp *ret)
 {
-	struct cxlmi_cci_get_timestamp *pl;
+	struct cxlmi_cci_get_timestamp *rsp_pl;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	int rc;
 	ssize_t rsp_sz;
@@ -445,7 +439,7 @@ int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 		.vendor_ext_status = 0xabcd,
 	};
 
-	rsp_sz = sizeof(*rsp) + sizeof(*pl);
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
 		return -1;
@@ -454,10 +448,52 @@ int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto free_rsp;
 
-	pl = (struct cxlmi_cci_get_timestamp *)(rsp->payload);
-	*ret = *pl;
+	rsp_pl = (struct cxlmi_cci_get_timestamp *)(rsp->payload);
+	*ret = *rsp_pl;
 
 free_rsp:
 	free(rsp);
+	return rc;
+}
+
+int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
+			    struct cxlmi_cci_set_timestamp *in)
+{
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct cxlmi_cci_set_timestamp *req_pl;
+	struct cxlmi_cci_msg *req, *rsp;
+	size_t req_sz, rsp_sz;
+	int rc = 0;
+
+	req_sz = sizeof(*req) + sizeof(*in);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	*req = (struct cxlmi_cci_msg) {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = SET,
+		.command_set = TIMESTAMP,
+		.vendor_ext_status = 0xabcd,
+		.pl_length = {
+			[0] = sizeof(*req_pl) & 0xff,
+			[1] = (sizeof(*req_pl) >> 8) & 0xff,
+			[2] = (sizeof(*req_pl) >> 16) & 0xff,
+		},
+	};
+	req_pl = (struct cxlmi_cci_set_timestamp *)req->payload;
+	*req_pl = *in;
+
+	rsp_sz = sizeof(*rsp);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		goto free_req;
+
+	rc = send_cmd_cci(ep, req, req_sz, rsp, rsp_sz, rsp_sz);
+
+	free(rsp);
+free_req:
+	free(req);
 	return rc;
 }

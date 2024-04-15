@@ -8,22 +8,32 @@ project(
     version: '0.0.1',
     license: 'LGPL-2.1-or-later',
     default_options: [
-        'c_std=gnu99',
-        'warning_level=1',
-        'buildtype=debugoptimized',
-        'prefix=/usr/local',
-        'sysconfdir=etc',
-        'wrap_mode=nofallback'
+	'c_std=gnu99',
+	'warning_level=1',
+	'buildtype=debugoptimized',
+	'prefix=/usr/local',
+	'sysconfdir=etc',
+	'wrap_mode=nofallback'
     ]
 )
 
 cc = meson.get_compiler('c')
 cxx_available = add_languages('cpp', required: false)
 
+conf = configuration_data()
+conf.set(
+    'HAVE_LINUX_MCTP_H',
+    cc.compiles(
+	'''#include <linux/mctp.h>''',
+	name: 'linux/mctp.h'
+    ),
+    description: 'Is linux/mctp.h include-able?'
+)
+
 add_project_arguments(
     [
-        '-fomit-frame-pointer',
-        '-D_GNU_SOURCE',
+	'-fomit-frame-pointer',
+	'-D_GNU_SOURCE',
     ],
     language : 'c',
 )
@@ -32,4 +42,6 @@ inc = include_directories(['ccan', 'src'])
 subdir('ccan')
 subdir('src')
 subdir('examples')
-install_headers('src/libcxlmi.h')
+
+mode = ['rw-r--r--', 0, 0]
+install_headers('src/libcxlmi.h', install_mode: mode)

@@ -136,6 +136,8 @@ int cxlmi_request_bg_operation_abort(struct cxlmi_endpoint *ep);
 
 int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 			      struct cxlmi_cci_get_timestamp *ret);
+int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
+			    struct cxlmi_cci_set_timestamp *in);
 
 #ifdef __cplusplus
 }

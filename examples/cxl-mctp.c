@@ -49,6 +49,28 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 	return rc;
 }
 
+static int modify_timestamp(struct cxlmi_endpoint *ep)
+{
+	int rc;
+	struct cxlmi_cci_get_timestamp get_ts;
+	struct cxlmi_cci_set_timestamp set_ts;
+
+	rc = cxlmi_query_cci_timestamp(ep, &get_ts);
+	if (rc)
+		return rc;
+	printf("device timestamp: %lu\n", get_ts.timestamp);
+	set_ts.timestamp = get_ts.timestamp * 2;
+
+	sleep(1);
+
+	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
+	if (rc)
+		return rc;
+	printf("new device timestamp: %lu\n", set_ts.timestamp);
+
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	struct cxlmi_ctx *ctx;
@@ -82,6 +104,11 @@ int main(int argc, char **argv)
 
 	/* yes, only 1 endpoint, but might add more */
 	rc = show_some_info_from_all_devices(ctx);
+
+	sleep(2);
+
+	rc = modify_timestamp(ep);
+
 	sleep(2);
 
 	rc = toggle_abort(ep);
