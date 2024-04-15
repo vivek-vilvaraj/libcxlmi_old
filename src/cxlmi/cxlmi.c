@@ -180,7 +180,7 @@ static int sanity_check_rsp(struct cxlmi_ctx *ctx,
 		((rsp->pl_length[2] & 0xf) << 16);
 	if (len - sizeof(*rsp) != pl_length) {
 		printf(
-			  "Payload length not matching expected part of full message %ld %d\n",
+			"Payload length not matching expected part of full message %ld %d\n",
 			  len - sizeof(*rsp), pl_length);
 		return -1;
 	}
@@ -461,7 +461,7 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	struct cxlmi_cci_set_timestamp *req_pl;
-	struct cxlmi_cci_msg *req, *rsp;
+	struct cxlmi_cci_msg *req, rsp;
 	size_t req_sz, rsp_sz;
 	int rc = 0;
 
@@ -485,15 +485,15 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	req_pl = (struct cxlmi_cci_set_timestamp *)req->payload;
 	*req_pl = *in;
 
-	rsp_sz = sizeof(*rsp);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		goto free_req;
+	rsp_sz = sizeof(rsp);
+	/* rsp = calloc(1, rsp_sz); */
+	/* if (!rsp) */
+	/* 	goto free_req; */
 
-	rc = send_cmd_cci(ep, req, req_sz, rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, req, req_sz, &rsp, rsp_sz, rsp_sz);
 
-	free(rsp);
-free_req:
+	/* free(rsp); */
+/* free_req: */
 	free(req);
 	return rc;
 }
