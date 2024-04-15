@@ -49,7 +49,7 @@ Component discovery
   Type3 device. This auto-probing can by disabled with `cxlmi_set_probe_enabled()`
   or with the `$LIBNVME_PROBE_ENABLED` environment variable.
 
-- Enumerate all endpoints with`cxlmi_open_scan_mctp()` (scan dbus: TODO).
+- Enumerate all endpoints with`cxlmi_scan_mctp()` (scan dbus: TODO).
 
 Issuing CCI commands
 --------------------
