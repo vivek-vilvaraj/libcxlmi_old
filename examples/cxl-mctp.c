@@ -14,7 +14,6 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 
 	cxlmi_for_each_endpoint(ctx, ep) {
 		struct cxlmi_cci_infostat_identify id;
-		struct cxlmi_cci_get_timestamp ts;
 
 		rc = cxlmi_query_cci_identify(ep, &id);
 		if (rc)
@@ -29,11 +28,6 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 			printf("\tVID:%04x DID:%04x\n", id.vendor_id, id.device_id);
 		}
 		printf("\tserial number: 0x%lx\n", (uint64_t)id.serial_num);
-
-		rc = cxlmi_query_cci_timestamp(ep, &ts);
-		if (rc)
-			break;
-		printf("\tdevice timestamp: %lu\n", ts.timestamp);
 	}
 
 	return rc;

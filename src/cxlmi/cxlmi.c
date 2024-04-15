@@ -137,41 +137,41 @@ static int sanity_check_rsp(struct cxlmi_ctx *ctx,
 	uint32_t pl_length;
 
 	if (len < sizeof(rsp)) {
-		cxlmi_msg(ctx, LOG_ERR, "Too short to read error code\n");
+		printf( "Too short to read error code\n");
 		return -1;
 	}
 
 	if (rsp->category != CXL_MCTP_CATEGORY_RSP) {
-		cxlmi_msg(ctx, LOG_ERR, "Message not a response\n");
+		printf( "Message not a response\n");
 		return -1;
 	}
 	if (rsp->tag != req->tag) {
-		cxlmi_msg(ctx, LOG_ERR, "Reply has wrong tag %d %d\n",
+		printf( "Reply has wrong tag %d %d\n",
 			  rsp->tag, req->tag);
 		return -1;
 	}
 	if ((rsp->command != req->command) ||
 	    (rsp->command_set != req->command_set)) {
-		cxlmi_msg(ctx, LOG_ERR, "Response to wrong command\n");
+		printf( "Response to wrong command\n");
 		return -1;
 	}
 
 	if (rsp->return_code != 0) {
-		cxlmi_msg(ctx, LOG_ERR, "Error code in response %d\n",
+		printf( "Error code in response %d\n",
 			  rsp->return_code);
 		return -1;
 	}
 
 	if (fixed_length) {
 		if (len != min_length) {
-			cxlmi_msg(ctx, LOG_ERR,
+			printf(
 				  "Not expected fixed length of response. %ld %ld\n",
 				  len, min_length);
 			return -1;
 		}
 	} else {
 		if (len < min_length) {
-			cxlmi_msg(ctx, LOG_ERR,
+			printf(
 				  "Not expected minimum length of response\n");
 			return -1;
 		}
@@ -179,7 +179,7 @@ static int sanity_check_rsp(struct cxlmi_ctx *ctx,
 	pl_length = rsp->pl_length[0] | (rsp->pl_length[1] << 8) |
 		((rsp->pl_length[2] & 0xf) << 16);
 	if (len - sizeof(*rsp) != pl_length) {
-		cxlmi_msg(ctx, LOG_ERR,
+		printf(
 			  "Payload length not matching expected part of full message %ld %d\n",
 			  len - sizeof(*rsp), pl_length);
 		return -1;
