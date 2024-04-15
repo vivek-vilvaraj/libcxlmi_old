@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
+#include <assert.h>
 
 #include <libcxlmi.h>
 
@@ -50,7 +51,7 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 	return rc;
 }
 
-static int modify_timestamp(struct cxlmi_endpoint *ep)
+static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 {
 	int rc;
 	struct cxlmi_cci_get_timestamp get_ts;
@@ -62,21 +63,19 @@ static int modify_timestamp(struct cxlmi_endpoint *ep)
 	printf("device timestamp: %lu\n", get_ts.timestamp);
 	set_ts.timestamp = get_ts.timestamp * 2;
 
-	sleep(1);
-
 	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
-	/* if (rc) */
-	/* 	return rc; */
-	printf("new device timestamp: %lu\n", set_ts.timestamp);
+	if (rc)
+		return rc;
 
 	memset(&get_ts, 0, sizeof(get_ts));
 	rc = cxlmi_query_cci_timestamp(ep, &get_ts);
 	if (rc)
 		return rc;
-	printf("device timestamp: %lu\n", get_ts.timestamp);
-	set_ts.timestamp = get_ts.timestamp * 2;
 
-	
+	assert(get_ts.timestamp == set_ts.timestamp);
+
+	printf("new device timestamp: %lu\n", get_ts.timestamp);
+
 	return 0;
 }
 
@@ -116,7 +115,7 @@ int main(int argc, char **argv)
 
 	/* sleep(2); */
 
-	rc = modify_timestamp(ep);
+	rc = play_with_device_timestamp(ep);
 
 	/* sleep(2); */
 
