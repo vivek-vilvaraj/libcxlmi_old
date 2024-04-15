@@ -53,7 +53,7 @@ static int modify_timestamp(struct cxlmi_endpoint *ep)
 {
 	int rc;
 	struct cxlmi_cci_get_timestamp get_ts;
-	struct cxlmi_cci_set_timestamp set_ts;
+	struct cxlmi_cci_set_timestamp set_ts = { 0 };
 
 	rc = cxlmi_query_cci_timestamp(ep, &get_ts);
 	if (rc)
@@ -103,15 +103,15 @@ int main(int argc, char **argv)
 	}
 
 	/* yes, only 1 endpoint, but might add more */
-	rc = show_some_info_from_all_devices(ctx);
+	/* rc = show_some_info_from_all_devices(ctx); */
 
-	sleep(2);
+	/* sleep(2); */
 
 	rc = modify_timestamp(ep);
 
-	sleep(2);
+	/* sleep(2); */
 
-	rc = toggle_abort(ep);
+	/* rc = toggle_abort(ep); */
 
 	cxlmi_close(ep);
 exit_free_ctx:
