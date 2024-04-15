@@ -64,8 +64,8 @@ static int modify_timestamp(struct cxlmi_endpoint *ep)
 	sleep(1);
 
 	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
-	if (rc)
-		return rc;
+	/* if (rc) */
+	/* 	return rc; */
 	printf("new device timestamp: %lu\n", set_ts.timestamp);
 
 	return 0;
