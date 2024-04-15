@@ -180,15 +180,15 @@ int main(int argc, char **argv)
 	}
 
 	/* yes, only 1 endpoint, but might add more */
-	rc = show_some_info_from_all_devices(ctx);
+	/* rc = show_some_info_from_all_devices(ctx); */
 
 	rc = get_device_logs(ep);
 
-	rc = play_with_device_timestamp(ep);
+	/* rc = play_with_device_timestamp(ep); */
 
-	sleep(2);
+	/* sleep(2); */
 
-	rc = toggle_abort(ep);
+	/* rc = toggle_abort(ep); */
 
 	cxlmi_close(ep);
 exit_free_ctx:
