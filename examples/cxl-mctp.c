@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 
 	printf("ep %d:%d\n", nid, eid);
 
-	ctx = cxlmi_new_ctx(stdout, 1);
+	ctx = cxlmi_new_ctx(stdout, DEFAULT_LOGLEVEL);
 	if (!ctx) {
 		fprintf(stderr, "cannot create new context object\n");
 		goto exit;
