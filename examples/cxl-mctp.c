@@ -61,7 +61,7 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 	if (rc)
 		return rc;
 	printf("device timestamp: %lu\n", get_ts.timestamp);
-	set_ts.timestamp = get_ts.timestamp * 2;
+	set_ts.timestamp = get_ts.timestamp * 10000;
 
 	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
 	if (rc)
