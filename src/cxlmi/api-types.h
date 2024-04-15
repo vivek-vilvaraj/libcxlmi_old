@@ -6,12 +6,6 @@
 
 #include <linux/types.h>
 
-/**
- * DOC: types.h
- *
- * CXL standard definitions
- */
-
 /* CXL r3.1 Section 8.2.9.1.1: Identify (Opcode 0001h) */
 struct cxlmi_cci_infostat_identify {
 	uint16_t vendor_id;
@@ -42,14 +36,38 @@ struct cxlmi_cci_set_response_msg_limit {
 	uint8_t limit;
 } __attribute__((packed));
 
-/* CXL r3.0 Section 8.2.9.4.1: Get Timestamp (Opcode 0300h) */
+/* CXL r3.1 Section 8.2.9.4.1: Get Timestamp (Opcode 0300h) */
 struct cxlmi_cci_get_timestamp {
 	uint64_t timestamp;
 } __attribute__((packed));
 
-/* CXL r3.0 Section 8.2.9.4.2: Set Timestamp (Opcode 0301h) */
+/* CXL r3.1 Section 8.2.9.4.2: Set Timestamp (Opcode 0301h) */
 struct cxlmi_cci_set_timestamp {
 	uint64_t timestamp;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.5.1: Get Supported Logs (Opcode 0400h) */
+struct cxlmi_supported_log_entry {
+	uint8_t uuid[0x10];
+	uint32_t log_size;
+} __attribute__((packed));
+
+struct cxlmi_cci_get_supported_logs {
+	uint16_t num_supported_log_entries;
+	uint8_t reserved[6];
+	struct cxlmi_supported_log_entry entries[];
+} __attribute__((packed));
+
+/*  CXL r3.1 Section 8.2.9.5.2: Get Log (Opcode 0401h) */
+struct cxlmi_cci_get_log_req {
+	uint8_t uuid[0x10];
+	uint32_t offset;
+	uint32_t length;
+} __attribute__((packed));
+
+struct cxlmi_cci_get_log_cel_rsp {
+	uint16_t opcode;
+	uint16_t commandeffect;
 } __attribute__((packed));
 
 #endif

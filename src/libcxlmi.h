@@ -130,14 +130,20 @@ struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m);
 /*
  * Definitions for Generic Component Commands, per CXL r3.1 Table 8-37.
  */
-int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
-			     struct cxlmi_cci_infostat_identify *ret);
+int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
+				struct cxlmi_cci_infostat_identify *ret);
+
 int cxlmi_request_bg_operation_abort(struct cxlmi_endpoint *ep);
 
-int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
-			      struct cxlmi_cci_get_timestamp *ret);
+int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
+			    struct cxlmi_cci_get_timestamp *ret);
 int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 			    struct cxlmi_cci_set_timestamp *in);
+
+int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
+				 struct cxlmi_cci_get_supported_logs *ret);
+/* int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep, */
+/* 		      struct cxlmi_cci_ *in); */
 
 #ifdef __cplusplus
 }

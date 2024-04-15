@@ -130,7 +130,7 @@ CXLMI_EXPORT void cxlmi_close(struct cxlmi_endpoint *ep)
 	free(ep);
 }
 
-static int sanity_check_rsp(struct cxlmi_ctx *ctx,
+static int sanity_check_rsp(struct cxlmi_endpoint *ep,
 			    struct cxlmi_cci_msg *req, struct cxlmi_cci_msg *rsp,
 			    size_t len, bool fixed_length, size_t min_length)
 {
@@ -198,7 +198,7 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 	struct sockaddr_mctp addrrx;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	struct pollfd pollfds[1];
-	int timeout = ep->timeout_ms ?: -1;
+	int timeout = ep->timeout_ms ? ep->timeout_ms : -1;
 
 	memset(rsp_msg, 0, rsp_msg_sz);
 
@@ -227,7 +227,7 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 	len = recvfrom(mctp->sd, rsp_msg, rsp_msg_sz, 0,
 		       (struct sockaddr *)&addrrx, &addrlen);
 
-	return sanity_check_rsp(ep->ctx, req_msg, rsp_msg, len,
+	return sanity_check_rsp(ep, req_msg, rsp_msg, len,
 				rsp_msg_sz == rsp_msg_sz_min, rsp_msg_sz_min);
 }
 
@@ -258,7 +258,7 @@ static void endpoint_probe(struct cxlmi_endpoint *ep)
 	if (!ep->ctx->probe_enabled)
 		return;
 
-	if (cxlmi_query_cci_identify(ep, &id))
+	if (cxlmi_cmd_infostat_identify(ep, &id))
 		return;
 
 	switch (id.component_type) {
@@ -359,13 +359,57 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
 	return ep ? list_next(&m->endpoints, ep, entry) : NULL;
 }
 
-int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
-			     struct cxlmi_cci_infostat_identify *ret)
+/* #define DECLARE_CMD_PLOUT(cmdset, cmd, outtype)				\ */
+/* CXLMI_EXPORT								\ */
+/* int cxlmi_cmd_##cmdset_##cmd(struct cxlmi_endpoint *ep,			\ */
+/* 			     typeof(outtype *) ret)			\ */
+/* {									\ */
+/* 	int rc;                                                         \ */
+/* 	struct cxlmi_transport_mctp *mctp = ep->transport_data;         \ */
+/* 	ssize_t rsp_sz;							\ */
+/* 	typeof(ret) rsp_pl;						\ */
+/* 	struct cxlmi_cci_msg *rsp;					\ */
+/* 	struct cxlmi_cci_msg req = {					\ */
+/* 		.category = CXL_MCTP_CATEGORY_REQ,                      \ */
+/* 		.tag = mctp->tag++,                                     \ */
+/* 		.command = (cmd),					\ */
+/* 		.command_set = (cmdset),				\ */
+/* 		.vendor_ext_status = 0xabcd,                            \ */
+/* 	};                                                              \ */
+/* 									\ */
+/* 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);			\ */
+/* 	rsp = calloc(1, rsp_sz);					\ */
+/* 	if (!rsp)							\ */
+/* 		return -1;						\ */
+/* 									\ */
+/* 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);	\ */
+/* 	if (rc) {							\ */
+/* 		if (rsp->return_code)					\ */
+/* 			rc = rsp->return_code;				\ */
+/* 		goto free_rsp;						\ */
+/* 	}								\ */
+/* 									\ */
+/* 	rsp_pl = (typeof(ret))rsp->payload;				\ */
+/* 	*ret = *rsp_pl;							\ */
+/* free_rsp:								\ */
+/* 	free(rsp);							\ */
+/* 	return rc;							\ */
+/* } */
+
+/* DECLARE_CMD_PLOUT(infostat, is_identify, struct cxlmi_cci_infostat_identify); */
+/* DECLARE_CMD_PLOUT(timestamp, get, struct cxlmi_cci_get_timestamp); */
+
+/* #define DECLARE_CMD_PLIN(cmdset, cmd) */
+/* #define DECLARE_CMD_PLIN_PLOUT(cmdset, cmd) */
+/* #define DECLARE_CMD_PLNONE(cmdset, cmd) */
+
+CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
+				     struct cxlmi_cci_infostat_identify *ret)
 {
 	int rc;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	ssize_t rsp_sz;
-	struct cxlmi_cci_infostat_identify *pl;
+	struct cxlmi_cci_infostat_identify *rsp_pl;
 	struct cxlmi_cci_msg *rsp;
 	struct cxlmi_cci_msg req = {
 		.category = CXL_MCTP_CATEGORY_REQ,
@@ -375,7 +419,7 @@ int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
 		.vendor_ext_status = 0xabcd,
 	};
 
-	rsp_sz = sizeof(*rsp) + sizeof(*pl);
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
 		return -1;
@@ -389,42 +433,17 @@ int cxlmi_query_cci_identify(struct cxlmi_endpoint *ep,
 		rc = rsp->return_code;
 		goto free_rsp;
 	}
-	pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
+	rsp_pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
 
-	*ret = *pl;
+	*ret = *rsp_pl;
 
 free_rsp:
 	free(rsp);
 	return rc;
 }
 
-int cxlmi_request_bg_operation_abort(struct cxlmi_endpoint *ep)
-{
-	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	int rc;
-	ssize_t rsp_sz;
-	struct cxlmi_cci_msg *rsp;
-	struct cxlmi_cci_msg req = {
-		.category = CXL_MCTP_CATEGORY_REQ,
-		.tag = mctp->tag++,
-		.command = BACKGROUND_OPERATION_ABORT,
-		.command_set = INFOSTAT,
-		.vendor_ext_status = 0xabcd,
-	};
-
-	rsp_sz = sizeof(*rsp);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-
-	free(rsp);
-	return rc;
-}
-
-int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
-			      struct cxlmi_cci_get_timestamp *ret)
+int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
+			    struct cxlmi_cci_get_timestamp *ret)
 {
 	struct cxlmi_cci_get_timestamp *rsp_pl;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
@@ -447,6 +466,11 @@ int cxlmi_query_cci_timestamp(struct cxlmi_endpoint *ep,
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto free_rsp;
+
+	if (rsp->return_code) {
+		rc = rsp->return_code;
+		goto free_rsp;
+	}
 
 	rsp_pl = (struct cxlmi_cci_get_timestamp *)(rsp->payload);
 	*ret = *rsp_pl;
@@ -497,3 +521,132 @@ free_req:
 	free(req);
 	return rc;
 }
+
+int cxlmi_request_bg_operation_abort(struct cxlmi_endpoint *ep)
+{
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	int rc;
+	ssize_t rsp_sz;
+	struct cxlmi_cci_msg *rsp;
+	struct cxlmi_cci_msg req = {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = BACKGROUND_OPERATION_ABORT,
+		.command_set = INFOSTAT,
+		.vendor_ext_status = 0xabcd,
+	};
+
+	rsp_sz = sizeof(*rsp);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+
+	free(rsp);
+	return rc;
+}
+
+static const int maxlogs = 10; /* Only 3 in CXL r3.0 but let us leave room */
+CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
+				      struct cxlmi_cci_get_supported_logs *ret)
+{
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct cxlmi_cci_get_supported_logs *pl;
+	struct cxlmi_cci_msg *rsp;
+	struct cxlmi_cci_msg req = {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = 0,
+		.command_set = 4,
+		.vendor_ext_status = 0xabcd,
+	};
+	int rc;
+	ssize_t rsp_sz;
+
+	rsp_sz = sizeof(*rsp) + sizeof(*pl) + maxlogs * sizeof(*pl->entries);
+
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz,
+			  sizeof(*rsp) + sizeof(*pl));
+	if (rc)
+		goto free_rsp;
+
+	pl = (void *)(rsp->payload);
+	*ret = *pl;
+free_rsp:
+	free(rsp);
+	return rc;
+}
+
+/* static int cxlmi_cmd_get_cel(struct cxlmi_endpoint *ep, */
+/* 		   struct cxlmi_cci_get_log_cel_req *in, */
+/* 		   struct cxlmi_cci_get_log_cel_rsp *ret) */
+/* { */
+	/* struct cci_get_log_cel_rsp *pl; */
+ /* 	struct cci_get_log_req *req_pl; */
+ /* 	struct cci_msg *req, *rsp; */
+ /* 	size_t req_sz, rsp_sz; */
+	int rc = 0;
+ /* 	int i; */
+
+ /* 	req_sz = sizeof(*req) + sizeof(*req_pl); */
+ /* 	req = calloc(1, req_sz); */
+ /* 	if (!req) */
+ /* 		return -1; */
+
+ /* 	*req = (struct cci_msg) { */
+ /* 		.category = CXL_MCTP_CATEGORY_REQ, */
+ /* 		.tag = *tag++, */
+ /* 		.command = 1, */
+ /* 		.command_set = 4, */
+ /* 		.vendor_ext_status = 0xabcd, */
+ /* 		.pl_length = { */
+ /* 			[0] = sizeof(*in) & 0xff, */
+ /* 			[1] = (sizeof(*in) >> 8) & 0xff, */
+ /* 			[2] = (sizeof(*in) >> 16) & 0xff, */
+ /* 		}, */
+ /* 	}; */
+ /* 	req_pl = (struct cci_get_log_req *)req->payload; */
+ /* 	memcpy(req_pl->uuid, cel_uuid, sizeof(req_pl->uuid)); */
+ /* 	req_pl->offset = 0; */
+ /* 	req_pl->length = cel_size; */
+
+ /* 	rsp_sz = sizeof(*rsp) + cel_size; */
+ /* 	rsp = malloc(rsp_sz); */
+ /* 	if (!rsp) { */
+ /* 		rc = -1; */
+ /* 		goto free_req; */
+ /* 	} */
+
+ /* 	printf("Command Effects Log Requested\n"); */
+
+ /* 	rc = trans_func(sd, addr, tag, port, id, req, req_sz, rsp, rsp_sz, */
+ /* 			rsp_sz); */
+ /* 	if (rc) */
+ /* 		goto free_rsp; */
+
+ /* 	pl = (struct cci_get_log_cel_rsp *)rsp->payload; */
+ /* 	printf("Command Effects Log\n"); */
+ /* 	for (i = 0; i < cel_size / sizeof(*pl); i++) { */
+ /* 		printf("\t[%04x] %s%s%s%s%s%s%s%s\n", */
+ /* 		       pl[i].opcode, */
+ /* 		       pl[i].commandeffect & 0x1 ? "ColdReset " : "", */
+ /* 		       pl[i].commandeffect & 0x2 ? "ImConf " : "", */
+ /* 		       pl[i].commandeffect & 0x4 ? "ImData " : "", */
+ /* 		       pl[i].commandeffect & 0x8 ? "ImPol " : "", */
+ /* 		       pl[i].commandeffect & 0x10 ? "ImLog " : "", */
+ /* 		       pl[i].commandeffect & 0x20 ? "ImSec" : "", */
+ /* 		       pl[i].commandeffect & 0x40 ? "BgOp" : "", */
+ /* 		       pl[i].commandeffect & 0x80 ? "SecSup" : ""); */
+ /* 	} */
+ /* free_rsp: */
+ /* 	free(rsp); */
+ /* free_req: */
+ /* 	free(req); */
+
+/* 	return rc; */
+/* } */
