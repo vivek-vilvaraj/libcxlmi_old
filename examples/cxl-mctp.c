@@ -17,17 +17,33 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 		rc = cxlmi_query_cci_identify(ep, &id);
 		if (rc)
 			break;
-		printf("device type: %s\n",
-		       id.component_type == 0x03 ? "type3":"switch");
-		printf("serial number: 0x%lx\n", (uint64_t)id.serial_num);
-		printf("\tVID:%04x DID:%04x SubsysVID:%04x SubsysID:%04x\n",
-		       id.vendor_id, id.device_id,
-		       id.subsys_vendor_id, id.subsys_id);
+		if (id.component_type == 0x03) {
+			printf("device type: CXL Type3 Device\n");
+			printf("\tVID:%04x DID:%04x SubsysVID:%04x SubsysID:%04x\n",
+			       id.vendor_id, id.device_id,
+			       id.subsys_vendor_id, id.subsys_id);
+		} else if (id.component_type == 0x00) {
+			printf("device type: CXL Switch\n");
+			printf("\tVID:%04x DID:%04x\n", id.vendor_id, id.device_id);
+		}
+		printf("\tserial number: 0x%lx\n", (uint64_t)id.serial_num);
 
 		rc = cxlmi_query_cci_timestamp(ep, &ts);
 		if (rc)
 			break;
-		printf("device timestamp: %lu\n", ts.timestamp);
+		printf("\tdevice timestamp: %lu\n", ts.timestamp);
+	}
+
+	return rc;
+}
+
+static int toggle_abort(struct cxlmi_endpoint *ep)
+{
+	int rc;
+
+	rc = cxlmi_request_bg_operation_abort(ep);
+	if (rc) {
+		printf("request not successful\n");
 	}
 
 	return rc;
@@ -66,6 +82,9 @@ int main(int argc, char **argv)
 
 	/* yes, only 1 endpoint, but might add more */
 	rc = show_some_info_from_all_devices(ctx);
+	sleep(2);
+
+	rc = toggle_abort(ep);
 
 	cxlmi_close(ep);
 exit_free_ctx:
