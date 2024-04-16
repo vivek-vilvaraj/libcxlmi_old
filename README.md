@@ -129,7 +129,7 @@ Upon error, the return payload is undefined and should be considered invalid.
    ```
 
 The exception to this is when a background operation has been started,
-which is considered a succesful return value. The user must ensure to
+which is considered a successful return value. The user must ensure to
 verify, when appropriate, against the `CXLMI_RET_BACKGROUND` value.
 
    ```
