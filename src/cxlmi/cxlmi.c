@@ -374,9 +374,9 @@ static const char *const cxlmi_retcode_status[] = {
 
 CXLMI_EXPORT const char *cxlmi_retcode_to_str(uint16_t code)
 {
-	if (code < ARRAY_SIZE(cxlmi_retcode_status))
-		return cxlmi_retcode_status[code];
-	return NULL;
+	if (code > ARRAY_SIZE(cxlmi_retcode_status))
+		return NULL;
+	return cxlmi_retcode_status[code];
 }
 
 CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m)
@@ -460,7 +460,7 @@ CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 		goto free_rsp;
 	}
 
-	rsp_pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
+	rsp_pl = (void *)rsp->payload;
 
 	*ret = *rsp_pl;
 
