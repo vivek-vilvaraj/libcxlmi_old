@@ -123,6 +123,7 @@ static int get_device_logs(struct cxlmi_endpoint *ep)
 static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 {
 	int rc;
+	uint64_t orig_ts;
 	struct cxlmi_cci_get_timestamp get_ts;
 	struct cxlmi_cci_set_timestamp set_ts = { 0 };
 
@@ -130,26 +131,35 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 	if (rc)
 		return rc;
 	printf("device timestamp: %lu\n", get_ts.timestamp);
-	set_ts.timestamp = get_ts.timestamp * 10000;
+	orig_ts = get_ts.timestamp;
 
+	set_ts.timestamp = get_ts.timestamp * 2;
 	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
 	if (rc) {
 		if (rc > 0)
 			printf("set_timestamp error: %s\n",
 			       cxlmi_retcode_to_str(rc));
-		else if (rc == -1)
-			printf("lalala\n");
 		return rc;
 	}
-	
-	memset(&get_ts, 0, sizeof(get_ts));
+
 	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
 	if (rc)
 		return rc;
-
-	assert(get_ts.timestamp == set_ts.timestamp);
-
 	printf("new device timestamp: %lu\n", get_ts.timestamp);
+
+	set_ts.timestamp = orig_ts;
+	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
+	if (rc) {
+		if (rc > 0)
+			printf("set_timestamp error: %s\n",
+			       cxlmi_retcode_to_str(rc));
+		return rc;
+	}
+
+	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
+	if (rc)
+		return rc;
+	printf("reset back to original device timestamp: %lu\n", get_ts.timestamp);
 
 	return 0;
 }
