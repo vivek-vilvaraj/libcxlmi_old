@@ -129,8 +129,8 @@ Upon error, the return payload is undefined and should be considered invalid.
    ```
 
 The exception to this is when a background operation has been started,
-for which the user must ensure to verify, when appropriate against the
-`CXLMI_RET_BACKGROUND` value.
+which is considered a succesful return value. The user must ensure to
+verify, when appropriate, against the `CXLMI_RET_BACKGROUND` value.
 
    ```
    err = cxlmi_cmd_sanitize(ep);
@@ -140,7 +140,6 @@ for which the user must ensure to verify, when appropriate against the
 	   return rc;
    }
    ```
-
 
 Logging
 -------
