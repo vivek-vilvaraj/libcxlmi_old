@@ -64,8 +64,7 @@ and outputs. This is similar to how the libnvme counterpart works. The nature
 of the API depends on the input and output payload characteristics of each
 command. Commands take the prefix prefix `cxlmi_cmd_`.
 
-1. Input-only
-Commands that only accept input payload:
+1. Input-only payload
    ```
    struct cxlmi_cci_set_timestamp ts = {
 	  .timestamp = 946684800, /* Jan 1, 2000 */
@@ -78,8 +77,7 @@ Commands that only accept input payload:
    ```
 
 
-2. Output-only
-Commands that produce only an output payload:
+2. Output-only payload
 
    ```
    struct cxlmi_cci_get_timestamp ts;
@@ -90,8 +88,9 @@ Commands that produce only an output payload:
    }
    ```
 
-4. No input, no output
-Commands that don't receive or return any payload:
+3. Input and output payloads.
+
+4. No input, no output payload
 
    ```
    rc = cxlmi_request_bg_operation_abort(ep);
