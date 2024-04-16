@@ -17,6 +17,7 @@
 /* #endif */
 
 #include <ccan/array_size/array_size.h>
+/* #include <ccan/minmax/minmax.h> */
 #include <ccan/list/list.h>
 
 #include <libcxlmi.h>
@@ -614,7 +615,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 		.command_set = LOGS,
 		.vendor_ext_status = 0xabcd,
 	};
-	int rc;
+	int rc, i, j;
 	ssize_t rsp_sz;
 
 	rsp_sz = sizeof(*rsp) + sizeof(*pl) + maxlogs * sizeof(*pl->entries);
@@ -629,7 +630,13 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 		goto free_rsp;
 
 	pl = (void *)(rsp->payload);
+//	memcpy(ret, pl, min(maxlogs, pl->num_supported_log_entries) * sizeof(*pl->entries));
 	*ret = *pl;
+	for (i = 0; i < pl->num_supported_log_entries; i++) {
+		for (j = 0; j < sizeof(pl->entries[i].uuid); j++) {
+			ret->entries[i].uuid[j] = pl->entries[i].uuid[j];
+		}
+	}
 free_rsp:
 	free(rsp);
 	return rc;
