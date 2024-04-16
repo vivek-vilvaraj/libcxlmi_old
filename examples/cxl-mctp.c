@@ -20,8 +20,12 @@ static int show_memdev_info(struct cxlmi_endpoint *ep)
 	printf("total capacity: %ld Mb\n", 256 * id.total_capacity);
 	printf("\tvolatile: %ld Mb\n", 256 * id.volatile_capacity);
 	printf("\tpersistent: %ld Mb\n", 256 * id.persistent_capacity);
+	printf("lsa size: %d bytes\n", id.lsa_size);
 	printf("poison injection limit: %d\n", id.inject_poison_limit);
-	return 0;
+	printf("poison caps 0x%x\n", id.poison_caps);
+	printf("DC event log size %d\n", id.dc_event_log_size);
+
+       return 0;
 }
 
 static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
@@ -35,6 +39,7 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 		rc = cxlmi_cmd_infostat_identify(ep, &id);
 		if (rc)
 			break;
+		printf("serial number: 0x%lx\n", (uint64_t)id.serial_num);
 		if (id.component_type == 0x03) {
 			printf("device type: CXL Type3 Device\n");
 			printf("\tVID:%04x DID:%04x SubsysVID:%04x SubsysID:%04x\n",
@@ -46,7 +51,7 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 			printf("device type: CXL Switch\n");
 			printf("\tVID:%04x DID:%04x\n", id.vendor_id, id.device_id);
 		}
-		printf("\tserial number: 0x%lx\n", (uint64_t)id.serial_num);
+
 	}
 
 	return rc;
