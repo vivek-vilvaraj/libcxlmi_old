@@ -62,9 +62,10 @@ API is very command-specific (as in payloads defined in the CXL specification),
 and the user is expected to know what to look for in the stack-allocated input
 and outputs. This is similar to how the libnvme counterpart works. The nature
 of the API depends on the input and output payload characteristics of each
-command. Commands take the prefix prefix `cxlmi_cmd_`.
+command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
 
 1. Input-only payload
+
    ```
    struct cxlmi_cci_set_timestamp ts = {
 	  .timestamp = 946684800, /* Jan 1, 2000 */
@@ -87,7 +88,21 @@ command. Commands take the prefix prefix `cxlmi_cmd_`.
    }
    ```
 
-3. Input and output payloads.
+3. Input and output payloads
+
+   ```
+   struct cxlmi_cci_get_log_req in = {
+	   .offset = 0,
+	   .length = cel_size;
+	   .uuid = cel_uuid;
+   } ;
+   struct cxlmi_cci_get_log_rsp ret;
+
+   rc = cxlmi_cmd_get_log(ep, &ret);
+   if (rc == 0) {
+	   /* do something with ret. */
+   }
+   ```
 
 4. No input, no output payload
 
