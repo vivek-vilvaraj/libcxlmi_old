@@ -137,6 +137,8 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 		if (rc > 0)
 			printf("set_timestamp error: %s\n",
 			       cxlmi_retcode_to_str(rc));
+		else if (rc == -1)
+			printf("lalala\n");
 		return rc;
 	}
 	
