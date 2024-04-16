@@ -76,7 +76,7 @@ static int parse_supported_logs(struct cxlmi_cci_get_supported_logs *pl,
 	printf("Get Supported Logs Response %d\n",
 	       pl->num_supported_log_entries);
 
-	for (i = 0; i < min(0x10, pl->num_supported_log_entries); i++) {
+	for (i = 0; i < min(10, pl->num_supported_log_entries); i++) {
 		for (j = 0; j < sizeof(pl->entries[i].uuid); j++) {
 			if (pl->entries[i].uuid[j] != cel_uuid[j])
 				break;
@@ -182,13 +182,13 @@ int main(int argc, char **argv)
 	/* yes, only 1 endpoint, but might add more */
 	/* rc = show_some_info_from_all_devices(ctx); */
 
-	rc = get_device_logs(ep);
+	/* rc = get_device_logs(ep); */
 
 	rc = play_with_device_timestamp(ep);
 
 	/* sleep(2); */
 
-	rc = toggle_abort(ep);
+	/* rc = toggle_abort(ep); */
 
 	cxlmi_close(ep);
 exit_free_ctx:
