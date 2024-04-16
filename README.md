@@ -138,6 +138,7 @@ Requirements
 
 4. The following kernel configuration enabled:
    ```
+   CONFIG_CXL_MEM_RAW_COMMANDS=y
    CONFIG_MCTP_TRANSPORT_I2C=y
    CONFIG_MCTP=y
    CONFIG_MCTP_FLOWS=y
