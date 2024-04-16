@@ -67,7 +67,7 @@ command. Commands take the prefix prefix `cxlmi_cmd_`.
 1. Input-only
 Commands that only accept input payload:
    ```
-   struct cxlmi_cci_get_timestamp ts = {
+   struct cxlmi_cci_set_timestamp ts = {
 	  .timestamp = 946684800, /* Jan 1, 2000 */
    };
 
