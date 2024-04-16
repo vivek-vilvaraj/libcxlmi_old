@@ -142,11 +142,13 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 		return rc;
 	}
 
+	memset(&get_ts, 0, sizeof(get_ts));
 	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
 	if (rc)
 		return rc;
 	printf("new device timestamp: %lu\n", get_ts.timestamp);
 
+	memset(&set_ts, 0, sizeof(set_ts));
 	set_ts.timestamp = orig_ts;
 	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
 	if (rc) {
@@ -156,6 +158,7 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 		return rc;
 	}
 
+	memset(&get_ts, 0, sizeof(get_ts));
 	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
 	if (rc)
 		return rc;
