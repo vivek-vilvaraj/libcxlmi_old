@@ -499,8 +499,8 @@ free_rsp:
 	return rc;
 }
 
-int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
-			    struct cxlmi_cci_set_timestamp *in)
+CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
+					 struct cxlmi_cci_set_timestamp *in)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	struct cxlmi_cci_set_timestamp *req_pl;
@@ -661,7 +661,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto free_rsp;
 
-	pl = (void *)(rsp->payload);
+	pl = (struct cxlmi_cci_identify_memdev *)(rsp->payload);
 	*ret = *pl;
 free_rsp:
 	free(rsp);

@@ -17,9 +17,9 @@ static int show_memdev_info(struct cxlmi_endpoint *ep)
 		return rc;
 
 	printf("FW revision: %s\n", id.fw_revision);
-	printf("total capacity: %ld\n", id.total_capacity);
-	printf("\tvolatile: %ld\n", id.volatile_capacity);
-	printf("\tpersistent: %ld\n", id.persistent_capacity);
+	printf("total capacity: %ld Mb\n", 256 * id.total_capacity);
+	printf("\tvolatile: %ld Mb\n", 256 * id.volatile_capacity);
+	printf("\tpersistent: %ld Mb\n", 256 * id.persistent_capacity);
 	printf("poison injection limit: %d\n", id.inject_poison_limit);
 	return 0;
 }
