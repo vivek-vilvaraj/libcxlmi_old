@@ -135,7 +135,7 @@ const char *cxlmi_retcode_to_str(uint16_t code);
 int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 				struct cxlmi_cci_infostat_identify *ret);
 
-int cxlmi_request_bg_operation_abort(struct cxlmi_endpoint *ep);
+int cxlmi_cmd_request_bg_operation_abort(struct cxlmi_endpoint *ep);
 
 int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 			    struct cxlmi_cci_get_timestamp *ret);

@@ -59,19 +59,47 @@ taking into account any maximum values defined by the transport. For example,
 for MCTP-based that is 2 seconds.
 
 API is very command-specific (as in payloads defined in the CXL specification),
-and the user is expected to know what to look for in the stack-allocated return
-output. This is similar to how the libnvme counterpart works. Commands that are
-read-only take the prefix `cxlmi_query_cci_`. For example, to get the timestamp
-of the device:
+and the user is expected to know what to look for in the stack-allocated input
+and outputs. This is similar to how the libnvme counterpart works. The nature
+of the API depends on the input and output payload characteristics of each
+command. Commands take the prefix prefix `cxlmi_cmd_`.
+
+1. Input-only
+Commands that only accept input payload:
+   ```
+   struct cxlmi_cci_get_timestamp ts = {
+	  .timestamp = 946684800, /* Jan 1, 2000 */
+   };
+
+   rc = cxlmi_cmd_set_timestamp(ep, &ts);
+   if (rc) {
+	  /* handle error */
+   }
+   ```
+
+
+2. Output-only
+Commands that produce only an output payload:
 
    ```
    struct cxlmi_cci_get_timestamp ts;
 
-   rc = cxlmi_query_cci_timestamp(ep, &ts);
+   rc = cxlmi_cmd_get_timestamp(ep, &ts);
    if (rc == 0) {
 	  /* do something with ts.timestamp */
    }
    ```
+
+4. No input, no output
+Commands that don't receive or return any payload:
+
+   ```
+   rc = cxlmi_request_bg_operation_abort(ep);
+   if (rc) {
+	  /* handle error */
+   }
+   ```
+
 
 Logging
 -------

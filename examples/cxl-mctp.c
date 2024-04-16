@@ -37,7 +37,7 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 {
 	int rc;
 
-	rc = cxlmi_request_bg_operation_abort(ep);
+	rc = cxlmi_cmd_request_bg_operation_abort(ep);
 	if (rc) {
 		if (rc > 0)
 			printf("request_bg_operation_abort error: %s\n",

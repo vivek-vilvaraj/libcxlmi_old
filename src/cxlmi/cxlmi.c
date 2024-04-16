@@ -566,7 +566,7 @@ free_req:
 	return rc;
 }
 
-int cxlmi_request_bg_operation_abort(struct cxlmi_endpoint *ep)
+int cxlmi_cmd_request_bg_operation_abort(struct cxlmi_endpoint *ep)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	int rc;
