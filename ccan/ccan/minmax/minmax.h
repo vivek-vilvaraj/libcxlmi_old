@@ -4,14 +4,6 @@
 
 #include <ccan/build_assert/build_assert.h>
 
-#if !HAVE_STATEMENT_EXPR || !HAVE_TYPEOF
-/*
- * Without these, there's no way to avoid unsafe double evaluation of
- * the arguments
- */
-#error Sorry, minmax module requires statement expressions and typeof
-#endif
-
 #if HAVE_BUILTIN_TYPES_COMPATIBLE_P
 #define MINMAX_ASSERT_COMPATIBLE(a, b) \
 	BUILD_ASSERT(__builtin_types_compatible_p(a, b))
