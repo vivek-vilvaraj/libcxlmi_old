@@ -157,7 +157,7 @@ static int sanity_check_rsp(struct cxlmi_endpoint *ep,
 	if (rsp->return_code != 0) {
 		printf( "Error code in response %d\n",
 			  rsp->return_code);
-		return rc;
+		return rsp->return_code;
 	}
 
 	if (fixed_length) {
