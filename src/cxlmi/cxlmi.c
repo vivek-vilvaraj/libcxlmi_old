@@ -16,6 +16,7 @@
 #include <linux/mctp.h>
 /* #endif */
 
+#include <ccan/array_size/array_size.h>
 #include <ccan/list/list.h>
 
 #include <libcxlmi.h>
@@ -369,12 +370,11 @@ static const char *const cxlmi_retcode_status[] = {
 	[CXLMI_RET_FEATURETRANSFEROOO] = "feature transfer out of order",
 	[CXLMI_RET_RESOURCEEXHAUSTED] = "resources are exhausted",
 	[CXLMI_RET_EXTLIST] = "invalid Extent List",
-
 };
 
 CXLMI_EXPORT const char *cxlmi_retcode_to_str(uint16_t code)
 {
-	if (code < NR_CXLMI_RETCODES)
+	if (code < ARRAY_SIZE(cxlmi_retcode_status))
 		return cxlmi_retcode_status[code];
 	return NULL;
 }

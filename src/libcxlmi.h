@@ -160,8 +160,6 @@ enum cxlmi_cmd_retcode {
 	CXLMI_RET_FEATURETRANSFEROOO,
 	CXLMI_RET_RESOURCEEXHAUSTED,
 	CXLMI_RET_EXTLIST,
-	
-	NR_CXLMI_RETCODES,
 };
 
 const char *cxlmi_retcode_to_str(uint16_t code);
