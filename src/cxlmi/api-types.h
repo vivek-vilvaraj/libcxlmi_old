@@ -18,7 +18,7 @@ struct cxlmi_cci_infostat_identify {
 } __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.1.2: Background Operation Status (Opcode 0002h) */
-struct cxlmi_cci_bg_operation_status {
+struct cxlmi_cci_infostat_bg_op_status {
 	uint8_t status;
 	uint8_t rsvd;
 	uint16_t opcode;

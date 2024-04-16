@@ -7,6 +7,23 @@
 
 #include <libcxlmi.h>
 
+static int show_memdev_info(struct cxlmi_endpoint *ep)
+{
+	int rc;
+	struct cxlmi_cci_identify_memdev id;
+
+	rc = cxlmi_cmd_identify_memdev(ep, &id);
+	if (rc)
+		return rc;
+
+	printf("FW revision: %s\n", id.fw_revision);
+	printf("total capacity: %ld\n", id.total_capacity);
+	printf("\tvolatile: %ld\n", id.volatile_capacity);
+	printf("\tpersistent: %ld\n", id.persistent_capacity);
+	printf("poison injection limit: %d\n", id.inject_poison_limit);
+	return 0;
+}
+
 static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 {
 	int rc = 0;
@@ -23,6 +40,8 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 			printf("\tVID:%04x DID:%04x SubsysVID:%04x SubsysID:%04x\n",
 			       id.vendor_id, id.device_id,
 			       id.subsys_vendor_id, id.subsys_id);
+
+			show_memdev_info(ep);
 		} else if (id.component_type == 0x00) {
 			printf("device type: CXL Switch\n");
 			printf("\tVID:%04x DID:%04x\n", id.vendor_id, id.device_id);
@@ -36,15 +55,25 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 static int toggle_abort(struct cxlmi_endpoint *ep)
 {
 	int rc;
+	struct cxlmi_cci_infostat_bg_op_status sts;
 
-	rc = cxlmi_cmd_request_bg_operation_abort(ep);
+	rc = cxlmi_cmd_infostat_bg_op_status(ep, &sts);
+	if (rc)
+		goto done;
+
+	if (!(sts.status & (1 << 0))) {
+		printf("no background operation in progress\n");
+		return 0;
+	}
+
+	rc = cxlmi_cmd_infostat_request_bg_op_abort(ep);
 	if (rc) {
 		if (rc > 0)
 			printf("request_bg_operation_abort error: %s\n",
 			       cxlmi_cmd_retcode_tostr(rc));
 	} else
-		printf("requested\n");
-
+		printf("background operation abort requested\n");
+done:
 	return rc;
 }
 
@@ -198,15 +227,15 @@ int main(int argc, char **argv)
 	}
 
 	/* yes, only 1 endpoint, but might add more */
-	/* rc = show_some_info_from_all_devices(ctx); */
+	rc = show_some_info_from_all_devices(ctx);
 
 	/* rc = get_device_logs(ep); */
 
-	rc = play_with_device_timestamp(ep);
+	/* rc = play_with_device_timestamp(ep); */
 
 	/* sleep(2); */
 
-	rc = toggle_abort(ep);
+	/* rc = toggle_abort(ep); */
 
 	cxlmi_close(ep);
 exit_free_ctx:

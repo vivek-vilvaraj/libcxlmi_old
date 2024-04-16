@@ -176,7 +176,9 @@ enum cxlmi_cmd_retcode {
 int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 				struct cxlmi_cci_infostat_identify *ret);
 
-int cxlmi_cmd_request_bg_operation_abort(struct cxlmi_endpoint *ep);
+int cxlmi_cmd_infostat_bg_op_status(struct cxlmi_endpoint *ep,
+			    struct cxlmi_cci_infostat_bg_op_status *ret);
+int cxlmi_cmd_infostat_request_bg_op_abort(struct cxlmi_endpoint *ep);
 
 int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 			    struct cxlmi_cci_get_timestamp *ret);

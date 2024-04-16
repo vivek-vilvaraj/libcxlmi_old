@@ -71,8 +71,8 @@ command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
 	  .timestamp = 946684800, /* Jan 1, 2000 */
    };
 
-   rc = cxlmi_cmd_set_timestamp(ep, &ts);
-   if (rc) {
+   err = cxlmi_cmd_set_timestamp(ep, &ts);
+   if (err) {
 	   /* handle error */
    }
    ```
@@ -82,8 +82,8 @@ command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
    ```
    struct cxlmi_cci_get_timestamp ts;
 
-   rc = cxlmi_cmd_get_timestamp(ep, &ts);
-   if (rc == 0) {
+   err = cxlmi_cmd_get_timestamp(ep, &ts);
+   if (err == 0) {
 	   /* do something with ts.timestamp */
    }
    ```
@@ -98,8 +98,8 @@ command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
    } ;
    struct cxlmi_cci_get_log_rsp ret;
 
-   rc = cxlmi_cmd_get_log(ep, &in, &ret);
-   if (rc == 0) {
+   err = cxlmi_cmd_get_log(ep, &in, &ret);
+   if (err == 0) {
 	   /* do something with ret. */
    }
    ```
@@ -107,8 +107,8 @@ command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
 4. No input, no output payload
 
    ```
-   rc = cxlmi_cmd_request_bg_operation_abort(ep);
-   if (rc) {
+   err = cxlmi_cmd_request_bg_operation_abort(ep);
+   if (err) {
 	   /* handle error */
    }
    ```
@@ -120,13 +120,27 @@ which can be translated to a string with `cxlmi_cmd_retcode_to_str()`.
 Upon error, the return payload is undefined and should be considered invalid.
 
    ```
-   rc = cxlmi_cmd_infostat_identify(ep, &ret);
-   if (rc) {
-	   if (rc > 0)
-		   fprintf(stderr, "%s", cxlmi_cmd_retcode_to_str(rc));
+   err = cxlmi_cmd_infostat_identify(ep, &ret);
+   if (err) {
+	   if (err > 0)
+		   fprintf(stderr, "%s", cxlmi_cmd_retcode_to_str(err));
 	   return rc;
    }
    ```
+
+The exception to this is when a background operation has been started,
+for which the user must ensure to verify, when appropriate against the
+`CXLMI_RET_BACKGROUND` value.
+
+   ```
+   err = cxlmi_cmd_sanitize(ep);
+   if (err && err != CXLMI_RET_BACKGROUND) {
+	   if (err > 0)
+		   fprintf(stderr, "%s", cxlmi_cmd_retcode_to_str(err));
+	   return rc;
+   }
+   ```
+
 
 Logging
 -------
@@ -166,7 +180,6 @@ Requirements
 
 4. The following kernel configuration enabled:
    ```
-   CONFIG_CXL_MEM_RAW_COMMANDS=y
    CONFIG_MCTP_TRANSPORT_I2C=y
    CONFIG_MCTP=y
    CONFIG_MCTP_FLOWS=y
