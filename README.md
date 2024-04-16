@@ -98,7 +98,7 @@ command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
    } ;
    struct cxlmi_cci_get_log_rsp ret;
 
-   rc = cxlmi_cmd_get_log(ep, &ret);
+   rc = cxlmi_cmd_get_log(ep, &in, &ret);
    if (rc == 0) {
 	   /* do something with ret. */
    }
