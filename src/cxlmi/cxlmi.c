@@ -634,7 +634,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	*ret = *pl;
 	for (i = 0; i < pl->num_supported_log_entries; i++) {
 		for (j = 0; j < sizeof(pl->entries[i].uuid); j++) {
-			ret->entries[i].uuid[j] = pl->entries[i].uuid[j];
+			ret->entries[i] = pl->entries[i];
 		}
 	}
 free_rsp:
