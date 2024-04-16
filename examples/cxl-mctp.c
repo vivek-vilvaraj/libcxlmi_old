@@ -41,7 +41,7 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 	if (rc) {
 		if (rc > 0)
 			printf("request_bg_operation_abort error: %s\n",
-			       cxlmi_retcode_to_str(rc));
+			       cxlmi_cmd_retcode_tostr(rc));
 	} else
 		printf("requested\n");
 
@@ -153,7 +153,7 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 	if (rc) {
 		if (rc > 0)
 			printf("set_timestamp error: %s\n",
-			       cxlmi_retcode_to_str(rc));
+			       cxlmi_cmd_retcode_tostr(rc));
 		return rc;
 	}
 

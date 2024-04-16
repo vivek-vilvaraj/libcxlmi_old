@@ -372,7 +372,7 @@ static const char *const cxlmi_retcode_status[] = {
 	[CXLMI_RET_EXTLIST] = "invalid Extent List",
 };
 
-CXLMI_EXPORT const char *cxlmi_retcode_to_str(uint16_t code)
+CXLMI_EXPORT const char *cxlmi_cmd_retcode_tostr(uint16_t code)
 {
 	if (code > ARRAY_SIZE(cxlmi_retcode_status))
 		return NULL;
@@ -591,6 +591,39 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz,
 			  sizeof(*rsp) + sizeof(*pl));
+	if (rc)
+		goto free_rsp;
+
+	pl = (void *)(rsp->payload);
+	*ret = *pl;
+free_rsp:
+	free(rsp);
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
+				   struct cxlmi_cci_identify_memdev *ret)
+{
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct cxlmi_cci_identify_memdev *pl;
+	struct cxlmi_cci_msg *rsp;
+	struct cxlmi_cci_msg req = {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = MEMORY_DEVICE,
+		.command_set = IDENTIFY,
+		.vendor_ext_status = 0xabcd,
+	};
+	int rc;
+	ssize_t rsp_sz;
+
+	rsp_sz = sizeof(*rsp) + sizeof(*pl);
+
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto free_rsp;
 

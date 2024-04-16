@@ -162,7 +162,13 @@ enum cxlmi_cmd_retcode {
 	CXLMI_RET_EXTLIST,
 };
 
-const char *cxlmi_retcode_to_str(uint16_t code);
+/**
+ * cxlmi_cmd_retcode_tostr - Convert a CXL-defined return code to a string
+ * @code: &cxlmi_cmd_retcode return code.
+ *
+ * Return: a string describing the return code, otherwise NULL if undefined.
+ */
+ const char *cxlmi_cmd_retcode_tostr(uint16_t code);
 
 /*
  * Definitions for Generic Component Commands, per CXL r3.1 Table 8-37.
@@ -179,8 +185,12 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 
 int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				 struct cxlmi_cci_get_supported_logs *ret);
-/* int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep, */
-/*		      struct cxlmi_cci_ *in); */
+
+/*
+ * Definitions for Memory Device Commands, per CXL 3.1 Table 8-126
+ */
+int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
+			      struct cxlmi_cci_identify_memdev *ret);
 
 #ifdef __cplusplus
 }

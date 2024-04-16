@@ -70,4 +70,23 @@ struct cxlmi_cci_get_log_cel_rsp {
 	uint16_t commandeffect;
 } __attribute__((packed));
 
+/*  CXL r3.1 Section 8.2.9.9.1.1: Identify Memory Device (Opcode 4000h) */
+struct cxlmi_cci_identify_memdev {
+	char fw_revision[0x10];
+	uint64_t total_capacity;
+	uint64_t volatile_capacity;
+	uint64_t persistent_capacity;
+	uint64_t partition_align;
+	uint16_t info_event_log_size;
+	uint16_t warning_event_log_size;
+	uint16_t failure_event_log_size;
+	uint16_t fatal_event_log_size;
+	uint32_t lsa_size;
+	uint8_t poison_list_max_mer[3];
+	uint16_t inject_poison_limit;
+	uint8_t poison_caps;
+	uint8_t qos_telemetry_caps;
+	uint16_t dc_event_log_size;
+}  __attribute__((packed));
+
 #endif
