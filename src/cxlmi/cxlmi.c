@@ -438,11 +438,11 @@ CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 				     struct cxlmi_cci_infostat_identify *ret)
 {
 	int rc;
-	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	ssize_t rsp_sz;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	struct cxlmi_cci_infostat_identify *rsp_pl;
 	struct cxlmi_cci_msg *rsp;
-	struct cxlmi_cci_msg req = {
+	struct cxlmi_cci_msg req = (struct cxlmi_cci_msg) {
 		.category = CXL_MCTP_CATEGORY_REQ,
 		.tag = mctp->tag++,
 		.command = IS_IDENTIFY,
@@ -460,10 +460,6 @@ CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 		goto free_rsp;
 	}
 
-	if (rsp->return_code) {
-		rc = rsp->return_code;
-		goto free_rsp;
-	}
 	rsp_pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
 
 	*ret = *rsp_pl;
