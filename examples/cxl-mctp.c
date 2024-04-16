@@ -157,7 +157,9 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 	int rc;
 	uint64_t orig_ts;
 	struct cxlmi_cci_get_timestamp get_ts;
-	struct cxlmi_cci_set_timestamp set_ts = { 0 };
+	struct cxlmi_cci_set_timestamp set_ts = {
+		.timestamp = 946684800, /* Jan 1, 2000 */
+	};
 
 	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
 	if (rc)
@@ -165,7 +167,6 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 	printf("device timestamp: %lu\n", get_ts.timestamp);
 	orig_ts = get_ts.timestamp;
 
-	set_ts.timestamp = get_ts.timestamp * 2;
 	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
 	if (rc)
 		return rc;
@@ -231,11 +232,11 @@ int main(int argc, char **argv)
 
 	/* rc = get_device_logs(ep); */
 
-	/* rc = play_with_device_timestamp(ep); */
+	sleep(1);
 
-	/* sleep(2); */
+	rc = play_with_device_timestamp(ep);
 
-	/* rc = toggle_abort(ep); */
+	rc = toggle_abort(ep);
 
 	cxlmi_close(ep);
 exit_free_ctx:
