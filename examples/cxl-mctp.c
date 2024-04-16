@@ -39,8 +39,11 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 
 	rc = cxlmi_request_bg_operation_abort(ep);
 	if (rc) {
-		printf("request not successful\n");
-	}
+		if (rc > 0)
+			printf("request_bg_operation_abort error: %s\n",
+			       cxlmi_retcode_to_str(rc));
+	} else
+		printf("requested\n");
 
 	return rc;
 }
@@ -135,12 +138,8 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 
 	set_ts.timestamp = get_ts.timestamp * 2;
 	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
-	if (rc) {
-		if (rc > 0)
-			printf("set_timestamp error: %s\n",
-			       cxlmi_retcode_to_str(rc));
+	if (rc)
 		return rc;
-	}
 
 	memset(&get_ts, 0, sizeof(get_ts));
 	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
@@ -207,7 +206,7 @@ int main(int argc, char **argv)
 
 	/* sleep(2); */
 
-	/* rc = toggle_abort(ep); */
+	rc = toggle_abort(ep);
 
 	cxlmi_close(ep);
 exit_free_ctx:
