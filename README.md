@@ -116,8 +116,8 @@ command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
 When sending a command to a device, a return of `0` indicates success.
 Otherwise `-1` is returned to indicate a problem sending the command, while
 `> 0` corresponds to the CXL defined returned code `cxlmi_cmd_retcode`,
-which can be translated to a string with `cxlmi_cmd_retcode_to_str()`. Upon error,
-the return payload is undefined and should be considered invalid.
+which can be translated to a string with `cxlmi_cmd_retcode_to_str()`.
+Upon error, the return payload is undefined and should be considered invalid.
 
    ```
    rc = cxlmi_cmd_infostat_identify(ep, &ret);
