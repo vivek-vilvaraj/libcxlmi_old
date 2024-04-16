@@ -124,7 +124,7 @@ Upon error, the return payload is undefined and should be considered invalid.
    if (err) {
 	   if (err > 0)
 		   fprintf(stderr, "%s", cxlmi_cmd_retcode_to_str(err));
-	   return rc;
+	   return err;
    }
    ```
 
@@ -137,7 +137,7 @@ verify, when appropriate, against the `CXLMI_RET_BACKGROUND` value.
    if (err && err != CXLMI_RET_BACKGROUND) {
 	   if (err > 0)
 		   fprintf(stderr, "%s", cxlmi_cmd_retcode_to_str(err));
-	   return rc;
+	   return err;
    }
    ```
 
