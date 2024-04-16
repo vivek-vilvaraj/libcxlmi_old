@@ -461,9 +461,7 @@ CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 	}
 
 	rsp_pl = (void *)rsp->payload;
-
 	*ret = *rsp_pl;
-
 free_rsp:
 	free(rsp);
 	return rc;
@@ -494,14 +492,8 @@ int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto free_rsp;
 
-	if (rsp->return_code) {
-		rc = rsp->return_code;
-		goto free_rsp;
-	}
-
-	rsp_pl = (struct cxlmi_cci_get_timestamp *)(rsp->payload);
+	rsp_pl = (void  *)(rsp->payload);
 	*ret = *rsp_pl;
-
 free_rsp:
 	free(rsp);
 	return rc;
