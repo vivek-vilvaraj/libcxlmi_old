@@ -632,11 +632,11 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	pl = (void *)(rsp->payload);
 //	memcpy(ret, pl, min(maxlogs, pl->num_supported_log_entries) * sizeof(*pl->entries));
 	*ret = *pl;
-	for (i = 0; i < pl->num_supported_log_entries; i++) {
-		for (j = 0; j < sizeof(pl->entries[i].uuid); j++) {
-			ret->entries[i] = pl->entries[i];
-		}
-	}
+	/* for (i = 0; i < pl->num_supported_log_entries; i++) { */
+	/* 	for (j = 0; j < sizeof(pl->entries[i].uuid); j++) { */
+	/* 		ret->entries[i] = pl->entries[i]; */
+	/* 	} */
+	/* } */
 free_rsp:
 	free(rsp);
 	return rc;
