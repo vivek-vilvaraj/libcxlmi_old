@@ -153,6 +153,8 @@ static int get_device_logs(struct cxlmi_endpoint *ep)
 	if (rc)
 		return rc;
 
+	printf("size of return: %ld\n", sizeof(ret));
+
 	parse_supported_logs(&ret, &cel_size);
 	return rc;
 }
