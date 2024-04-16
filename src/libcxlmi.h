@@ -23,7 +23,7 @@ struct cxlmi_endpoint;
  *
  * See &cxlmi_free_ctx.
  */
-struct cxlmi_ctx * cxlmi_new_ctx(FILE *fp, int loglvl);
+struct cxlmi_ctx * cxlmi_new_ctx(FILE *fp, int log_level);
 
 /**
  * cxlmi_free_ctx() - Free context object.

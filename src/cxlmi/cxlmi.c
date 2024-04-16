@@ -29,8 +29,6 @@ struct cxlmi_transport_mctp {
 	int	net;
 	uint8_t	eid;
 	int	sd;
-	void	*resp_buf;
-	size_t	resp_buf_size;
 	struct sockaddr_mctp addr;
 	int tag;
 };
@@ -51,7 +49,7 @@ static bool cxlmi_probe_enabled_default(void)
 		strncasecmp(val, "disable", 7);
 }
 
-CXLMI_EXPORT struct cxlmi_ctx *cxlmi_new_ctx(FILE *fp, int loglvl)
+CXLMI_EXPORT struct cxlmi_ctx *cxlmi_new_ctx(FILE *fp, int log_level)
 {
 	struct cxlmi_ctx *ctx;
 
@@ -60,6 +58,7 @@ CXLMI_EXPORT struct cxlmi_ctx *cxlmi_new_ctx(FILE *fp, int loglvl)
 		return NULL;
 
 	ctx->fp = fp ? fp : stderr;
+	ctx->log_level = log_level;
 	ctx->probe_enabled = cxlmi_probe_enabled_default();
 	list_head_init(&ctx->endpoints);
 
@@ -117,7 +116,6 @@ static void mctp_close(struct cxlmi_endpoint *ep)
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 
 	close(mctp->sd);
-	free(mctp->resp_buf);
 }
 
 CXLMI_EXPORT void cxlmi_close(struct cxlmi_endpoint *ep)
@@ -200,7 +198,7 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 	struct pollfd pollfds[1];
 	int timeout = ep->timeout_ms ? ep->timeout_ms : -1;
 
-	/* memset(rsp_msg, 0, rsp_msg_sz); */
+	memset(rsp_msg, 0, rsp_msg_sz);
 
 	len = sendto(mctp->sd, req_msg, req_msg_sz, 0,
 		     (struct sockaddr *)&mctp->addr, sizeof(mctp->addr));
@@ -240,7 +238,7 @@ static int send_cmd_cci(struct cxlmi_endpoint *ep,
 
 	/* TODO: rc = ep->transport->submit(ep, ...); ? */
 	rc = send_mctp_direct(ep, req_msg, req_msg_sz,
-			      rsp_msg, rsp_msg_sz, rsp_msg_sz);
+			      rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
 
 	return rc;
 }
@@ -305,13 +303,6 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 
 	mctp->sd = -1;
 
-	mctp->resp_buf_size = 4096;
-	mctp->resp_buf = calloc(1, mctp->resp_buf_size);
-	if (!mctp->resp_buf) {
-		errno_save = errno;
-		goto err_free_mctp;
-	}
-
 	mctp->net = netid;
 	mctp->eid = eid;
 	mctp->addr = cci_addr;
@@ -322,14 +313,14 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 			  "cannot open socket for mctp endpoint %d:%d\n",
 			  netid, eid);
 		errno_save = errno;
-		goto err_free_rspbuf;
+		goto err_free_mctp;
 	}
 	if (bind(mctp->sd,
 		 (struct sockaddr *)&cci_addr, sizeof(cci_addr))) {
 		cxlmi_msg(ctx, LOG_ERR,
 			  "cannot bind for mctp endpoint %d:%d\n", netid, eid);
 		errno_save = errno;
-		goto err_free_rspbuf;
+		goto err_free_mctp;
 	}
 
 	ep->transport_data = mctp;
@@ -338,8 +329,6 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 
 	return ep;
 
-err_free_rspbuf:
-	free(mctp->resp_buf);
 err_free_mctp:
 	free(mctp);
 err_close_ep:
@@ -362,38 +351,38 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
 /* #define DECLARE_CMD_PLOUT(cmdset, cmd, outtype)				\ */
 /* CXLMI_EXPORT								\ */
 /* int cxlmi_cmd_##cmdset_##cmd(struct cxlmi_endpoint *ep,			\ */
-/* 			     typeof(outtype *) ret)			\ */
+/*			     typeof(outtype *) ret)			\ */
 /* {									\ */
-/* 	int rc;                                                         \ */
-/* 	struct cxlmi_transport_mctp *mctp = ep->transport_data;         \ */
-/* 	ssize_t rsp_sz;							\ */
-/* 	typeof(ret) rsp_pl;						\ */
-/* 	struct cxlmi_cci_msg *rsp;					\ */
-/* 	struct cxlmi_cci_msg req = {					\ */
-/* 		.category = CXL_MCTP_CATEGORY_REQ,                      \ */
-/* 		.tag = mctp->tag++,                                     \ */
-/* 		.command = (cmd),					\ */
-/* 		.command_set = (cmdset),				\ */
-/* 		.vendor_ext_status = 0xabcd,                            \ */
-/* 	};                                                              \ */
-/* 									\ */
-/* 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);			\ */
-/* 	rsp = calloc(1, rsp_sz);					\ */
-/* 	if (!rsp)							\ */
-/* 		return -1;						\ */
-/* 									\ */
-/* 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);	\ */
-/* 	if (rc) {							\ */
-/* 		if (rsp->return_code)					\ */
-/* 			rc = rsp->return_code;				\ */
-/* 		goto free_rsp;						\ */
-/* 	}								\ */
-/* 									\ */
-/* 	rsp_pl = (typeof(ret))rsp->payload;				\ */
-/* 	*ret = *rsp_pl;							\ */
+/*	int rc;                                                         \ */
+/*	struct cxlmi_transport_mctp *mctp = ep->transport_data;         \ */
+/*	ssize_t rsp_sz;							\ */
+/*	typeof(ret) rsp_pl;						\ */
+/*	struct cxlmi_cci_msg *rsp;					\ */
+/*	struct cxlmi_cci_msg req = {					\ */
+/*		.category = CXL_MCTP_CATEGORY_REQ,                      \ */
+/*		.tag = mctp->tag++,                                     \ */
+/*		.command = (cmd),					\ */
+/*		.command_set = (cmdset),				\ */
+/*		.vendor_ext_status = 0xabcd,                            \ */
+/*	};                                                              \ */
+/*									\ */
+/*	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);			\ */
+/*	rsp = calloc(1, rsp_sz);					\ */
+/*	if (!rsp)							\ */
+/*		return -1;						\ */
+/*									\ */
+/*	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);	\ */
+/*	if (rc) {							\ */
+/*		if (rsp->return_code)					\ */
+/*			rc = rsp->return_code;				\ */
+/*		goto free_rsp;						\ */
+/*	}								\ */
+/*									\ */
+/*	rsp_pl = (typeof(ret))rsp->payload;				\ */
+/*	*ret = *rsp_pl;							\ */
 /* free_rsp:								\ */
-/* 	free(rsp);							\ */
-/* 	return rc;							\ */
+/*	free(rsp);							\ */
+/*	return rc;							\ */
 /* } */
 
 /* DECLARE_CMD_PLOUT(infostat, is_identify, struct cxlmi_cci_infostat_identify); */
@@ -583,70 +572,70 @@ free_rsp:
 }
 
 /* static int cxlmi_cmd_get_cel(struct cxlmi_endpoint *ep, */
-/* 		   struct cxlmi_cci_get_log_cel_req *in, */
-/* 		   struct cxlmi_cci_get_log_cel_rsp *ret) */
+/*		   struct cxlmi_cci_get_log_cel_req *in, */
+/*		   struct cxlmi_cci_get_log_cel_rsp *ret) */
 /* { */
 	/* struct cci_get_log_cel_rsp *pl; */
- /* 	struct cci_get_log_req *req_pl; */
- /* 	struct cci_msg *req, *rsp; */
- /* 	size_t req_sz, rsp_sz; */
+ /*	struct cci_get_log_req *req_pl; */
+ /*	struct cci_msg *req, *rsp; */
+ /*	size_t req_sz, rsp_sz; */
 	/* int rc = 0; */
- /* 	int i; */
+ /*	int i; */
 
- /* 	req_sz = sizeof(*req) + sizeof(*req_pl); */
- /* 	req = calloc(1, req_sz); */
- /* 	if (!req) */
- /* 		return -1; */
+ /*	req_sz = sizeof(*req) + sizeof(*req_pl); */
+ /*	req = calloc(1, req_sz); */
+ /*	if (!req) */
+ /*		return -1; */
 
- /* 	*req = (struct cci_msg) { */
- /* 		.category = CXL_MCTP_CATEGORY_REQ, */
- /* 		.tag = *tag++, */
- /* 		.command = 1, */
- /* 		.command_set = 4, */
- /* 		.vendor_ext_status = 0xabcd, */
- /* 		.pl_length = { */
- /* 			[0] = sizeof(*in) & 0xff, */
- /* 			[1] = (sizeof(*in) >> 8) & 0xff, */
- /* 			[2] = (sizeof(*in) >> 16) & 0xff, */
- /* 		}, */
- /* 	}; */
- /* 	req_pl = (struct cci_get_log_req *)req->payload; */
- /* 	memcpy(req_pl->uuid, cel_uuid, sizeof(req_pl->uuid)); */
- /* 	req_pl->offset = 0; */
- /* 	req_pl->length = cel_size; */
+ /*	*req = (struct cci_msg) { */
+ /*		.category = CXL_MCTP_CATEGORY_REQ, */
+ /*		.tag = *tag++, */
+ /*		.command = 1, */
+ /*		.command_set = 4, */
+ /*		.vendor_ext_status = 0xabcd, */
+ /*		.pl_length = { */
+ /*			[0] = sizeof(*in) & 0xff, */
+ /*			[1] = (sizeof(*in) >> 8) & 0xff, */
+ /*			[2] = (sizeof(*in) >> 16) & 0xff, */
+ /*		}, */
+ /*	}; */
+ /*	req_pl = (struct cci_get_log_req *)req->payload; */
+ /*	memcpy(req_pl->uuid, cel_uuid, sizeof(req_pl->uuid)); */
+ /*	req_pl->offset = 0; */
+ /*	req_pl->length = cel_size; */
 
- /* 	rsp_sz = sizeof(*rsp) + cel_size; */
- /* 	rsp = malloc(rsp_sz); */
- /* 	if (!rsp) { */
- /* 		rc = -1; */
- /* 		goto free_req; */
- /* 	} */
+ /*	rsp_sz = sizeof(*rsp) + cel_size; */
+ /*	rsp = malloc(rsp_sz); */
+ /*	if (!rsp) { */
+ /*		rc = -1; */
+ /*		goto free_req; */
+ /*	} */
 
- /* 	printf("Command Effects Log Requested\n"); */
+ /*	printf("Command Effects Log Requested\n"); */
 
- /* 	rc = trans_func(sd, addr, tag, port, id, req, req_sz, rsp, rsp_sz, */
- /* 			rsp_sz); */
- /* 	if (rc) */
- /* 		goto free_rsp; */
+ /*	rc = trans_func(sd, addr, tag, port, id, req, req_sz, rsp, rsp_sz, */
+ /*			rsp_sz); */
+ /*	if (rc) */
+ /*		goto free_rsp; */
 
- /* 	pl = (struct cci_get_log_cel_rsp *)rsp->payload; */
- /* 	printf("Command Effects Log\n"); */
- /* 	for (i = 0; i < cel_size / sizeof(*pl); i++) { */
- /* 		printf("\t[%04x] %s%s%s%s%s%s%s%s\n", */
- /* 		       pl[i].opcode, */
- /* 		       pl[i].commandeffect & 0x1 ? "ColdReset " : "", */
- /* 		       pl[i].commandeffect & 0x2 ? "ImConf " : "", */
- /* 		       pl[i].commandeffect & 0x4 ? "ImData " : "", */
- /* 		       pl[i].commandeffect & 0x8 ? "ImPol " : "", */
- /* 		       pl[i].commandeffect & 0x10 ? "ImLog " : "", */
- /* 		       pl[i].commandeffect & 0x20 ? "ImSec" : "", */
- /* 		       pl[i].commandeffect & 0x40 ? "BgOp" : "", */
- /* 		       pl[i].commandeffect & 0x80 ? "SecSup" : ""); */
- /* 	} */
+ /*	pl = (struct cci_get_log_cel_rsp *)rsp->payload; */
+ /*	printf("Command Effects Log\n"); */
+ /*	for (i = 0; i < cel_size / sizeof(*pl); i++) { */
+ /*		printf("\t[%04x] %s%s%s%s%s%s%s%s\n", */
+ /*		       pl[i].opcode, */
+ /*		       pl[i].commandeffect & 0x1 ? "ColdReset " : "", */
+ /*		       pl[i].commandeffect & 0x2 ? "ImConf " : "", */
+ /*		       pl[i].commandeffect & 0x4 ? "ImData " : "", */
+ /*		       pl[i].commandeffect & 0x8 ? "ImPol " : "", */
+ /*		       pl[i].commandeffect & 0x10 ? "ImLog " : "", */
+ /*		       pl[i].commandeffect & 0x20 ? "ImSec" : "", */
+ /*		       pl[i].commandeffect & 0x40 ? "BgOp" : "", */
+ /*		       pl[i].commandeffect & 0x80 ? "SecSup" : ""); */
+ /*	} */
  /* free_rsp: */
- /* 	free(rsp); */
+ /*	free(rsp); */
  /* free_req: */
- /* 	free(req); */
+ /*	free(req); */
 
-/* 	return rc; */
+/*	return rc; */
 /* } */
