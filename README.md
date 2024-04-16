@@ -72,10 +72,9 @@ command. Commands take the prefix prefix `cxlmi_cmd_`.
 
    rc = cxlmi_cmd_set_timestamp(ep, &ts);
    if (rc) {
-	  /* handle error */
+	   /* handle error */
    }
    ```
-
 
 2. Output-only payload
 
@@ -84,7 +83,7 @@ command. Commands take the prefix prefix `cxlmi_cmd_`.
 
    rc = cxlmi_cmd_get_timestamp(ep, &ts);
    if (rc == 0) {
-	  /* do something with ts.timestamp */
+	   /* do something with ts.timestamp */
    }
    ```
 
@@ -93,17 +92,30 @@ command. Commands take the prefix prefix `cxlmi_cmd_`.
 4. No input, no output payload
 
    ```
-   rc = cxlmi_request_bg_operation_abort(ep);
+   rc = cxlmi_cmd_request_bg_operation_abort(ep);
    if (rc) {
-	  /* handle error */
+	   /* handle error */
    }
    ```
 
+When sending a command to a device, a return of 0 indicates success.
+Otherwise -1 is returned to indicate a problem sending the command, while
+> 0 corresponds to the returned code from the device, indicating a specific
+error, which can be translated to a string with `cxlmi_cmd_retcode_to_str()`.
+
+   ```
+   rc = cxlmi_cmd_infostat_identify(ep, &ret);
+   if (rc) {
+	   if (rc > 0)
+		   fprintf(stderr, "%s", cxlmi_cmd_retcode_to_str(rc));
+	   return rc;
+   }
+   ```
 
 Logging
 -------
 Library internal logging information is set upon context creation, using `stderr`
-by default. Logging levels are standard syslog.
+by default. Logging levels are standard `syslog`.
 
 Considerations
 --------------
