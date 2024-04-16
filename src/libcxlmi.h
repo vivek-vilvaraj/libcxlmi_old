@@ -127,6 +127,8 @@ struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m);
 	     e != NULL;							\
 	     e = _e, _e = cxlmi_next_endpoint(m, e))
 
+const char *cxlmi_retcode_to_str(uint16_t code);
+	
 /*
  * Definitions for Generic Component Commands, per CXL r3.1 Table 8-37.
  */

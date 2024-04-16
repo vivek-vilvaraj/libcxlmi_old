@@ -337,6 +337,61 @@ err_close_ep:
 	return NULL;
 }
 
+enum cxlmi_retcode {
+	CXLMI_RET_SUCCESS = 0x0,
+	CXLMI_RET_BACKGROUND,
+	CXLMI_RET_INPUT,
+	CXLMI_RET_UNSUPPORTED,
+	CXLMI_RET_INTERNAL,
+	CXLMI_RET_RETRY,
+	CXLMI_RET_BUSY,
+
+	NR_CXLMI_RETCODES,
+};
+static const char *const cxlmi_retcode_status[] = {
+	[CXLMI_RET_SUCCESS] = "success",
+	[CXLMI_RET_BACKGROUND] = "background cmd started successfully",
+	[CXLMI_RET_INPUT] = "cmd input was invalid",
+	[CXLMI_RET_UNSUPPORTED] = "cmd is not supported",
+	[CXLMI_RET_INTERNAL] = "internal device error",
+	[CXLMI_RET_RETRY] = "temporary error, retry once",
+	[CXLMI_RET_BUSY] = "ongoing background operation",
+};
+
+	/* C(RETRY, -ENXIO, ),			\ */
+	/* C(BUSY, -ENXIO, ),			\ */
+	/* C(MEDIADISABLED, -ENXIO, "media access is disabled"),			\ */
+	/* C(FWINPROGRESS, -ENXIO,	"one FW package can be transferred at a time"), \ */
+	/* C(FWOOO, -ENXIO, "FW package content was transferred out of order"),    \ */
+	/* C(FWAUTH, -ENXIO, "FW package authentication failed"),			\ */
+	/* C(FWSLOT, -ENXIO, "FW slot is not supported for requested operation"),  \ */
+	/* C(FWROLLBACK, -ENXIO, "rolled back to the previous active FW"),         \ */
+	/* C(FWRESET, -ENXIO, "FW failed to activate, needs cold reset"),		\ */
+	/* C(HANDLE, -ENXIO, "one or more Event Record Handles were invalid"),     \ */
+	/* C(PADDR, -EFAULT, "physical address specified is invalid"),		\ */
+	/* C(POISONLMT, -ENXIO, "poison injection limit has been reached"),        \ */
+	/* C(MEDIAFAILURE, -ENXIO, "permanent issue with the media"),		\ */
+	/* C(ABORT, -ENXIO, "background cmd was aborted by device"),               \ */
+	/* C(SECURITY, -ENXIO, "not valid in the current security state"),         \ */
+	/* C(PASSPHRASE, -ENXIO, "phrase doesn't match current set passphrase"),   \ */
+	/* C(MBUNSUPPORTED, -ENXIO, "unsupported on the mailbox it was issued on"),\ */
+	/* C(PAYLOADLEN, -ENXIO, "invalid payload length"),			\ */
+	/* C(LOG, -ENXIO, "invalid or unsupported log page"),			\ */
+	/* C(INTERRUPTED, -ENXIO, "asynchronous event occured"),			\ */
+	/* C(FEATUREVERSION, -ENXIO, "unsupported feature version"),		\ */
+	/* C(FEATURESELVALUE, -ENXIO, "unsupported feature selection value"),	\ */
+	/* C(FEATURETRANSFERIP, -ENXIO, "feature transfer in progress"),		\ */
+	/* C(FEATURETRANSFEROOO, -ENXIO, "feature transfer out of order"),		\ */
+	/* C(RESOURCEEXHAUSTED, -ENXIO, "resources are exhausted"),		\ */
+	/* C(EXTLIST, -ENXIO, "invalid Extent List"),				\ */
+
+CXLMI_EXPORT const char *cxlmi_retcode_to_str(uint16_t code)
+{
+	if (code < NR_CXLMI_RETCODES)
+		return cxlmi_retcode_status[code];
+	return NULL;
+}
+
 CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m)
 {
 	return list_top(&m->endpoints, struct cxlmi_endpoint, entry);

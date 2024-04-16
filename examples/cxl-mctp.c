@@ -133,9 +133,13 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 	set_ts.timestamp = get_ts.timestamp * 10000;
 
 	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
-	if (rc)
+	if (rc) {
+		if (rc > 0)
+			printf("set_timestamp error: %s\n",
+			       cxlmi_retcode_to_str(rc));
 		return rc;
-
+	}
+	
 	memset(&get_ts, 0, sizeof(get_ts));
 	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
 	if (rc)
