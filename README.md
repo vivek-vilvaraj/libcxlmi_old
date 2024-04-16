@@ -102,7 +102,7 @@ command. Commands take the prefix prefix `cxlmi_cmd_`.
 
 Logging
 -------
-Library internal logging inforation is set upon context creation, using `stderr`
+Library internal logging information is set upon context creation, using `stderr`
 by default. Logging levels are standard syslog.
 
 Considerations
@@ -113,6 +113,10 @@ A few considerations users should keep in mind when evaluating using this librar
 
 - The library leaves any and all serialization up to the user - libs should not
 hold locks.
+
+- This library masks many of the protections provided by the OS driver, as such,
+users must provide the correct command(s) to the correct CXL Component. Similarly
+device state may be altered, and therefore users get to keep the pieces.
 
 - Commands initiated on MCTP-based CCIs are not tracked across any component state
 change, such as Conventional Resets.
