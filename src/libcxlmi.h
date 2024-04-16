@@ -127,8 +127,45 @@ struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m);
 	     e != NULL;							\
 	     e = _e, _e = cxlmi_next_endpoint(m, e))
 
-const char *cxlmi_retcode_to_str(uint16_t code);
+
+enum cxlmi_cmd_retcode {
+	CXLMI_RET_SUCCESS = 0x0,
+	CXLMI_RET_BACKGROUND,
+	CXLMI_RET_INPUT,
+	CXLMI_RET_UNSUPPORTED,
+	CXLMI_RET_INTERNAL,
+	CXLMI_RET_RETRY,
+	CXLMI_RET_BUSY,
+	CXLMI_RET_MEDIADISABLED,
+	CXLMI_RET_FWINPROGRESS,
+	CXLMI_RET_FWOOO,
+	CXLMI_RET_FWAUTH,
+	CXLMI_RET_FWSLOT,
+	CXLMI_RET_FWROLLBACK,
+	CXLMI_RET_FWRESET,
+	CXLMI_RET_HANDLE,
+	CXLMI_RET_PADDR,
+	CXLMI_RET_POISONLMT,
+	CXLMI_RET_MEDIAFAILURE,
+	CXLMI_RET_ABORT,
+	CXLMI_RET_SECURITY,
+	CXLMI_RET_PASSPHRASE,
+	CXLMI_RET_MBUNSUPPORTED,
+	CXLMI_RET_PAYLOADLEN,
+	CXLMI_RET_LOG,
+	CXLMI_RET_INTERRUPTED,
+	CXLMI_RET_FEATUREVERSION,
+	CXLMI_RET_FEATURESELVALUE,
+	CXLMI_RET_FEATURETRANSFERIP,
+	CXLMI_RET_FEATURETRANSFEROOO,
+	CXLMI_RET_RESOURCEEXHAUSTED,
+	CXLMI_RET_EXTLIST,
 	
+	NR_CXLMI_RETCODES,
+};
+
+const char *cxlmi_retcode_to_str(uint16_t code);
+
 /*
  * Definitions for Generic Component Commands, per CXL r3.1 Table 8-37.
  */
@@ -145,7 +182,7 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				 struct cxlmi_cci_get_supported_logs *ret);
 /* int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep, */
-/* 		      struct cxlmi_cci_ *in); */
+/*		      struct cxlmi_cci_ *in); */
 
 #ifdef __cplusplus
 }

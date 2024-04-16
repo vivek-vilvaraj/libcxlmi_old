@@ -337,17 +337,6 @@ err_close_ep:
 	return NULL;
 }
 
-enum cxlmi_retcode {
-	CXLMI_RET_SUCCESS = 0x0,
-	CXLMI_RET_BACKGROUND,
-	CXLMI_RET_INPUT,
-	CXLMI_RET_UNSUPPORTED,
-	CXLMI_RET_INTERNAL,
-	CXLMI_RET_RETRY,
-	CXLMI_RET_BUSY,
-
-	NR_CXLMI_RETCODES,
-};
 static const char *const cxlmi_retcode_status[] = {
 	[CXLMI_RET_SUCCESS] = "success",
 	[CXLMI_RET_BACKGROUND] = "background cmd started successfully",
@@ -356,34 +345,32 @@ static const char *const cxlmi_retcode_status[] = {
 	[CXLMI_RET_INTERNAL] = "internal device error",
 	[CXLMI_RET_RETRY] = "temporary error, retry once",
 	[CXLMI_RET_BUSY] = "ongoing background operation",
-};
+	[CXLMI_RET_MEDIADISABLED] = "media access is disabled",
+	[CXLMI_RET_FWINPROGRESS] = "one FW package can be transferred at a time",
+	[CXLMI_RET_FWOOO] = "FW package content was transferred out of order",
+	[CXLMI_RET_FWAUTH] = "FW package authentication failed",
+	[CXLMI_RET_FWSLOT] = "FW slot is not supported for requested operation",
+	[CXLMI_RET_FWROLLBACK] = "rolled back to the previous active FW",
+	[CXLMI_RET_FWRESET] = "FW failed to activate, needs cold reset",
+	[CXLMI_RET_HANDLE] = "one or more Event Record Handles were invalid",
+	[CXLMI_RET_PADDR] = "physical address specified is invalid",
+	[CXLMI_RET_POISONLMT] = "poison injection limit has been reached",
+	[CXLMI_RET_MEDIAFAILURE] = "permanent issue with the media",
+	[CXLMI_RET_ABORT] = "background cmd was aborted by device",
+	[CXLMI_RET_SECURITY] = "not valid in the current security state",
+	[CXLMI_RET_PASSPHRASE] = "phrase doesn't match current set passphrase",
+	[CXLMI_RET_MBUNSUPPORTED] = "unsupported on the mailbox it was issued on",
+	[CXLMI_RET_PAYLOADLEN] = "invalid payload length",
+	[CXLMI_RET_LOG] = "nvalid or unsupported log page",
+	[CXLMI_RET_INTERRUPTED] = "asynchronous event occured",
+	[CXLMI_RET_FEATUREVERSION] = "unsupported feature version",
+	[CXLMI_RET_FEATURESELVALUE] = "unsupported feature selection value",
+	[CXLMI_RET_FEATURETRANSFERIP] = "feature transfer in progress",
+	[CXLMI_RET_FEATURETRANSFEROOO] = "feature transfer out of order",
+	[CXLMI_RET_RESOURCEEXHAUSTED] = "resources are exhausted",
+	[CXLMI_RET_EXTLIST] = "invalid Extent List",
 
-	/* C(RETRY, -ENXIO, ),			\ */
-	/* C(BUSY, -ENXIO, ),			\ */
-	/* C(MEDIADISABLED, -ENXIO, "media access is disabled"),			\ */
-	/* C(FWINPROGRESS, -ENXIO,	"one FW package can be transferred at a time"), \ */
-	/* C(FWOOO, -ENXIO, "FW package content was transferred out of order"),    \ */
-	/* C(FWAUTH, -ENXIO, "FW package authentication failed"),			\ */
-	/* C(FWSLOT, -ENXIO, "FW slot is not supported for requested operation"),  \ */
-	/* C(FWROLLBACK, -ENXIO, "rolled back to the previous active FW"),         \ */
-	/* C(FWRESET, -ENXIO, "FW failed to activate, needs cold reset"),		\ */
-	/* C(HANDLE, -ENXIO, "one or more Event Record Handles were invalid"),     \ */
-	/* C(PADDR, -EFAULT, "physical address specified is invalid"),		\ */
-	/* C(POISONLMT, -ENXIO, "poison injection limit has been reached"),        \ */
-	/* C(MEDIAFAILURE, -ENXIO, "permanent issue with the media"),		\ */
-	/* C(ABORT, -ENXIO, "background cmd was aborted by device"),               \ */
-	/* C(SECURITY, -ENXIO, "not valid in the current security state"),         \ */
-	/* C(PASSPHRASE, -ENXIO, "phrase doesn't match current set passphrase"),   \ */
-	/* C(MBUNSUPPORTED, -ENXIO, "unsupported on the mailbox it was issued on"),\ */
-	/* C(PAYLOADLEN, -ENXIO, "invalid payload length"),			\ */
-	/* C(LOG, -ENXIO, "invalid or unsupported log page"),			\ */
-	/* C(INTERRUPTED, -ENXIO, "asynchronous event occured"),			\ */
-	/* C(FEATUREVERSION, -ENXIO, "unsupported feature version"),		\ */
-	/* C(FEATURESELVALUE, -ENXIO, "unsupported feature selection value"),	\ */
-	/* C(FEATURETRANSFERIP, -ENXIO, "feature transfer in progress"),		\ */
-	/* C(FEATURETRANSFEROOO, -ENXIO, "feature transfer out of order"),		\ */
-	/* C(RESOURCEEXHAUSTED, -ENXIO, "resources are exhausted"),		\ */
-	/* C(EXTLIST, -ENXIO, "invalid Extent List"),				\ */
+};
 
 CXLMI_EXPORT const char *cxlmi_retcode_to_str(uint16_t code)
 {
