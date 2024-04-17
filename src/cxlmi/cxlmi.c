@@ -529,6 +529,8 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	req_pl = (struct cxlmi_cci_set_timestamp *)req->payload;
 	*req_pl = *in;
 
+	printf("%ld\n", req_pl->timestamp);
+
 	rsp_sz = sizeof(*rsp);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
