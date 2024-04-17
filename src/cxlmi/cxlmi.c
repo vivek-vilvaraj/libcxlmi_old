@@ -340,7 +340,7 @@ err_close_ep:
 	return NULL;
 }
 
-static const char *const cxlmi_retcode_status[] = {
+static const char *const cxlmi_cmd_retcode_tbl[] = {
 	[CXLMI_RET_SUCCESS] = "success",
 	[CXLMI_RET_BACKGROUND] = "background cmd started successfully",
 	[CXLMI_RET_INPUT] = "cmd input was invalid",
@@ -372,13 +372,16 @@ static const char *const cxlmi_retcode_status[] = {
 	[CXLMI_RET_FEATURETRANSFEROOO] = "feature transfer out of order",
 	[CXLMI_RET_RESOURCEEXHAUSTED] = "resources are exhausted",
 	[CXLMI_RET_EXTLIST] = "invalid Extent List",
+	[CXLMI_RET_TRANSFEROOO] = "transfer out of order",
+	[CXLMI_RET_NO_BGABORT] = "on-going background cmd is not abortable",
 };
 
 CXLMI_EXPORT const char *cxlmi_cmd_retcode_tostr(enum cxlmi_cmd_retcode code)
 {
-	if (code > ARRAY_SIZE(cxlmi_retcode_status))
+	if (code > ARRAY_SIZE(cxlmi_cmd_retcode_tbl))
 		return NULL;
-	return cxlmi_retcode_status[code];
+
+	return cxlmi_cmd_retcode_tbl[code];
 }
 
 CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m)
