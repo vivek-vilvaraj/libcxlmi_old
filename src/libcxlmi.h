@@ -272,7 +272,7 @@ int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 /*
  * Definitions for Memory Device Commands, per CXL r3.1 Table 8-126.
  */
-int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
+int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 			      struct cxlmi_cci_identify_memdev *ret);
 int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep);
 

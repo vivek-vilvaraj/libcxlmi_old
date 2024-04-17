@@ -611,7 +611,7 @@ done:
 	return rc;
 }
 
-CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
+CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 				   struct cxlmi_cci_identify_memdev *ret)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;

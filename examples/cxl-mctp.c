@@ -12,7 +12,7 @@ static int show_memdev_info(struct cxlmi_endpoint *ep)
 	int rc;
 	struct cxlmi_cci_identify_memdev id;
 
-	rc = cxlmi_cmd_identify_memdev(ep, &id);
+	rc = cxlmi_cmd_memdev_identify(ep, &id);
 	if (rc)
 		return rc;
 
@@ -176,7 +176,7 @@ int main(int argc, char **argv)
 	}
 
 	/* yes, only 1 endpoint, but might add more */
-	/* rc = show_some_info_from_all_devices(ctx); */
+	rc = show_some_info_from_all_devices(ctx);
 
 	rc = play_with_device_timestamp(ep);
 
