@@ -18,6 +18,7 @@
 
 #include <ccan/array_size/array_size.h>
 #include <ccan/minmax/minmax.h>
+#include <ccan/endian/endian.h>
 #include <ccan/list/list.h>
 
 #include <libcxlmi.h>
@@ -494,7 +495,7 @@ int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 		goto free_rsp;
 
 	rsp_pl = (void  *)(rsp->payload);
-	*ret = *rsp_pl;
+	ret->timestamp = le64_to_cpu(rsp_pl->timestamp);
 free_rsp:
 	free(rsp);
 	return rc;
@@ -526,8 +527,8 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 			[2] = (sizeof(*req_pl) >> 16) & 0xff,
 		},
 	};
-	req_pl = (struct cxlmi_cci_set_timestamp *)req->payload;
-	*req_pl = *in;
+	req_pl = (void *)req->payload;
+	req_pl->timestamp = cpu_to_le64(in->timestamp);
 
 	printf("%ld\n", req_pl->timestamp);
 
