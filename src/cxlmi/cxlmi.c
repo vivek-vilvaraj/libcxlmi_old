@@ -530,7 +530,7 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	req_pl = (void *)req->payload;
 	req_pl->timestamp = cpu_to_le64(in->timestamp);
 
-	printf("%ld\n", req_pl->timestamp);
+	printf("from app: %ld\n", req_pl->timestamp);
 
 	rsp_sz = sizeof(*rsp);
 	rsp = calloc(1, rsp_sz);
@@ -647,7 +647,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 				   struct cxlmi_cci_identify_memdev *ret)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	struct cxlmi_cci_identify_memdev *pl;
+	struct cxlmi_cci_identify_memdev *rsp_pl;
 	struct cxlmi_cci_msg *rsp;
 	struct cxlmi_cci_msg req = {
 		.category = CXL_MCTP_CATEGORY_REQ,
@@ -659,7 +659,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 	int rc;
 	ssize_t rsp_sz;
 
-	rsp_sz = sizeof(*rsp) + sizeof(*pl);
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
 
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
@@ -669,8 +669,14 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto free_rsp;
 
-	pl = (struct cxlmi_cci_identify_memdev *)(rsp->payload);
-	*ret = *pl;
+	rsp_pl = (void *)(rsp->payload);
+	ret->total_capacity = le64_to_cpu(rsp_pl->total_capacity);
+	ret->volatile_capacity = le64_to_cpu(rsp_pl->volatile_capacity);
+	ret->persistent_capacity = le64_to_cpu(rsp_pl->persistent_capacity);
+	ret->partition_align = le64_to_cpu(rsp_pl->partition_align);
+	ret->lsa_size = le32_to_cpu(rsp_pl->lsa_size);
+	memcpy(ret->fw_revision, rsp_pl->fw_revision,
+	       sizeof(rsp_pl->fw_revision));
 free_rsp:
 	free(rsp);
 	return rc;
