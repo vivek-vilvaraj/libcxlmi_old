@@ -270,10 +270,14 @@ int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				 struct cxlmi_cci_get_supported_logs *ret);
 
 /*
- * Definitions for Memory Device Commands, per CXL 3.1 Table 8-126
+ * Definitions for Memory Device Commands, per CXL r3.1 Table 8-126.
  */
 int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 			      struct cxlmi_cci_identify_memdev *ret);
+
+/*
+ * Definitions for FMAPI Commands. per CXL r3.1 Table 8-215.
+ */
 
 #ifdef __cplusplus
 }
