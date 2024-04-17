@@ -21,6 +21,7 @@
 #include <ccan/endian/endian.h>
 #include <ccan/list/list.h>
 
+/* #include "bswap.h" */
 #include <libcxlmi.h>
 
 #include "private.h"
@@ -632,8 +633,8 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto free_rsp;
 
-	pl = (void *)(rsp->payload);
-	*ret = *pl;
+	pl = (void *)rsp->payload;
+	ret->num_supported_log_entries = pl->num_supported_log_entries;
 	for (i = 0; i < pl->num_supported_log_entries; i++) {
 		ret->entries[i] = pl->entries[i];
 	}
