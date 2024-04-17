@@ -374,7 +374,7 @@ static const char *const cxlmi_retcode_status[] = {
 	[CXLMI_RET_EXTLIST] = "invalid Extent List",
 };
 
-CXLMI_EXPORT const char *cxlmi_cmd_retcode_tostr(uint16_t code)
+CXLMI_EXPORT const char *cxlmi_cmd_retcode_tostr(enum cxlmi_cmd_retcode code)
 {
 	if (code > ARRAY_SIZE(cxlmi_retcode_status))
 		return NULL;
@@ -648,55 +648,13 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 	ret->failure_event_log_size = le16_to_cpu(rsp_pl->failure_event_log_size);
 	ret->fatal_event_log_size = le16_to_cpu(rsp_pl->fatal_event_log_size);
 	ret->lsa_size = le32_to_cpu(rsp_pl->lsa_size);
-	/* TODO unaligned endianness ie: get_unaligned_le24(rsp_pl->poison_list_max_mer); */
+	/* TODO unaligned ie: get_unaligned_le24(rsp_pl->poison_list_max_mer); */
 	memcpy(ret->poison_list_max_mer, rsp_pl->poison_list_max_mer,
 	       sizeof(rsp_pl->poison_list_max_mer));
 	ret->inject_poison_limit = le16_to_cpu(rsp_pl->inject_poison_limit);
 	ret->poison_caps = rsp_pl->poison_caps;
 	ret->qos_telemetry_caps = rsp_pl->qos_telemetry_caps;
 	ret->dc_event_log_size = le16_to_cpu(rsp_pl->dc_event_log_size);
-done:
-	free(rsp);
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_identify_switch(struct cxlmi_endpoint *ep,
-				     struct cxlmi_cci_identify_switch *ret)
-{
-	int rc;
-	ssize_t rsp_sz;
-	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	struct cxlmi_cci_identify_switch *rsp_pl;
-	struct cxlmi_cci_msg *rsp;
-	struct cxlmi_cci_msg req = (struct cxlmi_cci_msg) {
-		.category = CXL_MCTP_CATEGORY_REQ,
-		.tag = mctp->tag++,
-		.command = IDENTIFY_SWITCH_DEVICE,
-		.command_set = PHYSICAL_SWITCH,
-		.vendor_ext_status = 0xabcd,
-	};
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc)
-		goto done;
-
-	rsp_pl = (struct cxlmi_cci_identify_switch *)rsp->payload;
-
-	ret->ingress_port_id = rsp_pl->ingress_port_id;
-	ret->num_physical_ports = rsp_pl->num_physical_ports;
-	ret->num_vcss = rsp_pl->num_vcss;
-	memcpy(ret->active_port_bitmask, rsp_pl->active_port_bitmask,
-	       sizeof(rsp_pl->active_port_bitmask));
-	memcpy(ret->active_vcs_bitmask, rsp_pl->active_vcs_bitmask,
-	       sizeof(rsp_pl->active_vcs_bitmask));
-	ret->total_vppbs = le16_to_cpu(rsp_pl->total_vppbs);
-	ret->bound_vppbs = le16_to_cpu(rsp_pl->bound_vppbs);
-	ret->num_hdm_decoders_per_usp = rsp_pl->num_hdm_decoders_per_usp;
 done:
 	free(rsp);
 	return rc;

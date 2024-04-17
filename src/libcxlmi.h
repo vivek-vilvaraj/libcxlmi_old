@@ -127,7 +127,82 @@ struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m);
 	     e != NULL;							\
 	     e = _e, _e = cxlmi_next_endpoint(m, e))
 
-
+/**
+ * enum cxlmi_cmd_retcode - CXL-defined Command Return Codes
+ * @CXLMI_RET_SUCCESS:            Success
+ * @CXLMI_RET_BACKGROUND:         Background operation started (Success).
+ * @CXLMI_RET_INPUT:              One or more command inputs are invalid.
+ * @CXLMI_RET_UNSUPPORTED:        The command is not supported
+ * @CXLMI_RET_INTERNAL:           The command was not completed because of an
+				  internal device error.
+ * @CXLMI_RET_RETRY:              The command was not completed because of a
+				  temporary error. An optional single retry may
+				  resolve the issue.
+ * @CXLMI_RET_BUSY:               The device is currently busy processing a
+				  background operation.
+				  Wait until background command completes and then
+				  retry the command.
+ * @CXLMI_RET_MEDIADISABLED:      The command could not be completed because it
+				  requires media access and media is disabled.
+ * @CXLMI_RET_FWINPROGRESS:       Only one FW package can be transferred at a time.
+				  Complete the current FW package transfer before
+				  starting a new one.
+ * @CXLMI_RET_FWOOO:              The FW package transfer was aborted because
+				  the FW package content was transferred out
+				  of order.
+ * @CXLMI_RET_FWAUTH:             The FW package was not saved to the device
+				  because the FW package verification failed.
+ * @CXLMI_RET_FWSLOT:             The FW slot specified is not supported or not
+				  valid for the requested operation.
+ * @CXLMI_RET_FWROLLBACK:         The new FW failed to activate and rolled back
+				  to the previous active FW.
+ * @CXLMI_RET_FWRESET:            The new FW failed to activate. A cold reset is
+				  required.
+ * @CXLMI_RET_HANDLE:             One or more Event Record Handles were invalid
+				  or specified out of order.
+ * @CXLMI_RET_PADDR:              The physical address specified is invalid.
+ * @CXLMI_RET_POISONLMT:          The device’s limit on allowed poison injection
+				  has been reached. Clear injected poison requests
+				  before attempting to inject more.
+ * @CXLMI_RET_MEDIAFAILURE:       The device could not clear poison because of a
+				  permanent issue with the media.
+ * @CXLMI_RET_ABORT:              The background command was aborted by the device.
+				  either on its own or as a result of a Request
+				  Abort Background Operation command.
+ * @CXLMI_RET_SECURITY:           The command is invalid in the current
+				  security state.
+ * @CXLMI_RET_PASSPHRASE:         The passphrase does not match the currently
+				  set passphrase.
+ * @CXLMI_RET_MBUNSUPPORTED:      The command is not supported on the mailbox
+				  or CCI it was issued on.
+ * @CXLMI_RET_PAYLOADLEN:         The input payload length specified for the
+				  command is invalid or exceeds the component’s
+				  Maximum Supported Message Size. The device is
+				  required to perform this check prior to
+				  processing any command defined in this
+				  specification.
+ * @CXLMI_RET_LOG:                The log page is not supported or not valid.
+ * @CXLMI_RET_INTERRUPTED:        The command could not be successfully completed
+				  because of an asynchronous event.
+ * @CXLMI_RET_FEATUREVERSION:     The Feature version in the input payload is not
+				  supported.
+ * @CXLMI_RET_FEATURESELVALUE:    The selection value in the input payload is not
+				  supported.
+ * @CXLMI_RET_FEATURETRANSFERIP:  Only one Feature data can be transferred at a
+				  time for each Feature. Complete the current
+				  Feature data transfer before starting a new one.
+ * @CXLMI_RET_FEATURETRANSFEROOO: The Feature data transfer was aborted because
+				  the Feature data content was transferred out
+				  of order.
+ * @CXLMI_RET_RESOURCEEXHAUSTED:  The Device cannot perform the operation as
+				  resources are exhausted.
+ * @CXLMI_RET_EXTLIST:            The Dynamic Capacity Extent List contains
+				  invalid starting DPA and length
+ * @CXLMI_RET_TRANSFEROOO:        The input parameters data transfer was aborted
+				  because it occurred out of order.
+ * @CXLMI_RET_NO_BGABORT:         The ongoing background operation does not
+				  support the Request Abort command.
+*/
 enum cxlmi_cmd_retcode {
 	CXLMI_RET_SUCCESS = 0x0,
 	CXLMI_RET_BACKGROUND,
@@ -166,16 +241,14 @@ enum cxlmi_cmd_retcode {
  * cxlmi_cmd_retcode_tostr - Convert a CXL-defined return code to a string
  * @code: &cxlmi_cmd_retcode return code.
  *
+ * Returned string is const, and should not be free()ed.
+ *
  * Return: a string describing the return code, otherwise NULL if undefined.
  */
- const char *cxlmi_cmd_retcode_tostr(uint16_t code);
+const char *cxlmi_cmd_retcode_tostr(enum cxlmi_cmd_retcode code);
 
-/*
- * Definitions for FMAPI (TODO)
- */
-int cxlmi_cmd_identify_switch(struct cxlmi_endpoint *ep,
-			      struct cxlmi_cci_identify_switch *ret);
-	
+
+
 /*
  * Definitions for Generic Component Commands, per CXL r3.1 Table 8-37.
  */

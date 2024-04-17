@@ -6,19 +6,6 @@
 
 #include <linux/types.h>
 
-/*  CXL r3.1 Section 7.6.7.1.1: Identify Switch Device (Opcode 5100h) */
-struct cxlmi_cci_identify_switch {
-	uint8_t ingress_port_id;
-        uint8_t rsvd;
-        uint8_t num_physical_ports;
-        uint8_t num_vcss;
-        uint8_t active_port_bitmask[0x20];
-        uint8_t active_vcs_bitmask[0x20];
-        uint16_t total_vppbs;
-        uint16_t bound_vppbs;
-        uint8_t num_hdm_decoders_per_usp;
-}__attribute__((packed)); 
-
 /* CXL r3.1 Section 8.2.9.1.1: Identify (Opcode 0001h) */
 struct cxlmi_cci_infostat_identify {
 	uint16_t vendor_id;
