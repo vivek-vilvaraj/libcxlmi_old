@@ -670,7 +670,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 		goto free_rsp;
 
 	rsp_pl = (struct cxlmi_cci_identify_memdev *)rsp->payload;
-	ret->total_capacity = le64_to_cpu(rsp_pl->total_capacity);
+	ret->total_capacity =rsp_pl->total_capacity;
 	ret->volatile_capacity = le64_to_cpu(rsp_pl->volatile_capacity);
 	ret->persistent_capacity = le64_to_cpu(rsp_pl->persistent_capacity);
 	ret->partition_align = le64_to_cpu(rsp_pl->partition_align);
