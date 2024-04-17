@@ -378,7 +378,7 @@ static const char *const cxlmi_cmd_retcode_tbl[] = {
 
 CXLMI_EXPORT const char *cxlmi_cmd_retcode_tostr(enum cxlmi_cmd_retcode code)
 {
-	if (code > ARRAY_SIZE(cxlmi_cmd_retcode_tbl))
+	if (code > ARRAY_SIZE(cxlmi_cmd_retcode_tbl) - 1)
 		return NULL;
 
 	return cxlmi_cmd_retcode_tbl[code];
