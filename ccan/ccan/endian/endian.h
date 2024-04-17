@@ -122,6 +122,9 @@ typedef uint32_t ENDIAN_TYPE beint32_t;
 typedef uint16_t ENDIAN_TYPE leint16_t;
 typedef uint16_t ENDIAN_TYPE beint16_t;
 
+/*
+ * TODO: set by meson build
+ */
 #define HAVE_LITTLE_ENDIAN 1
 #if HAVE_LITTLE_ENDIAN
 /**

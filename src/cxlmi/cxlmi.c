@@ -21,7 +21,6 @@
 #include <ccan/endian/endian.h>
 #include <ccan/list/list.h>
 
-/* #include "bswap.h" */
 #include <libcxlmi.h>
 
 #include "private.h"
@@ -673,8 +672,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 	rsp_pl = (struct cxlmi_cci_identify_memdev *)rsp->payload;
 	memcpy(ret->fw_revision, rsp_pl->fw_revision,
 	       sizeof(rsp_pl->fw_revision));
-	printf("wtf::: %ld vs %ld", rsp_pl->total_capacity, le64_to_cpu(rsp_pl->total_capacity));
-	ret->total_capacity = rsp_pl->total_capacity;
+	ret->total_capacity = le64_to_cpu(rsp_pl->total_capacity);
 	ret->volatile_capacity = le64_to_cpu(rsp_pl->volatile_capacity);
 	ret->persistent_capacity = le64_to_cpu(rsp_pl->persistent_capacity);
 	ret->partition_align = le64_to_cpu(rsp_pl->partition_align);
