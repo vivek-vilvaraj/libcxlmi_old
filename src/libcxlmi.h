@@ -171,6 +171,12 @@ enum cxlmi_cmd_retcode {
  const char *cxlmi_cmd_retcode_tostr(uint16_t code);
 
 /*
+ * Definitions for FMAPI (TODO)
+ */
+int cxlmi_cmd_identify_switch(struct cxlmi_endpoint *ep,
+			      struct cxlmi_cci_identify_switch *ret);
+	
+/*
  * Definitions for Generic Component Commands, per CXL r3.1 Table 8-37.
  */
 int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,

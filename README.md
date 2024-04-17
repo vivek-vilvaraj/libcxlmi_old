@@ -156,6 +156,8 @@ A few considerations users should keep in mind when evaluating using this librar
 - The library leaves any and all serialization up to the user - libs should not
 hold locks.
 
+- Library is endianness-aware.
+
 - This library masks many of the protections provided by the OS driver, as such,
 users must provide the correct command(s) to the correct CXL Component. Similarly
 device state may be altered, and therefore users get to keep the pieces.

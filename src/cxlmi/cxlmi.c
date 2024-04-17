@@ -415,7 +415,7 @@ CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc) {
-		goto free_rsp;
+		goto done;
 	}
 
 	rsp_pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
@@ -427,7 +427,7 @@ CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 	ret->serial_num = le64_to_cpu(rsp_pl->serial_num);
 	ret->max_msg_size = rsp_pl->max_msg_size;
 	ret->component_type = rsp_pl->component_type;
-free_rsp:
+done:
 	free(rsp);
 	return rc;
 }
@@ -455,14 +455,14 @@ CXLMI_EXPORT int cxlmi_cmd_infostat_bg_op_status(struct cxlmi_endpoint *ep,
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
-		goto free_rsp;
+		goto done;
 
-	rsp_pl = (void  *)(rsp->payload);
+	rsp_pl = (struct cxlmi_cci_infostat_bg_op_status *)rsp->payload;
 	ret->status = rsp_pl->status;
 	ret->opcode = le16_to_cpu(rsp_pl->opcode);
 	ret->returncode = le16_to_cpu(rsp_pl->returncode);
 	ret->vendor_ext_status = le16_to_cpu(rsp_pl->vendor_ext_status);
-free_rsp:
+done:
 	free(rsp);
 	return rc;
 }
@@ -517,11 +517,11 @@ int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
-		goto free_rsp;
+		goto done;
 
-	rsp_pl = (void  *)(rsp->payload);
+	rsp_pl = (struct cxlmi_cci_get_timestamp *)rsp->payload;
 	ret->timestamp = le64_to_cpu(rsp_pl->timestamp);
-free_rsp:
+done:
 	free(rsp);
 	return rc;
 }
@@ -552,7 +552,7 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 			[2] = (sizeof(*req_pl) >> 16) & 0xff,
 		},
 	};
-	req_pl = (void *)req->payload;
+	req_pl = (struct cxlmi_cci_set_timestamp *)req->payload;
 	req_pl->timestamp = cpu_to_le64(in->timestamp);
 
 	printf("from lib: %ld\n", req_pl->timestamp);
@@ -560,12 +560,12 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	rsp_sz = sizeof(*rsp);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
-		goto free_req;
+		goto done;
 
 	rc = send_cmd_cci(ep, req, req_sz, rsp, rsp_sz, rsp_sz);
 
 	free(rsp);
-free_req:
+done:
 	free(req);
 	return rc;
 }
@@ -596,7 +596,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz,
 			  sizeof(*rsp) + sizeof(*pl));
 	if (rc)
-		goto free_rsp;
+		goto done;
 
 	pl = (void *)rsp->payload;
 	ret->num_supported_log_entries = pl->num_supported_log_entries;
@@ -604,7 +604,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 		ret->entries[i] = pl->entries[i];
 	}
 
-free_rsp:
+done:
 	free(rsp);
 	return rc;
 }
@@ -633,7 +633,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
-		goto free_rsp;
+		goto done;
 
 	rsp_pl = (struct cxlmi_cci_identify_memdev *)rsp->payload;
 
@@ -648,12 +648,56 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 	ret->failure_event_log_size = le16_to_cpu(rsp_pl->failure_event_log_size);
 	ret->fatal_event_log_size = le16_to_cpu(rsp_pl->fatal_event_log_size);
 	ret->lsa_size = le32_to_cpu(rsp_pl->lsa_size);
-	/* ret->poison_list_max_mer = get_unaligned_le24(rsp_pl->poison_list_max_mer); */
+	/* TODO unaligned endianness ie: get_unaligned_le24(rsp_pl->poison_list_max_mer); */
+	memcpy(ret->poison_list_max_mer, rsp_pl->poison_list_max_mer,
+	       sizeof(rsp_pl->poison_list_max_mer));
 	ret->inject_poison_limit = le16_to_cpu(rsp_pl->inject_poison_limit);
 	ret->poison_caps = rsp_pl->poison_caps;
 	ret->qos_telemetry_caps = rsp_pl->qos_telemetry_caps;
 	ret->dc_event_log_size = le16_to_cpu(rsp_pl->dc_event_log_size);
-free_rsp:
+done:
+	free(rsp);
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_identify_switch(struct cxlmi_endpoint *ep,
+				     struct cxlmi_cci_identify_switch *ret)
+{
+	int rc;
+	ssize_t rsp_sz;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct cxlmi_cci_identify_switch *rsp_pl;
+	struct cxlmi_cci_msg *rsp;
+	struct cxlmi_cci_msg req = (struct cxlmi_cci_msg) {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = IDENTIFY_SWITCH_DEVICE,
+		.command_set = PHYSICAL_SWITCH,
+		.vendor_ext_status = 0xabcd,
+	};
+
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	if (rc)
+		goto done;
+
+	rsp_pl = (struct cxlmi_cci_identify_switch *)rsp->payload;
+
+	ret->ingress_port_id = rsp_pl->ingress_port_id;
+	ret->num_physical_ports = rsp_pl->num_physical_ports;
+	ret->num_vcss = rsp_pl->num_vcss;
+	memcpy(ret->active_port_bitmask, rsp_pl->active_port_bitmask,
+	       sizeof(rsp_pl->active_port_bitmask));
+	memcpy(ret->active_vcs_bitmask, rsp_pl->active_vcs_bitmask,
+	       sizeof(rsp_pl->active_vcs_bitmask));
+	ret->total_vppbs = le16_to_cpu(rsp_pl->total_vppbs);
+	ret->bound_vppbs = le16_to_cpu(rsp_pl->bound_vppbs);
+	ret->num_hdm_decoders_per_usp = rsp_pl->num_hdm_decoders_per_usp;
+done:
 	free(rsp);
 	return rc;
 }
