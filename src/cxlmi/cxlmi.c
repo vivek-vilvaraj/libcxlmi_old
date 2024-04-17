@@ -670,13 +670,15 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 		goto free_rsp;
 
 	rsp_pl = (struct cxlmi_cci_identify_memdev *)rsp->payload;
-	ret->total_capacity =rsp_pl->total_capacity;
+	memcpy(ret->fw_revision, rsp_pl->fw_revision,
+	       sizeof(rsp_pl->fw_revision));
+	printf("wtf::: %ld vs %ld", rsp_pl->total_capacity, le64_to_cpu(rsp_pl->total_capacity));
+	ret->total_capacity = rsp_pl->total_capacity;
 	ret->volatile_capacity = le64_to_cpu(rsp_pl->volatile_capacity);
 	ret->persistent_capacity = le64_to_cpu(rsp_pl->persistent_capacity);
 	ret->partition_align = le64_to_cpu(rsp_pl->partition_align);
 	ret->lsa_size = le32_to_cpu(rsp_pl->lsa_size);
-	memcpy(ret->fw_revision, rsp_pl->fw_revision,
-	       sizeof(rsp_pl->fw_revision));
+
 free_rsp:
 	free(rsp);
 	return rc;
