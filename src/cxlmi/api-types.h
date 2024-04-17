@@ -12,8 +12,8 @@ struct cxlmi_cci_infostat_identify {
 	uint16_t device_id;
 	uint16_t subsys_vendor_id;
 	uint16_t subsys_id;
-	uint8_t serial_num[8];
-	uint8_t max_msg;
+	uint64_t serial_num;
+	uint8_t max_msg_size;
 	uint8_t component_type;
 } __attribute__((packed));
 

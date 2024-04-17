@@ -418,14 +418,14 @@ CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 		goto free_rsp;
 	}
 
-	rsp_pl = (void *)rsp->payload;
+	rsp_pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
 
 	ret->vendor_id = le16_to_cpu(rsp_pl->vendor_id);
 	ret->device_id = le16_to_cpu(rsp_pl->device_id);
 	ret->subsys_vendor_id = le16_to_cpu(rsp_pl->subsys_vendor_id);
 	ret->subsys_id = le16_to_cpu(rsp_pl->subsys_id);
-	memcpy(ret->serial_num, rsp_pl->serial_num, sizeof(rsp_pl->serial_num));
-	ret->max_msg = rsp_pl->max_msg;
+	ret->serial_num = le64_to_cpu(rsp_pl->serial_num);
+	ret->max_msg_size = rsp_pl->max_msg_size;
 	ret->component_type = rsp_pl->component_type;
 free_rsp:
 	free(rsp);
@@ -555,7 +555,7 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	req_pl = (void *)req->payload;
 	req_pl->timestamp = cpu_to_le64(in->timestamp);
 
-	printf("from app: %ld\n", req_pl->timestamp);
+	printf("from lib: %ld\n", req_pl->timestamp);
 
 	rsp_sz = sizeof(*rsp);
 	rsp = calloc(1, rsp_sz);
