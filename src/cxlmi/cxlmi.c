@@ -364,7 +364,7 @@ static const char *const cxlmi_cmd_retcode_tbl[] = {
 	[CXLMI_RET_PASSPHRASE] = "phrase doesn't match current set passphrase",
 	[CXLMI_RET_MBUNSUPPORTED] = "unsupported on the mailbox it was issued on",
 	[CXLMI_RET_PAYLOADLEN] = "invalid payload length",
-	[CXLMI_RET_LOG] = "nvalid or unsupported log page",
+	[CXLMI_RET_LOG] = "invalid or unsupported log page",
 	[CXLMI_RET_INTERRUPTED] = "asynchronous event occured",
 	[CXLMI_RET_FEATUREVERSION] = "unsupported feature version",
 	[CXLMI_RET_FEATURESELVALUE] = "unsupported feature selection value",
@@ -417,9 +417,8 @@ CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 		return -1;
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc) {
+	if (rc)
 		goto done;
-	}
 
 	rsp_pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
 
@@ -659,6 +658,31 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 	ret->qos_telemetry_caps = rsp_pl->qos_telemetry_caps;
 	ret->dc_event_log_size = le16_to_cpu(rsp_pl->dc_event_log_size);
 done:
+	free(rsp);
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep)
+{
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct cxlmi_cci_msg *rsp;
+	struct cxlmi_cci_msg req = {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = SANITIZE,
+		.command_set = SANITIZE,
+		.vendor_ext_status = 0xabcd,
+	};
+	int rc;
+	ssize_t rsp_sz;
+
+	rsp_sz = sizeof(*rsp);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+
 	free(rsp);
 	return rc;
 }

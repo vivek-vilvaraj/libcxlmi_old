@@ -38,7 +38,7 @@ enum {
 	#define GET_LSA       0x2
 	#define SET_LSA       0x3
     SANITIZE    = 0x44,
-	#define OVERWRITE     0x0
+	#define SANITIZE      0x0
 	#define SECURE_ERASE  0x1
     PERSISTENT_MEM = 0x45,
 	#define GET_SECURITY_STATE     0x0

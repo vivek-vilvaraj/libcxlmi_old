@@ -76,8 +76,17 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 		goto done;
 
 	if (!(sts.status & (1 << 0))) {
-		printf("no background operation in progress\n");
-		return 0;
+		printf("no background operation in progress...\n");
+
+		rc = cxlmi_cmd_memdev_sanitize(ep);
+		if (rc && rc != CXLMI_RET_BACKGROUND) {
+			printf("could not start sanitize: %s\n",
+			       cxlmi_cmd_retcode_tostr(rc));;
+			goto done;
+		} else {
+			printf("sanitizing op started\n");
+			sleep(1);
+		}
 	}
 
 	rc = cxlmi_cmd_infostat_request_bg_op_abort(ep);
@@ -171,7 +180,7 @@ int main(int argc, char **argv)
 
 	rc = play_with_device_timestamp(ep);
 
-	/* rc = toggle_abort(ep); */
+	rc = toggle_abort(ep);
 
 	cxlmi_close(ep);
 exit_free_ctx:
