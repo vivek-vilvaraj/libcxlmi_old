@@ -392,50 +392,6 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
 	return ep ? list_next(&m->endpoints, ep, entry) : NULL;
 }
 
-/* #define DECLARE_CMD_PLOUT(cmdset, cmd, outtype)				\ */
-/* CXLMI_EXPORT								\ */
-/* int cxlmi_cmd_##cmdset_##cmd(struct cxlmi_endpoint *ep,			\ */
-/*			     typeof(outtype *) ret)			\ */
-/* {									\ */
-/*	int rc;                                                         \ */
-/*	struct cxlmi_transport_mctp *mctp = ep->transport_data;         \ */
-/*	ssize_t rsp_sz;							\ */
-/*	typeof(ret) rsp_pl;						\ */
-/*	struct cxlmi_cci_msg *rsp;					\ */
-/*	struct cxlmi_cci_msg req = {					\ */
-/*		.category = CXL_MCTP_CATEGORY_REQ,                      \ */
-/*		.tag = mctp->tag++,                                     \ */
-/*		.command = (cmd),					\ */
-/*		.command_set = (cmdset),				\ */
-/*		.vendor_ext_status = 0xabcd,                            \ */
-/*	};                                                              \ */
-/*									\ */
-/*	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);			\ */
-/*	rsp = calloc(1, rsp_sz);					\ */
-/*	if (!rsp)							\ */
-/*		return -1;						\ */
-/*									\ */
-/*	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);	\ */
-/*	if (rc) {							\ */
-/*		if (rsp->return_code)					\ */
-/*			rc = rsp->return_code;				\ */
-/*		goto free_rsp;						\ */
-/*	}								\ */
-/*									\ */
-/*	rsp_pl = (typeof(ret))rsp->payload;				\ */
-/*	*ret = *rsp_pl;							\ */
-/* free_rsp:								\ */
-/*	free(rsp);							\ */
-/*	return rc;							\ */
-/* } */
-
-/* DECLARE_CMD_PLOUT(infostat, is_identify, struct cxlmi_cci_infostat_identify); */
-/* DECLARE_CMD_PLOUT(timestamp, get, struct cxlmi_cci_get_timestamp); */
-
-/* #define DECLARE_CMD_PLIN(cmdset, cmd) */
-/* #define DECLARE_CMD_PLIN_PLOUT(cmdset, cmd) */
-/* #define DECLARE_CMD_PLNONE(cmdset, cmd) */
-
 CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 				     struct cxlmi_cci_infostat_identify *ret)
 {
@@ -463,8 +419,77 @@ CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
 	}
 
 	rsp_pl = (void *)rsp->payload;
-	*ret = *rsp_pl;
+
+	ret->vendor_id = le16_to_cpu(rsp_pl->vendor_id);
+	ret->device_id = le16_to_cpu(rsp_pl->device_id);
+	ret->subsys_vendor_id = le16_to_cpu(rsp_pl->subsys_vendor_id);
+	ret->subsys_id = le16_to_cpu(rsp_pl->subsys_id);
+	memcpy(ret->serial_num, rsp_pl->serial_num, sizeof(rsp_pl->serial_num));
+	ret->max_msg = rsp_pl->max_msg;
+	ret->component_type = rsp_pl->component_type;
 free_rsp:
+	free(rsp);
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_infostat_bg_op_status(struct cxlmi_endpoint *ep,
+				struct cxlmi_cci_infostat_bg_op_status *ret)
+{
+	struct cxlmi_cci_infostat_bg_op_status *rsp_pl;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	int rc;
+	ssize_t rsp_sz;
+	struct cxlmi_cci_msg *rsp;
+	struct cxlmi_cci_msg req = {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = BACKGROUND_OPERATION_STATUS,
+		.command_set = INFOSTAT,
+		.vendor_ext_status = 0xabcd,
+	};
+
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	if (rc)
+		goto free_rsp;
+
+	rsp_pl = (void  *)(rsp->payload);
+	ret->status = rsp_pl->status;
+	ret->opcode = le16_to_cpu(rsp_pl->opcode);
+	ret->returncode = le16_to_cpu(rsp_pl->returncode);
+	ret->vendor_ext_status = le16_to_cpu(rsp_pl->vendor_ext_status);
+free_rsp:
+	free(rsp);
+	return rc;
+}
+
+
+CXLMI_EXPORT int
+cxlmi_cmd_infostat_request_bg_op_abort(struct cxlmi_endpoint *ep)
+{
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	int rc;
+	ssize_t rsp_sz;
+	struct cxlmi_cci_msg *rsp;
+	struct cxlmi_cci_msg req = {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = BACKGROUND_OPERATION_ABORT,
+		.command_set = INFOSTAT,
+		.vendor_ext_status = 0xabcd,
+	};
+
+	rsp_sz = sizeof(*rsp);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+
 	free(rsp);
 	return rc;
 }
@@ -545,65 +570,6 @@ free_req:
 	return rc;
 }
 
-CXLMI_EXPORT int cxlmi_cmd_infostat_bg_op_status(struct cxlmi_endpoint *ep,
-				struct cxlmi_cci_infostat_bg_op_status *ret)
-{
-	struct cxlmi_cci_infostat_bg_op_status *rsp_pl;
-	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	int rc;
-	ssize_t rsp_sz;
-	struct cxlmi_cci_msg *rsp;
-	struct cxlmi_cci_msg req = {
-		.category = CXL_MCTP_CATEGORY_REQ,
-		.tag = mctp->tag++,
-		.command = BACKGROUND_OPERATION_STATUS,
-		.command_set = INFOSTAT,
-		.vendor_ext_status = 0xabcd,
-	};
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc)
-		goto free_rsp;
-
-	rsp_pl = (void  *)(rsp->payload);
-	*ret = *rsp_pl;
-free_rsp:
-	free(rsp);
-	return rc;
-}
-
-
-CXLMI_EXPORT int
-cxlmi_cmd_infostat_request_bg_op_abort(struct cxlmi_endpoint *ep)
-{
-	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	int rc;
-	ssize_t rsp_sz;
-	struct cxlmi_cci_msg *rsp;
-	struct cxlmi_cci_msg req = {
-		.category = CXL_MCTP_CATEGORY_REQ,
-		.tag = mctp->tag++,
-		.command = BACKGROUND_OPERATION_ABORT,
-		.command_set = INFOSTAT,
-		.vendor_ext_status = 0xabcd,
-	};
-
-	rsp_sz = sizeof(*rsp);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-
-	free(rsp);
-	return rc;
-}
-
 static const int maxlogs = 10; /* Only 3 in CXL r3.0 but let us leave room */
 CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				      struct cxlmi_cci_get_supported_logs *ret)
@@ -670,14 +636,23 @@ CXLMI_EXPORT int cxlmi_cmd_identify_memdev(struct cxlmi_endpoint *ep,
 		goto free_rsp;
 
 	rsp_pl = (struct cxlmi_cci_identify_memdev *)rsp->payload;
+
 	memcpy(ret->fw_revision, rsp_pl->fw_revision,
 	       sizeof(rsp_pl->fw_revision));
 	ret->total_capacity = le64_to_cpu(rsp_pl->total_capacity);
 	ret->volatile_capacity = le64_to_cpu(rsp_pl->volatile_capacity);
 	ret->persistent_capacity = le64_to_cpu(rsp_pl->persistent_capacity);
 	ret->partition_align = le64_to_cpu(rsp_pl->partition_align);
+	ret->info_event_log_size = le16_to_cpu(rsp_pl->info_event_log_size);
+	ret->warning_event_log_size = le16_to_cpu(rsp_pl->warning_event_log_size);
+	ret->failure_event_log_size = le16_to_cpu(rsp_pl->failure_event_log_size);
+	ret->fatal_event_log_size = le16_to_cpu(rsp_pl->fatal_event_log_size);
 	ret->lsa_size = le32_to_cpu(rsp_pl->lsa_size);
-
+	/* ret->poison_list_max_mer = get_unaligned_le24(rsp_pl->poison_list_max_mer); */
+	ret->inject_poison_limit = le16_to_cpu(rsp_pl->inject_poison_limit);
+	ret->poison_caps = rsp_pl->poison_caps;
+	ret->qos_telemetry_caps = rsp_pl->qos_telemetry_caps;
+	ret->dc_event_log_size = le16_to_cpu(rsp_pl->dc_event_log_size);
 free_rsp:
 	free(rsp);
 	return rc;
