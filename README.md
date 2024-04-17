@@ -88,7 +88,8 @@ command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
    }
    ```
 
-3. Input and output payloads
+3. Input and output payloads - input payloads end with `_req` while output
+data types end with `_rsp`.
 
    ```
    struct cxlmi_cci_get_log_req in = {
@@ -96,11 +97,11 @@ command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
 	   .length = cel_size;
 	   .uuid = cel_uuid;
    } ;
-   struct cxlmi_cci_get_log_rsp ret;
+   struct cxlmi_cci_get_log_cel_rsp ret;
 
    err = cxlmi_cmd_get_log(ep, &in, &ret);
    if (err == 0) {
-	   /* do something with ret. */
+	   /* do something with ret.opcode */
    }
    ```
 

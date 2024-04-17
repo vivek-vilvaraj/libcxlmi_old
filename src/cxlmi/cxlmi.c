@@ -615,7 +615,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 		.command_set = LOGS,
 		.vendor_ext_status = 0xabcd,
 	};
-	int rc, i, j;
+	int rc, i;
 	ssize_t rsp_sz;
 
 	rsp_sz = sizeof(*rsp) + sizeof(*pl) + maxlogs * sizeof(*pl->entries);
@@ -634,6 +634,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	for (i = 0; i < pl->num_supported_log_entries; i++) {
 		ret->entries[i] = pl->entries[i];
 	}
+
 free_rsp:
 	free(rsp);
 	return rc;
