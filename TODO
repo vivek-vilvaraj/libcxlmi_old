@@ -1,7 +1,11 @@
+Pending features before a first release.
+
 - Add all commands as of latest CXL Spec.
-- Implement missing commands to qemu.
 - Add unit tests.
 - More examples.
-- Support vendor-specific commands.
 - Support FMAPI.
 - Support raw commands via ioctl interface.
+
+Others:
+- Implement missing commands to qemu.
+- Support vendor-specific commands.
