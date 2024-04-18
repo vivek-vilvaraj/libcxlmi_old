@@ -209,7 +209,7 @@ static int show_cel(struct cxlmi_endpoint *ep, int cel_size)
 	struct cxlmi_cci_get_log_cel_rsp *ret;
 	int i, rc;
 
-        ret = calloc(1, sizeof(*ret) + cel_size);
+	ret = calloc(1, sizeof(*ret) + cel_size);
 	if (!ret)
 		return -1;
 
@@ -229,7 +229,6 @@ static int show_cel(struct cxlmi_endpoint *ep, int cel_size)
 		       ret[i].command_effect & 0x40 ? "BgOp" : "",
 		       ret[i].command_effect & 0x80 ? "SecSup" : "");
 	}
-
 done:
 	free(ret);
 	return rc;
@@ -254,7 +253,7 @@ static int get_device_logs(struct cxlmi_endpoint *ep)
 		return rc;
 	else {
 		/* we know there is a CEL */
-		show_cel(ep, cel_size);
+		rc = show_cel(ep, cel_size);
 	}
 
 	free(gsl);
