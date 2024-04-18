@@ -9,7 +9,6 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
 #include <linux/types.h>
 
 /* #if HAVE_LINUX_MCTP_H */
@@ -555,10 +554,8 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 		},
 	};
 	req_pl = (struct cxlmi_cci_set_timestamp *)req->payload;
+
 	req_pl->timestamp = cpu_to_le64(in->timestamp);
-
-	printf("from lib: %ld\n", req_pl->timestamp);
-
 	rsp_sz = sizeof(*rsp);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
@@ -577,7 +574,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				      struct cxlmi_cci_get_supported_logs *ret)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	struct cxlmi_cci_get_supported_logs *pl;
+	struct cxlmi_cci_get_supported_logs *rsp_pl;
 	struct cxlmi_cci_msg *rsp;
 	struct cxlmi_cci_msg req = {
 		.category = CXL_MCTP_CATEGORY_REQ,
@@ -589,23 +586,29 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	int rc, i;
 	ssize_t rsp_sz;
 
-	rsp_sz = sizeof(*rsp) + sizeof(*pl) + maxlogs * sizeof(*pl->entries);
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) + maxlogs * sizeof(*rsp_pl->entries);
 
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
 		return -1;
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz,
-			  sizeof(*rsp) + sizeof(*pl));
+			  sizeof(*rsp) + sizeof(*rsp_pl));
 	if (rc)
 		goto done;
 
-	pl = (void *)rsp->payload;
-	ret->num_supported_log_entries = pl->num_supported_log_entries;
-	for (i = 0; i < pl->num_supported_log_entries; i++) {
-		ret->entries[i] = pl->entries[i];
-	}
+	rsp_pl = (struct cxlmi_cci_get_supported_logs *)rsp->payload;
+	memset(ret, 0, sizeof(*ret));
 
+	ret->num_supported_log_entries =
+		le16_to_cpu(rsp_pl->num_supported_log_entries);
+
+	for (i = 0; i < rsp_pl->num_supported_log_entries; i++) {
+		memcpy(ret->entries[i].uuid, rsp_pl->entries[i].uuid,
+		       sizeof(rsp_pl->entries[i].uuid));
+		ret->entries[i].log_size =
+			le32_to_cpu(rsp_pl->entries[i].log_size);
+	}
 done:
 	free(rsp);
 	return rc;
@@ -638,6 +641,7 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 		goto done;
 
 	rsp_pl = (struct cxlmi_cci_identify_memdev *)rsp->payload;
+	memset(ret, 0, sizeof(*ret));
 
 	memcpy(ret->fw_revision, rsp_pl->fw_revision,
 	       sizeof(rsp_pl->fw_revision));
