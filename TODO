@@ -4,4 +4,4 @@
 - More examples.
 - Support vendor-specific commands.
 - Support FMAPI.
-- Support RAW ioctl interface.
+- Support raw commands via ioctl interface.
