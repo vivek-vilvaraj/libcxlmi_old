@@ -67,7 +67,7 @@ API for sending commands is very ad-hoc to the CXL specification, including
 payload input and output. As such, the user is expected to know what to look
 for in each case, accessing particular structure members, for example.
 
-Functions for each command have a `cxlmi_cmd_[memdev|fmapi]_<cmdname>` format.
+Functions for each command have a `cxlmi_cmd_[memdev|fmapi_]<cmdname>` format.
 Where `memdev`and `fmapi` (not implemented) depends if the command is from the
 respective command set, otherwise the command belongs to the Generic Component
 set.
