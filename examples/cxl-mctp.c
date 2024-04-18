@@ -299,7 +299,7 @@ int main(int argc, char **argv)
 
 	rc = get_device_logs(ep);
 
-	rc = toggle_abort(ep);
+	/* rc = toggle_abort(ep); */
 
 	cxlmi_close(ep);
 exit_free_ctx:

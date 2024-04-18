@@ -657,7 +657,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 
 	rc = send_cmd_cci(ep, req, req_sz, rsp, rsp_sz, rsp_sz);
 	if (rc)
-		goto done;
+		goto done_free;
 
 	rsp_pl = (struct cxlmi_cci_get_log_cel_rsp *)rsp->payload;
 	memset(ret, 0, sizeof(*ret));
@@ -667,7 +667,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 		ret[i].command_effect =
 			le16_to_cpu(rsp_pl[i].command_effect);
 	}
-done:
+done_free:
 	free(rsp);
 done_free_req:
 	free(req);
