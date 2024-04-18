@@ -268,6 +268,9 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 
 int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				 struct cxlmi_cci_get_supported_logs *ret);
+int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
+			  struct cxlmi_cci_get_log *in,
+			  struct cxlmi_cci_get_log_cel_rsp *ret);
 
 /*
  * Definitions for Memory Device Commands, per CXL r3.1 Table 8-126.

@@ -135,43 +135,44 @@ static int sanity_check_rsp(struct cxlmi_endpoint *ep,
 			    size_t len, bool fixed_length, size_t min_length)
 {
 	uint32_t pl_length;
+	struct cxlmi_ctx *ctx = ep->ctx;
 
 	if (len < sizeof(rsp)) {
-		printf( "Too short to read error code\n");
+		cxlmi_msg(ctx, LOG_ERR, "Too short to read error code\n");
 		return -1;
 	}
 
 	if (rsp->category != CXL_MCTP_CATEGORY_RSP) {
-		printf( "Message not a response\n");
+		cxlmi_msg(ctx, LOG_ERR, "Message not a response\n");
 		return -1;
 	}
 	if (rsp->tag != req->tag) {
-		printf( "Reply has wrong tag %d %d\n",
+		cxlmi_msg(ctx, LOG_ERR, "Reply has wrong tag %d %d\n",
 			  rsp->tag, req->tag);
 		return -1;
 	}
 	if ((rsp->command != req->command) ||
 	    (rsp->command_set != req->command_set)) {
-		printf( "Response to wrong command\n");
+		cxlmi_msg(ctx, LOG_ERR, "Response to wrong command\n");
 		return -1;
 	}
 
 	if (rsp->return_code != 0) {
-		printf( "Error code in response %d\n",
+		cxlmi_msg(ctx, LOG_ERR, "Error code in response %d\n",
 			  rsp->return_code);
 		return rsp->return_code;
 	}
 
 	if (fixed_length) {
 		if (len != min_length) {
-			printf(
+			cxlmi_msg(ctx, LOG_ERR,
 				  "Not expected fixed length of response. %ld %ld\n",
 				  len, min_length);
 			return -1;
 		}
 	} else {
 		if (len < min_length) {
-			printf(
+			cxlmi_msg(ctx, LOG_ERR,
 				  "Not expected minimum length of response\n");
 			return -1;
 		}
@@ -179,7 +180,7 @@ static int sanity_check_rsp(struct cxlmi_endpoint *ep,
 	pl_length = rsp->pl_length[0] | (rsp->pl_length[1] << 8) |
 		((rsp->pl_length[2] & 0xf) << 16);
 	if (len - sizeof(*rsp) != pl_length) {
-		printf(
+		cxlmi_msg(ctx, LOG_ERR,
 			"Payload length not matching expected part of full message %ld %d\n",
 			  len - sizeof(*rsp), pl_length);
 		return -1;
@@ -556,6 +557,7 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	req_pl = (struct cxlmi_cci_set_timestamp *)req->payload;
 
 	req_pl->timestamp = cpu_to_le64(in->timestamp);
+
 	rsp_sz = sizeof(*rsp);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
@@ -611,6 +613,64 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	}
 done:
 	free(rsp);
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
+				       struct cxlmi_cci_get_log *in,
+				       struct cxlmi_cci_get_log_cel_rsp *ret)
+{
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct cxlmi_cci_get_log *req_pl;
+	struct cxlmi_cci_get_log_cel_rsp *rsp_pl;
+	struct cxlmi_cci_msg *req, *rsp;
+	ssize_t req_sz, rsp_sz;
+	int i, rc = -1;
+
+	req_sz = sizeof(*req) + sizeof(*in);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	*req = (struct cxlmi_cci_msg) {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = GET_LOG,
+		.command_set = LOGS,
+		.vendor_ext_status = 0xabcd,
+		.pl_length = {
+			[0] = sizeof(*req_pl) & 0xff,
+			[1] = (sizeof(*req_pl) >> 8) & 0xff,
+			[2] = (sizeof(*req_pl) >> 16) & 0xff,
+		},
+	};
+	req_pl = (struct cxlmi_cci_get_log *)req->payload;
+
+	req_pl->offset = cpu_to_le32(in->offset);
+	req_pl->length = cpu_to_le32(in->length);
+	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
+
+	rsp_sz = sizeof(*rsp) + in->length;
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		goto done_free_req;
+
+	rc = send_cmd_cci(ep, req, req_sz, rsp, rsp_sz, rsp_sz);
+	if (rc)
+		goto done;
+
+	rsp_pl = (struct cxlmi_cci_get_log_cel_rsp *)rsp->payload;
+	memset(ret, 0, sizeof(*ret));
+
+	for (i = 0; i < in->length / sizeof(*rsp_pl); i++) {
+		ret[i].opcode = le16_to_cpu(rsp_pl[i].opcode);
+		ret[i].command_effect =
+			le16_to_cpu(rsp_pl[i].command_effect);
+	}
+done:
+	free(rsp);
+done_free_req:
+	free(req);
 	return rc;
 }
 

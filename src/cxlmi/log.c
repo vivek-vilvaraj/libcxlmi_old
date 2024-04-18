@@ -66,10 +66,6 @@ __cxlmi_msg(struct cxlmi_ctx *c, int lvl,
 	} else
 		*timebuf = '\0';
 
-	/* if (c && c->log_pid) { */
-	/*	snprintf(pidbuf, sizeof(pidbuf), "%ld", (long)getpid()); */
-	/*	idx |= 1 << 1; */
-	/* } else */
 	*pidbuf = '\0';
 
 	if (func)
