@@ -255,28 +255,28 @@ const char *cxlmi_cmd_retcode_tostr(enum cxlmi_cmd_retcode code);
  * Definitions for Generic Component Commands, per CXL r3.1 Table 8-37.
  */
 int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
-		       struct cxlmi_cci_infostat_identify *ret);
+		       struct cxlmi_cmd_identify *ret);
 
 int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
-			    struct cxlmi_cci_infostat_bg_op_status *ret);
+			   struct cxlmi_cmd_bg_op_status *ret);
 int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep);
 
 int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
-			    struct cxlmi_cci_get_timestamp *ret);
+			    struct cxlmi_cmd_get_timestamp *ret);
 int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
-			    struct cxlmi_cci_set_timestamp *in);
+			    struct cxlmi_cmd_set_timestamp *in);
 
 int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
-				 struct cxlmi_cci_get_supported_logs *ret);
+				 struct cxlmi_cmd_get_supported_logs *ret);
 int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
-			  struct cxlmi_cci_get_log *in,
-			  struct cxlmi_cci_get_log_cel_rsp *ret);
+			  struct cxlmi_cmd_get_log *in,
+			  struct cxlmi_cmd_get_log_cel_rsp *ret);
 
 /*
  * Definitions for Memory Device Commands, per CXL r3.1 Table 8-126.
  */
 int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
-			      struct cxlmi_cci_identify_memdev *ret);
+			      struct cxlmi_cmd_memdev_identify *ret);
 int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep);
 
 

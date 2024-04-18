@@ -10,7 +10,7 @@
 static int show_memdev_info(struct cxlmi_endpoint *ep)
 {
 	int rc;
-	struct cxlmi_cci_identify_memdev id;
+	struct cxlmi_cmd_memdev_identify id;
 
 	rc = cxlmi_cmd_memdev_identify(ep, &id);
 	if (rc)
@@ -34,7 +34,7 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 	struct cxlmi_endpoint *ep;
 
 	cxlmi_for_each_endpoint(ctx, ep) {
-		struct cxlmi_cci_infostat_identify id;
+		struct cxlmi_cmd_identify id;
 
 		rc = cxlmi_cmd_identify(ep, &id);
 		if (rc)
@@ -69,7 +69,7 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 static int toggle_abort(struct cxlmi_endpoint *ep)
 {
 	int rc;
-	struct cxlmi_cci_infostat_bg_op_status sts;
+	struct cxlmi_cmd_bg_op_status sts;
 
 	rc = cxlmi_cmd_bg_op_status(ep, &sts);
 	if (rc)
@@ -104,8 +104,8 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 {
 	int rc;
 	uint64_t orig_ts;
-	struct cxlmi_cci_get_timestamp get_ts;
-	struct cxlmi_cci_set_timestamp set_ts = {
+	struct cxlmi_cmd_get_timestamp get_ts;
+	struct cxlmi_cmd_set_timestamp set_ts = {
 		.timestamp = 946684800, /* Jan 1, 2000 */
 	};
 
@@ -163,7 +163,7 @@ static const uint8_t c_s_dump[0x10] = { 0xb3, 0xfa, 0xb4, 0xcf,
 					0x5e, 0x99, 0x62, 0xf2, 0x35, 0x67 };
 
 static const int maxlogs = 10; /* Only 7 in CXL r3.1, but let us leave room */
-static int parse_supported_logs(struct cxlmi_cci_get_supported_logs *pl,
+static int parse_supported_logs(struct cxlmi_cmd_get_supported_logs *pl,
 				size_t *cel_size)
 {
 	int i, j;
@@ -202,11 +202,11 @@ static int parse_supported_logs(struct cxlmi_cci_get_supported_logs *pl,
 
 static int show_cel(struct cxlmi_endpoint *ep, int cel_size)
 {
-	struct cxlmi_cci_get_log in = {
+	struct cxlmi_cmd_get_log in = {
 		.offset = 0,
 		.length = cel_size,
 	};
-	struct cxlmi_cci_get_log_cel_rsp *ret;
+	struct cxlmi_cmd_get_log_cel_rsp *ret;
 	int i, rc;
 
 	ret = calloc(1, sizeof(*ret) + cel_size);
@@ -239,7 +239,7 @@ static int get_device_logs(struct cxlmi_endpoint *ep)
 {
 	int rc;
 	size_t cel_size;
-	struct cxlmi_cci_get_supported_logs *gsl;
+	struct cxlmi_cmd_get_supported_logs *gsl;
 
 	gsl = calloc(1, sizeof(*gsl) + maxlogs * sizeof(*gsl->entries));
 	if (!gsl)

@@ -254,7 +254,7 @@ CXLMI_EXPORT void cxlmi_set_probe_enabled(struct cxlmi_ctx *ctx, bool enabled)
 /* probe cxl component for basic device info */
 static void endpoint_probe(struct cxlmi_endpoint *ep)
 {
-	struct cxlmi_cci_infostat_identify id;
+	struct cxlmi_cmd_identify id;
 
 	if (!ep->ctx->probe_enabled)
 		return;
@@ -396,12 +396,12 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
 }
 
 CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
-				    struct cxlmi_cci_infostat_identify *ret)
+				    struct cxlmi_cmd_identify *ret)
 {
 	int rc;
 	ssize_t rsp_sz;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	struct cxlmi_cci_infostat_identify *rsp_pl;
+	struct cxlmi_cmd_identify *rsp_pl;
 	struct cxlmi_cci_msg *rsp;
 	struct cxlmi_cci_msg req = (struct cxlmi_cci_msg) {
 		.category = CXL_MCTP_CATEGORY_REQ,
@@ -420,7 +420,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto done;
 
-	rsp_pl = (struct cxlmi_cci_infostat_identify *)rsp->payload;
+	rsp_pl = (struct cxlmi_cmd_identify *)rsp->payload;
 
 	ret->vendor_id = le16_to_cpu(rsp_pl->vendor_id);
 	ret->device_id = le16_to_cpu(rsp_pl->device_id);
@@ -435,9 +435,9 @@ done:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
-				struct cxlmi_cci_infostat_bg_op_status *ret)
+				struct cxlmi_cmd_bg_op_status *ret)
 {
-	struct cxlmi_cci_infostat_bg_op_status *rsp_pl;
+	struct cxlmi_cmd_bg_op_status *rsp_pl;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	int rc;
 	ssize_t rsp_sz;
@@ -459,7 +459,7 @@ CXLMI_EXPORT int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto done;
 
-	rsp_pl = (struct cxlmi_cci_infostat_bg_op_status *)rsp->payload;
+	rsp_pl = (struct cxlmi_cmd_bg_op_status *)rsp->payload;
 	ret->status = rsp_pl->status;
 	ret->opcode = le16_to_cpu(rsp_pl->opcode);
 	ret->returncode = le16_to_cpu(rsp_pl->returncode);
@@ -497,9 +497,9 @@ cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep)
 }
 
 int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
-			    struct cxlmi_cci_get_timestamp *ret)
+			    struct cxlmi_cmd_get_timestamp *ret)
 {
-	struct cxlmi_cci_get_timestamp *rsp_pl;
+	struct cxlmi_cmd_get_timestamp *rsp_pl;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	int rc;
 	ssize_t rsp_sz;
@@ -521,7 +521,7 @@ int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto done;
 
-	rsp_pl = (struct cxlmi_cci_get_timestamp *)rsp->payload;
+	rsp_pl = (struct cxlmi_cmd_get_timestamp *)rsp->payload;
 	ret->timestamp = le64_to_cpu(rsp_pl->timestamp);
 done:
 	free(rsp);
@@ -529,10 +529,10 @@ done:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
-					 struct cxlmi_cci_set_timestamp *in)
+					 struct cxlmi_cmd_set_timestamp *in)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	struct cxlmi_cci_set_timestamp *req_pl;
+	struct cxlmi_cmd_set_timestamp *req_pl;
 	struct cxlmi_cci_msg *req, *rsp;
 	size_t req_sz, rsp_sz;
 	int rc = 0;
@@ -554,7 +554,7 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 			[2] = (sizeof(*req_pl) >> 16) & 0xff,
 		},
 	};
-	req_pl = (struct cxlmi_cci_set_timestamp *)req->payload;
+	req_pl = (struct cxlmi_cmd_set_timestamp *)req->payload;
 
 	req_pl->timestamp = cpu_to_le64(in->timestamp);
 
@@ -573,10 +573,10 @@ done:
 
 static const int maxlogs = 10; /* Only 3 in CXL r3.0 but let us leave room */
 CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
-				      struct cxlmi_cci_get_supported_logs *ret)
+				      struct cxlmi_cmd_get_supported_logs *ret)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	struct cxlmi_cci_get_supported_logs *rsp_pl;
+	struct cxlmi_cmd_get_supported_logs *rsp_pl;
 	struct cxlmi_cci_msg *rsp;
 	struct cxlmi_cci_msg req = {
 		.category = CXL_MCTP_CATEGORY_REQ,
@@ -599,7 +599,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto done;
 
-	rsp_pl = (struct cxlmi_cci_get_supported_logs *)rsp->payload;
+	rsp_pl = (struct cxlmi_cmd_get_supported_logs *)rsp->payload;
 	memset(ret, 0, sizeof(*ret));
 
 	ret->num_supported_log_entries =
@@ -617,12 +617,12 @@ done:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
-				       struct cxlmi_cci_get_log *in,
-				       struct cxlmi_cci_get_log_cel_rsp *ret)
+				       struct cxlmi_cmd_get_log *in,
+				       struct cxlmi_cmd_get_log_cel_rsp *ret)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	struct cxlmi_cci_get_log *req_pl;
-	struct cxlmi_cci_get_log_cel_rsp *rsp_pl;
+	struct cxlmi_cmd_get_log *req_pl;
+	struct cxlmi_cmd_get_log_cel_rsp *rsp_pl;
 	struct cxlmi_cci_msg *req, *rsp;
 	ssize_t req_sz, rsp_sz;
 	int i, rc = -1;
@@ -644,7 +644,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 			[2] = (sizeof(*req_pl) >> 16) & 0xff,
 		},
 	};
-	req_pl = (struct cxlmi_cci_get_log *)req->payload;
+	req_pl = (struct cxlmi_cmd_get_log *)req->payload;
 
 	req_pl->offset = cpu_to_le32(in->offset);
 	req_pl->length = cpu_to_le32(in->length);
@@ -659,7 +659,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto done_free;
 
-	rsp_pl = (struct cxlmi_cci_get_log_cel_rsp *)rsp->payload;
+	rsp_pl = (struct cxlmi_cmd_get_log_cel_rsp *)rsp->payload;
 	memset(ret, 0, sizeof(*ret));
 
 	for (i = 0; i < in->length / sizeof(*rsp_pl); i++) {
@@ -675,10 +675,10 @@ done_free_req:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
-				   struct cxlmi_cci_identify_memdev *ret)
+				   struct cxlmi_cmd_memdev_identify *ret)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	struct cxlmi_cci_identify_memdev *rsp_pl;
+	struct cxlmi_cmd_memdev_identify *rsp_pl;
 	struct cxlmi_cci_msg *rsp;
 	struct cxlmi_cci_msg req = {
 		.category = CXL_MCTP_CATEGORY_REQ,
@@ -700,7 +700,7 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto done;
 
-	rsp_pl = (struct cxlmi_cci_identify_memdev *)rsp->payload;
+	rsp_pl = (struct cxlmi_cmd_memdev_identify *)rsp->payload;
 	memset(ret, 0, sizeof(*ret));
 
 	memcpy(ret->fw_revision, rsp_pl->fw_revision,

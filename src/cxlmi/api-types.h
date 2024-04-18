@@ -7,7 +7,7 @@
 #include <linux/types.h>
 
 /* CXL r3.1 Section 8.2.9.1.1: Identify (Opcode 0001h) */
-struct cxlmi_cci_infostat_identify {
+struct cxlmi_cmd_identify {
 	uint16_t vendor_id;
 	uint16_t device_id;
 	uint16_t subsys_vendor_id;
@@ -18,7 +18,7 @@ struct cxlmi_cci_infostat_identify {
 } __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.1.2: Background Operation Status (Opcode 0002h) */
-struct cxlmi_cci_infostat_bg_op_status {
+struct cxlmi_cmd_bg_op_status {
 	uint8_t status;
 	uint8_t rsvd;
 	uint16_t opcode;
@@ -27,22 +27,22 @@ struct cxlmi_cci_infostat_bg_op_status {
 }__attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.1.3: Get Response Message Limit (Opcode 0003h) */
-struct cxlmi_cci_get_response_msg_limit {
+struct cxlmi_cmd_get_response_msg_limit {
 	uint8_t limit;
 } __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.1.4: Set Response Message Limit (Opcode 0004h) */
-struct cxlmi_cci_set_response_msg_limit {
+struct cxlmi_cmd_set_response_msg_limit {
 	uint8_t limit;
 } __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.4.1: Get Timestamp (Opcode 0300h) */
-struct cxlmi_cci_get_timestamp {
+struct cxlmi_cmd_get_timestamp {
 	uint64_t timestamp;
 } __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.4.2: Set Timestamp (Opcode 0301h) */
-struct cxlmi_cci_set_timestamp {
+struct cxlmi_cmd_set_timestamp {
 	uint64_t timestamp;
 } __attribute__((packed));
 
@@ -52,26 +52,26 @@ struct cxlmi_supported_log_entry {
 	uint32_t log_size;
 } __attribute__((packed));
 
-struct cxlmi_cci_get_supported_logs {
+struct cxlmi_cmd_get_supported_logs {
 	uint16_t num_supported_log_entries;
 	uint8_t reserved[6];
 	struct cxlmi_supported_log_entry entries[];
 } __attribute__((packed));
 
 /*  CXL r3.1 Section 8.2.9.5.2: Get Log (Opcode 0401h) */
-struct cxlmi_cci_get_log {
+struct cxlmi_cmd_get_log {
 	uint8_t uuid[0x10];
 	uint32_t offset;
 	uint32_t length;
 } __attribute__((packed));
 
-struct cxlmi_cci_get_log_cel_rsp {
+struct cxlmi_cmd_get_log_cel_rsp {
 	uint16_t opcode;
 	uint16_t command_effect;
 } __attribute__((packed));
 
 /*  CXL r3.1 Section 8.2.9.9.1.1: Identify Memory Device (Opcode 4000h) */
-struct cxlmi_cci_identify_memdev {
+struct cxlmi_cmd_memdev_identify {
 	char fw_revision[0x10];
 	uint64_t total_capacity;
 	uint64_t volatile_capacity;

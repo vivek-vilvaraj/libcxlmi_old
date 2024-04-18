@@ -1,6 +1,7 @@
 - Add all commands as of latest CXL Spec.
 - Implement missing commands to qemu.
 - Add unit tests.
+- More examples.
 - Support vendor-specific commands.
 - Support FMAPI.
 - Support RAW ioctl interface.

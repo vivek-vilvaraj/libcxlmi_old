@@ -78,7 +78,7 @@ responses require the user to already provide the output payload buffer.
 1. Input-only payload
 
    ```
-   struct cxlmi_cci_set_timestamp ts = {
+   struct cxlmi_cmd_set_timestamp ts = {
 	  .timestamp = 946684800, /* Jan 1, 2000 */
    };
 
@@ -91,7 +91,7 @@ responses require the user to already provide the output payload buffer.
 2. Output-only payload
 
    ```
-   struct cxlmi_cci_get_timestamp ts;
+   struct cxlmi_cmd_get_timestamp ts;
 
    err = cxlmi_cmd_get_timestamp(ep, &ts);
    if (err == 0) {
@@ -102,11 +102,11 @@ responses require the user to already provide the output payload buffer.
 3. Input and output payloads
 
    ```
-   struct cxlmi_cci_get_log in = {
+   struct cxlmi_cmd_get_log in = {
 	   .offset = 0,
 	   .length = cel_size,
    } ;
-   struct cxlmi_cci_get_log_cel_rsp *ret = calloc(1, cel_size);
+   struct cxlmi_cmd_get_log_cel_rsp *ret = calloc(1, cel_size);
 
    memcpy(in.uuid, cel_uuid, sizeof(in.uuid));
    err = cxlmi_cmd_get_log(ep, &in, ret);
