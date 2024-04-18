@@ -81,7 +81,7 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 		rc = cxlmi_cmd_memdev_sanitize(ep);
 		if (rc && rc != CXLMI_RET_BACKGROUND) {
 			printf("could not start sanitize: %s\n",
-			       cxlmi_cmd_retcode_tostr(rc));;
+			       cxlmi_cmd_retcode_tostr(rc));
 			goto done;
 		} else {
 			printf("sanitizing op started\n");
