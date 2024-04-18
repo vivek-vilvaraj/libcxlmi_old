@@ -10,10 +10,10 @@ mostly be BMC and/or firmware, targeting: Type3 SLD, Type3 MLD (FM owned)
 or a CXL Switch.
 
 CXL Manageability Model defines a CXL device to be the managed entity,
-governed by *sensors* and *effectors* (command) capabilities, depending
-on whether the it affects device state (read-only) or not. These can be
-accessed either in-band or out-of-band. As such, CXL supports various
-management interfaces and interconnects.
+through various command sets, which can have *sensors* or *effectors*
+semantics, depending on whether the it affects device state (read-only)
+or not. These can be accessed either in-band or out-of-band. As such,
+CXL supports various management interfaces and interconnects.
 
 Actual management of CXL components is done through the Component Command
 Interface (CCI), which represents a command, and can be either Mailbox
@@ -25,8 +25,13 @@ equivalent, benefits for OoB management include:
 - Works on any host OS.
 - Does not require an OS (pre-boot).
 
-Abstractions (opaque data structures)
--------------------------------------
+Abstractions
+------------
+
+Unlike the actual CCI commands described below, the library provided
+abstractions (data structures) described here are opaque, and therefore
+members cannot be directly referenced.
+
 - `struct cxlmi_ctx`: library context object - holds general information
 common to all opened/tracked endpoints as well as library settings. Before
 discovery a new context must be created via `cxlmi_new_ctx()`, providing
@@ -59,8 +64,13 @@ taking into account any maximum values defined by the transport. For example,
 for MCTP-based that is 2 seconds.
 
 API for sending commands is very ad-hoc to the CXL specification, including
-payload input and output. As such the user is expected to know what to look
-for in each case. Functions for each command have a `cxlmi_cmd_` prefix.
+payload input and output. As such, the user is expected to know what to look
+for in each case, accessing particular structure members, for example.
+
+Functions for each command have a `cxlmi_cmd_[memdev|fmapi]_<cmdname>` format.
+Where `memdev`and `fmapi` (not implemented) depends if the command is from the
+respective command set, otherwise the command belongs to the Generic Component
+set.
 
 Simple payloads can use stack-allocated input variables, while more complex
 responses require the user to already provide the output payload buffer.
@@ -94,7 +104,7 @@ responses require the user to already provide the output payload buffer.
    ```
    struct cxlmi_cci_get_log in = {
 	   .offset = 0,
-	   .length = cel_size;
+	   .length = cel_size,
    } ;
    struct cxlmi_cci_get_log_cel_rsp *ret = calloc(1, cel_size);
 
@@ -122,7 +132,7 @@ which can be translated to a string with `cxlmi_cmd_retcode_to_str()`.
 Upon error, the return payload is undefined and should be considered invalid.
 
    ```
-   err = cxlmi_cmd_infostat_identify(ep, &ret);
+   err = cxlmi_cmd_identify(ep, &ret);
    if (err) {
 	   if (err > 0)
 		   fprintf(stderr, "%s", cxlmi_cmd_retcode_to_str(err));
@@ -135,7 +145,7 @@ which is considered a successful return value. The user must ensure to
 verify, when appropriate, against the `CXLMI_RET_BACKGROUND` value.
 
    ```
-   err = cxlmi_cmd_sanitize(ep);
+   err = cxlmi_cmd_memdev_sanitize(ep);
    if (err && err != CXLMI_RET_BACKGROUND) {
 	   if (err > 0)
 		   fprintf(stderr, "%s", cxlmi_cmd_retcode_to_str(err));

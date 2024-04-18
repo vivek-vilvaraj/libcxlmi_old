@@ -5,8 +5,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
+#include <sys/socket.h>
 #include <sys/types.h>
+#include <linux/types.h>
+
+#include <linux/mctp.h>
 
 #include <ccan/list/list.h>
 
@@ -17,6 +20,8 @@ enum {
     INFOSTAT    = 0x00,
 	#define IS_IDENTIFY   0x1
 	#define BACKGROUND_OPERATION_STATUS    0x2
+	#define GET_RESP_MSG_LIMIT             003
+	#define SET_RSP_MSG_LIMIT              0x4
 	#define BACKGROUND_OPERATION_ABORT     0x5
     EVENTS      = 0x01,
 	#define GET_RECORDS     0x0
@@ -31,6 +36,10 @@ enum {
     LOGS        = 0x04,
 	#define GET_SUPPORTED 0x0
 	#define GET_LOG       0x1
+	#define GET_LOG_CAPS  0x2
+	#define CLEAR_LOG     0x3
+	#define POPULATE_LOG  0x4
+	#define GET_SUPPORTED_SUBULIST 0x5
     IDENTIFY    = 0x40,
 	#define MEMORY_DEVICE 0x0
     CCLS        = 0x41,

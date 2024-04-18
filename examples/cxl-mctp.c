@@ -36,7 +36,7 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 	cxlmi_for_each_endpoint(ctx, ep) {
 		struct cxlmi_cci_infostat_identify id;
 
-		rc = cxlmi_cmd_infostat_identify(ep, &id);
+		rc = cxlmi_cmd_identify(ep, &id);
 		if (rc)
 			break;
 
@@ -71,7 +71,7 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 	int rc;
 	struct cxlmi_cci_infostat_bg_op_status sts;
 
-	rc = cxlmi_cmd_infostat_bg_op_status(ep, &sts);
+	rc = cxlmi_cmd_bg_op_status(ep, &sts);
 	if (rc)
 		goto done;
 
@@ -89,7 +89,7 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 		}
 	}
 
-	rc = cxlmi_cmd_infostat_request_bg_op_abort(ep);
+	rc = cxlmi_cmd_request_bg_op_abort(ep);
 	if (rc) {
 		if (rc > 0)
 			printf("request_bg_operation_abort error: %s\n",

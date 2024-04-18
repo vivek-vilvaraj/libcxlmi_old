@@ -259,7 +259,7 @@ static void endpoint_probe(struct cxlmi_endpoint *ep)
 	if (!ep->ctx->probe_enabled)
 		return;
 
-	if (cxlmi_cmd_infostat_identify(ep, &id))
+	if (cxlmi_cmd_identify(ep, &id))
 		return;
 
 	switch (id.component_type) {
@@ -395,8 +395,8 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
 	return ep ? list_next(&m->endpoints, ep, entry) : NULL;
 }
 
-CXLMI_EXPORT int cxlmi_cmd_infostat_identify(struct cxlmi_endpoint *ep,
-				     struct cxlmi_cci_infostat_identify *ret)
+CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
+				    struct cxlmi_cci_infostat_identify *ret)
 {
 	int rc;
 	ssize_t rsp_sz;
@@ -434,7 +434,7 @@ done:
 	return rc;
 }
 
-CXLMI_EXPORT int cxlmi_cmd_infostat_bg_op_status(struct cxlmi_endpoint *ep,
+CXLMI_EXPORT int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
 				struct cxlmi_cci_infostat_bg_op_status *ret)
 {
 	struct cxlmi_cci_infostat_bg_op_status *rsp_pl;
@@ -471,7 +471,7 @@ done:
 
 
 CXLMI_EXPORT int
-cxlmi_cmd_infostat_request_bg_op_abort(struct cxlmi_endpoint *ep)
+cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	int rc;
