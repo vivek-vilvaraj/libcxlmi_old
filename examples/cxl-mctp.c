@@ -213,6 +213,7 @@ static int show_cel(struct cxlmi_endpoint *ep, int cel_size)
 	if (!ret)
 		return -1;
 
+	memcpy(in.uuid, cel_uuid, sizeof(in.uuid));	
 	rc = cxlmi_cmd_get_log_cel(ep, &in, ret);
 	if (rc)
 		goto done;
