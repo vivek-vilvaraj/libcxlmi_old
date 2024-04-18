@@ -296,9 +296,9 @@ int main(int argc, char **argv)
 
 	rc = play_with_device_timestamp(ep);
 
-	rc = toggle_abort(ep);
-
 	rc = get_device_logs(ep);
+
+	rc = toggle_abort(ep);
 
 	cxlmi_close(ep);
 exit_free_ctx:
