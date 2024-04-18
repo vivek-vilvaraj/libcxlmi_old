@@ -58,11 +58,12 @@ response timeouts are configurable through `cxlmi_endpoint_set_timeout()`,
 taking into account any maximum values defined by the transport. For example,
 for MCTP-based that is 2 seconds.
 
-API is very command-specific (as in payloads defined in the CXL specification),
-and the user is expected to know what to look for in the stack-allocated input
-and outputs. This is similar to how the libnvme counterpart works. The nature
-of the API depends on the input and output payload characteristics of each
-command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
+API for sending commands is very ad-hoc to the CXL specification, including
+payload input and output. As such the user is expected to know what to look
+for in each case. Functions for each command have a `cxlmi_cmd_` prefix.
+
+Simple payloads can use stack-allocated input variables, while more complex
+responses require the user to already provide the output payload buffer.
 
 1. Input-only payload
 
@@ -88,21 +89,21 @@ command, as exemplified below. Commands take the prefix prefix `cxlmi_cmd_`.
    }
    ```
 
-3. Input and output payloads - input payloads end with `_req` while output
-data types end with `_rsp`.
+3. Input and output payloads
 
    ```
-   struct cxlmi_cci_get_log_req in = {
+   struct cxlmi_cci_get_log in = {
 	   .offset = 0,
 	   .length = cel_size;
-	   .uuid = cel_uuid;
    } ;
-   struct cxlmi_cci_get_log_cel_rsp ret;
+   struct cxlmi_cci_get_log_cel_rsp *ret = calloc(1, cel_size);
 
-   err = cxlmi_cmd_get_log(ep, &in, &ret);
+   memcpy(in.uuid, cel_uuid, sizeof(in.uuid));
+   err = cxlmi_cmd_get_log(ep, &in, ret);
    if (err == 0) {
-	   /* do something with ret.opcode */
+	   /* do something with ret[i].opcode */
    }
+   free(ret);
    ```
 
 4. No input, no output payload
