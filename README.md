@@ -6,8 +6,8 @@ CXL Management Interface utility library, which provides type definitions
 for CXL specification structures, enumerations and helper functions to
 construct, send and decode commands (CCI) and payloads over an out-of-band
 (OoB) link, typically MCTP-based CCIs over I2C or VDM. As such, users will
-mostly be BMC and/or firmware, targeting: Type3 SLD, Type3 MLD (FM owned)
-or a CXL Switch.
+mostly be BMC, firmware and/or fabric managers, targeting: Type3 SLD,
+Type3 MLD (FM owned) or a CXL Switch.
 
 CXL Manageability Model defines a CXL device to be the managed entity,
 through various command sets, which can have *sensors* or *effectors*
