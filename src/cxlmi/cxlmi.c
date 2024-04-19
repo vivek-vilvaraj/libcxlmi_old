@@ -168,7 +168,7 @@ static int sanity_check_mctp_rsp(struct cxlmi_endpoint *ep,
 
 	if (rsp->return_code != 0) {
 		if (rsp->return_code != CXLMI_RET_BACKGROUND)
-			cxlmi_msg(ctx, LOG_ERR, "Error code in response %d\n",
+			cxlmi_msg(ctx, LOG_ERR, "Error code in response: %d\n",
 				  rsp->return_code);
 		return rsp->return_code;
 	}
