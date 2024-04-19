@@ -427,7 +427,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 
 	if (!strncmp(devname, "switch", strlen("switch")))
 		ep->type = CXLMI_SWITCH;
-	else if (!strncmp(devname, "memdev", strlen("memdev")))
+	else if (!strncmp(devname, "mem", strlen("mem")))
 		ep->type = CXLMI_TYPE3;
 
 	snprintf(filename, sizeof(filename), "/dev/cxl/%s", devname);
@@ -525,7 +525,7 @@ static int arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
 		}
 	}
 
-	/* common */
+	/* common to ioctl */
 	req->command_set = cmdset;
 	req->command = cmd;
 
