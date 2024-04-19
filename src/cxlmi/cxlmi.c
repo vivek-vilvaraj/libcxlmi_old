@@ -166,8 +166,9 @@ static int sanity_check_mctp_rsp(struct cxlmi_endpoint *ep,
 	}
 
 	if (rsp->return_code != 0) {
-		cxlmi_msg(ctx, LOG_ERR, "Error code in response %d\n",
-			  rsp->return_code);
+		if (rsp->return_code != CXLMI_RET_BACKGROUND)
+			cxlmi_msg(ctx, LOG_ERR, "Error code in response %d\n",
+				  rsp->return_code);
 		return rsp->return_code;
 	}
 
@@ -269,8 +270,10 @@ static int send_ioctl_direct(struct cxlmi_endpoint *ep,
 	}
 
 	if (cmd.retval != 0) {
-		cxlmi_msg(ctx, LOG_ERR, "ioctl returned non zero retval %d\n",
-			  cmd.retval);
+		if (cmd.retval != CXLMI_RET_BACKGROUND)
+			cxlmi_msg(ctx, LOG_ERR,
+				  "ioctl returned non zero retval %d\n",
+				  cmd.retval);
 		return cmd.retval;
 	}
 	if (cmd.out.size < rsp_msg_sz_min - sizeof(*rsp_msg)) {
