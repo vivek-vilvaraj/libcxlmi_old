@@ -273,7 +273,6 @@ int main(int argc, char **argv)
 		goto exit;
 	}
 
-	printf("ep '%s'\n", argv[1]);
 
 	ctx = cxlmi_new_ctx(stdout, DEFAULT_LOGLEVEL);
 	if (!ctx) {
@@ -286,6 +285,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "cannot open '%s' endpoint\n", argv[1]);
 		goto exit_free_ctx;
 	}
+
+	printf("ep '%s'\n", argv[1]);
 
 	/* yes, only 1 endpoint, but might add more */
 	rc = show_some_info_from_all_devices(ctx);
