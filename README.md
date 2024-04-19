@@ -55,11 +55,12 @@ For example, if already open, the same MCTP endpoint cannot be opened again.
 
 Component discovery
 -------------------
-- Individual, specific `nid:eid` endpoint by using `cxlmi_open_mctp()`. This will
-  setup the path for CCI commands to be sent. By default, it will also probe
-  the endpoint to get the CXL component this belongs to: either a Switch or a
-  Type3 device. This auto-probing can by disabled with `cxlmi_set_probe_enabled()`
-  or with the `$LIBNVME_PROBE_ENABLED` environment variable.
+- Individual, specific `nid:eid` MCTP endpoint by using `cxlmi_open_mctp()`.
+  This will setup the path for CCI commands to be sent. By default, it will
+  also probe the endpoint to get the CXL component this belongs to: either
+  a Switch or a Type3 device. This auto-probing can by disabled with
+  `cxlmi_set_probe_enabled()` or with the `$LIBCXL_PROBE_ENABLED` environment
+  variable.
 
 - Enumerate all endpoints with `cxlmi_scan_mctp()` (scan dbus: TODO).
 
