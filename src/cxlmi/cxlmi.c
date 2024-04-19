@@ -249,7 +249,7 @@ static int send_ioctl_direct(struct cxlmi_endpoint *ep,
 		      struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
 		      size_t rsp_msg_sz_min)
 {
-	int rc;
+	int rc, errno_save;
 	struct cxlmi_ctx *ctx = ep->ctx;
 	struct cxl_send_command cmd = {
 		.id = CXL_MEM_COMMAND_ID_RAW,
@@ -263,8 +263,9 @@ static int send_ioctl_direct(struct cxlmi_endpoint *ep,
 
 	rc = ioctl(ep->fd, CXL_MEM_SEND_COMMAND, &cmd);
 	if (rc < 0) {
+		errno_save = errno;
 		cxlmi_msg(ctx, LOG_ERR, "ioctl failed %d\n", rc);
-		return rc;
+		goto err;
 	}
 
 	if (cmd.retval != 0) {
@@ -273,11 +274,16 @@ static int send_ioctl_direct(struct cxlmi_endpoint *ep,
 		return cmd.retval;
 	}
 	if (cmd.out.size < rsp_msg_sz_min - sizeof(*rsp_msg)) {
+		errno_save = errno;
 		cxlmi_msg(ctx, LOG_ERR, "ioctl returned too little data\n");
-		return -1;
+		goto err;
+
 	}
 
 	return 0;
+err:
+	errno = errno_save;
+	return -1;
 }
 
 static int send_cmd_cci(struct cxlmi_endpoint *ep,
