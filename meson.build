@@ -129,15 +129,13 @@ add_project_arguments(
     ],
     language : 'c',
 )
-inc = include_directories(['ccan', 'src'])
+inc = include_directories(['ccan', 'src'], '.')
 
 ################################################################################
 config_h = configure_file(
     output: 'config.h',
     configuration: conf
 )
-
-internal_incdir = include_directories('.')
 
 config_dep = declare_dependency(
   include_directories : inc,
