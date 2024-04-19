@@ -105,43 +105,43 @@ done:
 static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 {
 	int rc;
-	uint64_t orig_ts;
+	/* uint64_t orig_ts; */
 	struct cxlmi_cmd_get_timestamp get_ts;
-	struct cxlmi_cmd_set_timestamp set_ts = {
-		.timestamp = 946684800, /* Jan 1, 2000 */
-	};
+	/* struct cxlmi_cmd_set_timestamp set_ts = { */
+	/* 	.timestamp = 946684800, /\* Jan 1, 2000 *\/ */
+	/* }; */
 
 	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
 	if (rc)
 		return rc;
 	printf("device timestamp: %lu\n", get_ts.timestamp);
-	orig_ts = get_ts.timestamp;
+	/* orig_ts = get_ts.timestamp; */
 
-	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
-	if (rc)
-		return rc;
+	/* rc = cxlmi_cmd_set_timestamp(ep, &set_ts); */
+	/* if (rc) */
+	/* 	return rc; */
 
-	memset(&get_ts, 0, sizeof(get_ts));
-	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
-	if (rc)
-		return rc;
-	printf("new device timestamp: %lu\n", get_ts.timestamp);
+	/* memset(&get_ts, 0, sizeof(get_ts)); */
+	/* rc = cxlmi_cmd_get_timestamp(ep, &get_ts); */
+	/* if (rc) */
+	/* 	return rc; */
+	/* printf("new device timestamp: %lu\n", get_ts.timestamp); */
 
-	memset(&set_ts, 0, sizeof(set_ts));
-	set_ts.timestamp = orig_ts;
-	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
-	if (rc) {
-		if (rc > 0)
-			printf("set_timestamp error: %s\n",
-			       cxlmi_cmd_retcode_tostr(rc));
-		return rc;
-	}
+	/* memset(&set_ts, 0, sizeof(set_ts)); */
+	/* set_ts.timestamp = orig_ts; */
+	/* rc = cxlmi_cmd_set_timestamp(ep, &set_ts); */
+	/* if (rc) { */
+	/* 	if (rc > 0) */
+	/* 		printf("set_timestamp error: %s\n", */
+	/* 		       cxlmi_cmd_retcode_tostr(rc)); */
+	/* 	return rc; */
+	/* } */
 
-	memset(&get_ts, 0, sizeof(get_ts));
-	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
-	if (rc)
-		return rc;
-	printf("reset back to original device timestamp: %lu\n", get_ts.timestamp);
+	/* memset(&get_ts, 0, sizeof(get_ts)); */
+	/* rc = cxlmi_cmd_get_timestamp(ep, &get_ts); */
+	/* if (rc) */
+	/* 	return rc; */
+	/* printf("reset back to original device timestamp: %lu\n", get_ts.timestamp); */
 
 	return 0;
 }
