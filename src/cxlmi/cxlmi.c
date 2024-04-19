@@ -652,12 +652,12 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	size_t req_sz;
 	int rc = 0;
 
-	arm_cci_request(ep, req, sizeof(*in), TIMESTAMP, SET);
-
 	req_sz = sizeof(*req) + sizeof(*in);
 	req = calloc(1, req_sz);
 	if (!req)
 		return -1;
+
+	arm_cci_request(ep, req, sizeof(*in), TIMESTAMP, SET);
 
 	req_pl = (struct cxlmi_cmd_set_timestamp *)req->payload;
 	req_pl->timestamp = cpu_to_le64(in->timestamp);
