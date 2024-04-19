@@ -50,8 +50,10 @@ Given a context, all tracked endpoints in the system can be reached with
 the (and related) `cxlmi_for_each_endpoint()` iterator.
 
 While a library context can track different representations of CCIs for
-the same underlying CXL component, duplicates of each type are forbidden.
-For example, if already open, the same MCTP endpoint cannot be opened again.
+the same underlying CXL component, duplicates of each type is forbidden.
+This matches the component requirement of 1:1 MCTP and a primary Mailbox
+(secondary is ignored in Linux). For example, if already open, the same
+MCTP endpoint cannot be opened again.
 
 Component discovery
 -------------------
