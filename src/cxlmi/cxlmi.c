@@ -608,8 +608,7 @@ done:
 }
 
 
-CXLMI_EXPORT int
-cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep)
+CXLMI_EXPORT int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep)
 {
 	struct cxlmi_cci_msg req, rsp;
 
@@ -619,8 +618,8 @@ cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep)
 			    &rsp, sizeof(rsp), sizeof(rsp));
 }
 
-int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
-			    struct cxlmi_cmd_get_timestamp *ret)
+CXLMI_EXPORT int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
+					 struct cxlmi_cmd_get_timestamp *ret)
 {
 	struct cxlmi_cmd_get_timestamp *rsp_pl;
 	struct cxlmi_cci_msg req, *rsp;
@@ -653,12 +652,12 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	size_t req_sz;
 	int rc = 0;
 
+	arm_cci_request(ep, req, sizeof(*in), TIMESTAMP, SET);
+
 	req_sz = sizeof(*req) + sizeof(*in);
 	req = calloc(1, req_sz);
 	if (!req)
 		return -1;
-
-	arm_cci_request(ep, req, sizeof(*req_pl), TIMESTAMP, SET);
 
 	req_pl = (struct cxlmi_cmd_set_timestamp *)req->payload;
 	req_pl->timestamp = cpu_to_le64(in->timestamp);
