@@ -385,17 +385,17 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 
 	mctp->sd = socket(AF_MCTP, SOCK_DGRAM, 0);
 	if (mctp->sd < 0) {
+		errno_save = errno;
 		cxlmi_msg(ctx, LOG_ERR,
 			  "cannot open socket for mctp endpoint %d:%d\n",
 			  netid, eid);
-		errno_save = errno;
 		goto err_free_mctp;
 	}
 	if (bind(mctp->sd,
 		 (struct sockaddr *)&cci_addr, sizeof(cci_addr))) {
+		errno_save = errno;
 		cxlmi_msg(ctx, LOG_ERR,
 			  "cannot bind for mctp endpoint %d:%d\n", netid, eid);
-		errno_save = errno;
 		goto err_free_mctp;
 	}
 
@@ -580,9 +580,9 @@ CXLMI_EXPORT int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
 				struct cxlmi_cmd_bg_op_status *ret)
 {
 	struct cxlmi_cmd_bg_op_status *rsp_pl;
-	int rc;
-	ssize_t rsp_sz;
 	struct cxlmi_cci_msg req, *rsp;
+	ssize_t rsp_sz;
+	int rc;
 
 	arm_cci_request(ep, &req, 0, INFOSTAT, BACKGROUND_OPERATION_STATUS);
 
@@ -621,16 +621,16 @@ int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 			    struct cxlmi_cmd_get_timestamp *ret)
 {
 	struct cxlmi_cmd_get_timestamp *rsp_pl;
-	int rc;
-	ssize_t rsp_sz;
 	struct cxlmi_cci_msg req, *rsp;
+	ssize_t rsp_sz;
+	int rc;
+
+	arm_cci_request(ep, &req, 0, TIMESTAMP, GET);
 
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
 		return -1;
-
-	arm_cci_request(ep, &req, 0, TIMESTAMP, GET);
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
@@ -679,7 +679,6 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	arm_cci_request(ep, &req, 0, LOGS, GET_SUPPORTED);
 
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) + maxlogs * sizeof(*rsp_pl->entries);
-
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
 		return -1;
