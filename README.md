@@ -10,7 +10,7 @@ mostly be BMC, firmware and/or fabric managers, targeting: Type3 SLD,
 Type3 MLD (FM owned) or a CXL Switch.
 
 CXL Manageability Model defines a CXL device to be the managed entity,
-through various command sets, which can have *sensors* or *effectors*
+through various command sets, which can have sensor or effector
 semantics, depending on whether the it affects device state (read-only)
 or not. These can be accessed either in-band or out-of-band. As such,
 CXL supports various management interfaces and interconnects.
@@ -25,6 +25,7 @@ equivalent, benefits for OoB management include:
 - Works on any host OS.
 - Does not require an OS (pre-boot).
 
+
 Abstractions
 ------------
 
@@ -34,9 +35,9 @@ individual members cannot be directly referenced.
 
 - `struct cxlmi_ctx`: library context object - holds general information
 common to all opened/tracked endpoints as well as library settings. Before
-discovery a new context must be created via `cxlmi_new_ctx()`, providing
-basic logging information. And once finished with it, the `cxlmi_free_ctx()`
-counterpart must be called.
+component enumeration, a new context must be created via `cxlmi_new_ctx()`,
+providing basic logging information. And once finished with it, the
+`cxlmi_free_ctx()` counterpart must be called.
 
 - `struct cxlmi_endpoint`: A CXL component may include different types
 of CCIs, which operate independently. As such library endpoint represents
@@ -55,6 +56,7 @@ This matches the component requirement of 1:1 MCTP and a primary Mailbox
 (secondary is ignored in Linux). For example, if already open, the same
 MCTP endpoint cannot be opened again.
 
+
 Component discovery
 -------------------
 - Individual, MCTP-specific `nid:eid` endpoint by using `cxlmi_open_mctp()`.
@@ -66,8 +68,9 @@ Component discovery
 
 - Enumerate all endpoints with `cxlmi_scan_mctp()` (scan dbus: TODO).
 
-- Individual, Linux-specific `device` endpoint by using `cxlmi_open()`. This is
-for in-band communication through ioctl for CXL Mailbox raw commands.
+- Individual, Linux-specific `device` endpoint by using `cxlmi_open()`. This
+  is for in-band communication through ioctl for Mailbox based raw CXL commands.
+
 
 Issuing CCI commands
 --------------------
@@ -171,6 +174,7 @@ Logging
 Library internal logging information is set upon context creation, using `stderr`
 by default. Logging levels are standard `syslog`.
 
+
 Considerations
 --------------
 A few considerations users should keep in mind when evaluating using this library:
@@ -196,6 +200,7 @@ The assumption here is that for those command either smctp_type is fine.
 
 - FMAPI command set (used to manage/tunnel CXL Switches) is TODO.
 
+
 Requirements
 ============
 1. arm64 or x86-64 architecture.
@@ -214,6 +219,7 @@ Requirements
    ```
 
 For more info, refer to https://gitlab.com/jic23/cxl-fmapi-tests
+
 
 Build
 =====
@@ -235,11 +241,13 @@ Optionally, to install:
 meson install -C build
 ```
 
+
 Linking
 =======
 
 Programs making use of this library must include the `libcxlmi.h` header file
 and link with `-lcxlmi`.
+
 
 References
 ==========

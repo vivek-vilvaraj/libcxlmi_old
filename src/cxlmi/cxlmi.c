@@ -11,9 +11,9 @@
 #include <sys/types.h>
 #include <linux/types.h>
 
-/* #if HAVE_LINUX_MCTP_H */
+#if HAVE_LINUX_MCTP_H
 #include <linux/mctp.h>
-/* #endif */
+#endif
 
 #include <linux/cxl_mem.h>
 
@@ -85,6 +85,7 @@ static struct cxlmi_endpoint *init_endpoint(struct cxlmi_ctx *ctx)
 	list_node_init(&ep->entry);
 	ep->ctx = ctx;
 	ep->timeout_ms = 5000;
+	ep->type = -1;
 	list_add(&ctx->endpoints, &ep->entry);
 
 	return ep;
