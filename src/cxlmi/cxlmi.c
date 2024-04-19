@@ -264,13 +264,13 @@ static int send_ioctl_direct(struct cxlmi_endpoint *ep,
 	rc = ioctl(ep->fd, CXL_MEM_SEND_COMMAND, &cmd);
 	if (rc < 0) {
 		cxlmi_msg(ctx, LOG_ERR, "ioctl failed %d\n", rc);
-		return -1;
+		return rc;
 	}
 
 	if (cmd.retval != 0) {
 		cxlmi_msg(ctx, LOG_ERR, "ioctl returned non zero retval %d\n",
 			  cmd.retval);
-		return rc;
+		return cmd.retval;
 	}
 	if (cmd.out.size < rsp_msg_sz_min - sizeof(*rsp_msg)) {
 		cxlmi_msg(ctx, LOG_ERR, "ioctl returned too little data\n");
