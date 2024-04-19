@@ -536,11 +536,11 @@ static int arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
 		req->tag = mctp->tag++;
 		req->vendor_ext_status = 0xabcd;
 
-		if (req_pl_sz) {
-			req->pl_length[0] = req_pl_sz & 0xff;
-			req->pl_length[1] = (req_pl_sz >> 8) & 0xff;
-			req->pl_length[2] = (req_pl_sz >> 16) & 0xff;
-		}
+		/* if (req_pl_sz) { */
+		/* 	req->pl_length[0] = req_pl_sz & 0xff; */
+		/* 	req->pl_length[1] = (req_pl_sz >> 8) & 0xff; */
+		/* 	req->pl_length[2] = (req_pl_sz >> 16) & 0xff; */
+		/* } */
 	}
 
 	/* common to ioctl */
