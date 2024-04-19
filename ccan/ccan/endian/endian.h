@@ -122,7 +122,7 @@ typedef uint32_t ENDIAN_TYPE beint32_t;
 typedef uint16_t ENDIAN_TYPE leint16_t;
 typedef uint16_t ENDIAN_TYPE beint16_t;
 
-#if HAVE_LITTLE_ENDIAN
+#if 1 //HAVE_LITTLE_ENDIAN
 /**
  * CPU_TO_LE64 - convert a constant uint64_t value to little-endian
  * @native: constant to convert
