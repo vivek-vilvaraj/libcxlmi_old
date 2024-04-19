@@ -2,6 +2,8 @@
 #ifndef CCAN_MINMAX_H
 #define CCAN_MINMAX_H
 
+#include "config.h"
+
 #include <ccan/build_assert/build_assert.h>
 
 #if HAVE_BUILTIN_TYPES_COMPATIBLE_P
