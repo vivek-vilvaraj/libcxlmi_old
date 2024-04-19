@@ -129,7 +129,7 @@ add_project_arguments(
     ],
     language : 'c',
 )
-inc = include_directories(['ccan', 'src'], '.')
+inc = include_directories(['ccan', 'src', '.'])
 
 ################################################################################
 config_h = configure_file(
