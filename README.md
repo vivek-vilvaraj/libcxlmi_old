@@ -65,7 +65,7 @@ Component discovery
 - Enumerate all endpoints with `cxlmi_scan_mctp()` (scan dbus: TODO).
 
 - Individual, Linux-specific `device` endpoint by using `cxlmi_open()`. This is
-for in-band communication through ioctl for CXL raw Mailbox commands.
+for in-band communication through ioctl for CXL Mailbox raw commands.
 
 Issuing CCI commands
 --------------------
