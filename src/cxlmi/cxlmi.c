@@ -534,8 +534,8 @@ static int arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
 	*req = (struct cxlmi_cci_msg) { 
 		.category = CXL_MCTP_CATEGORY_REQ,
 		.tag = mctp->tag++,
-		.command = MEMORY_DEVICE,
-		.command_set = IDENTIFY,
+		.command = cmd,
+		.command_set = cmdset,
 		.vendor_ext_status = 0xabcd,
 	};
 	
