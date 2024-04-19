@@ -268,8 +268,8 @@ int main(int argc, char **argv)
 	int rc = EXIT_FAILURE;
 
 	if (argc != 2) {
-		fprintf(stderr, "Must provide a device sysfs path\n");
-		fprintf(stderr, "Usage: cxl-ioctl <dev-path>\n");
+		fprintf(stderr, "Must provide a device name (ie: mem0)\n");
+		fprintf(stderr, "Usage: cxl-ioctl <device>\n");
 		goto exit;
 	}
 

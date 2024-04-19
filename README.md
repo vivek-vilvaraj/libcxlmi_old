@@ -29,8 +29,8 @@ Abstractions
 ------------
 
 Unlike the actual CCI commands described below, the library provided
-abstractions (data structures) described here are opaque, and therefore
-members cannot be directly referenced.
+abstractions (data structures) listed here are opaque, and therefore
+individual members cannot be directly referenced.
 
 - `struct cxlmi_ctx`: library context object - holds general information
 common to all opened/tracked endpoints as well as library settings. Before
@@ -38,23 +38,33 @@ discovery a new context must be created via `cxlmi_new_ctx()`, providing
 basic logging information. And once finished with it, the `cxlmi_free_ctx()`
 counterpart must be called.
 
-- `struct cxlmi_endpoint`: an MI endpoint - mechanism of communication with
-a CXL-MI. For MCTP, an endpoint will be the component that holds
-the MCTP address (EID), and receives request messages. Endpoint creation
-is done by opening an MCTP endpoint through `cxlmi_open_mctp()`. The respective
-housekeeping is done with the `cxlmi_close()` counterpart. Given a context,
-all tracked endpoints in the system can be reached with the (and related)
-`cxlmi_for_each_endpoint()` iterator.
+- `struct cxlmi_endpoint`: A CXL component may include different types
+of CCIs, which operate independently. As such library endpoint represents
+a specific type: either MCTP-based or the Linux ioctl interface for raw
+primary Mailbox registers. For MCTP, an endpoint will be the component
+that holds the MCTP address (EID), and receives request messages. Endpoint
+creation is done by opening an MCTP endpoint through `cxlmi_open_mctp()`.
+Similarly, opening a Linux CXL device is done through `cxlmi_open()`. The
+respective housekeeping is done with the `cxlmi_close()` counterpart.
+Given a context, all tracked endpoints in the system can be reached with
+the (and related) `cxlmi_for_each_endpoint()` iterator.
+
+While a library context can track different representations of CCIs for
+the same underlying CXL component, duplicates of each type are forbidden.
+For example, if already open, the same MCTP endpoint cannot be opened again.
 
 Component discovery
 -------------------
-- Single, specific `nid:eid` endpoint by using `cxlmi_open_mctp()`. This will
+- Individual, specific `nid:eid` endpoint by using `cxlmi_open_mctp()`. This will
   setup the path for CCI commands to be sent. By default, it will also probe
   the endpoint to get the CXL component this belongs to: either a Switch or a
   Type3 device. This auto-probing can by disabled with `cxlmi_set_probe_enabled()`
   or with the `$LIBNVME_PROBE_ENABLED` environment variable.
 
-- Enumerate all endpoints with`cxlmi_scan_mctp()` (scan dbus: TODO).
+- Enumerate all endpoints with `cxlmi_scan_mctp()` (scan dbus: TODO).
+
+- Individual, Linux-specific `device` endpoint by using `cxlmi_open()`. This is
+for in-band communication through ioctl for CXL raw Mailbox commands.
 
 Issuing CCI commands
 --------------------
@@ -148,7 +158,7 @@ verify, when appropriate, against the `CXLMI_RET_BACKGROUND` value.
    err = cxlmi_cmd_memdev_sanitize(ep);
    if (err && err != CXLMI_RET_BACKGROUND) {
 	   if (err > 0)
-		   fprintf(stderr, "%s", cxlmi_cmd_retcode_to_str(err));
+		   fprintf(stderr, "%s", cxlmi_cmd_retcode_tostr(err));
 	   return err;
    }
    ```
@@ -169,9 +179,10 @@ hold locks.
 
 - Library is endianness-aware.
 
-- This library masks many of the protections provided by the OS driver, as such,
-users must provide the correct command(s) to the correct CXL Component. Similarly
-device state may be altered, and therefore users get to keep the pieces.
+- This library bypasses many of the protections traditionally provided by the OS
+driver, as such, users must provide the correct command(s) to the correct CXL
+component. Similarly device state may be altered by command semantics, and
+therefore users get to keep the pieces.
 
 - Commands initiated on MCTP-based CCIs are not tracked across any component state
 change, such as Conventional Resets.

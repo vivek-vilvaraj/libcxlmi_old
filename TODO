@@ -4,7 +4,7 @@ Pending features before a first release.
 - Add unit tests.
 - More examples.
 - Support FMAPI.
-- Support raw commands via ioctl interface.
+- Support tunneling.
 
 Others:
 - Implement missing commands to qemu.
