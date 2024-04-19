@@ -639,6 +639,8 @@ CXLMI_EXPORT int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 		return -1;
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	printf("----> send_cmd_cci returned %d\n", rc);
+
 	if (rc)
 		goto done;
 
