@@ -37,8 +37,10 @@ static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
 		struct cxlmi_cmd_identify id;
 
 		rc = cxlmi_cmd_identify(ep, &id);
-		if (rc)
+		if (rc) {
+			printf("identify failed\n");
 			break;
+		}
 
 		printf("serial number: 0x%lx\n", (uint64_t)id.serial_num);
 
