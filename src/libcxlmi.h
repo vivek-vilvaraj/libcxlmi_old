@@ -17,7 +17,7 @@ struct cxlmi_endpoint;
  * @log_level:	Logging level to use (standard syslog)
  *
  * Create the top-level library handle for creating subsequent
- * endpointobjects.
+ * endpoint objects.
  *
  * Return: new context object, or NULL on failure.
  *
@@ -47,6 +47,19 @@ void cxlmi_free_ctx(struct cxlmi_ctx *ctx);
  */
 struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 				       unsigned int net, uint8_t eid);
+
+/**
+ * cxlmi_open() - Create an endpoint to send commands over a Mailbox.
+ * @ctx: library context object to create under
+ * @devname: cxl device to open
+ *
+ * Mailbox-specific (ioctl) endpoint initialization for MI-connected endpoints.
+ *
+ * Return: New endpoint object for @devname, or NULL on failure.
+ *
+ * See &cxlmi_close
+ */
+struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx, const char *devname);
 
 /**
  * cxlmi_close() - Close an endpoint connection and release resources

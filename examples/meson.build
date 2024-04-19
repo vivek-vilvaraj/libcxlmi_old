@@ -8,3 +8,10 @@ executable(
     dependencies: libcxlmi_dep,
     include_directories: [inc]
 )
+
+executable(
+    'cxl-ioctl',
+    ['cxl-ioctl.c'],
+    dependencies: libcxlmi_dep,
+    include_directories: [inc]
+)

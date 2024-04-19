@@ -108,11 +108,16 @@ struct cxlmi_ctx {
 
 struct cxlmi_endpoint {
 	struct cxlmi_ctx *ctx;
-	struct cxlmi_transport *transport;
+
+	/* mctp */
 	void *transport_data;
+
+	/* ioctl (primary mbox) */
+	int fd;
+	char *devname;
+
 	struct list_node entry;
 	unsigned int timeout_ms;
-	uint8_t tag;
 	enum cxlmi_component_type type;
 };
 
