@@ -328,6 +328,7 @@ static void endpoint_probe(struct cxlmi_endpoint *ep)
 		ep->type = CXLMI_TYPE3;
 		break;
 	default:
+		ep->type = -1;
 		break;
 	}
 }
@@ -429,6 +430,8 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 		ep->type = CXLMI_SWITCH;
 	else if (!strncmp(devname, "mem", strlen("mem")))
 		ep->type = CXLMI_TYPE3;
+	else
+		ep->type = -1;
 
 	snprintf(filename, sizeof(filename), "/dev/cxl/%s", devname);
 

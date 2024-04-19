@@ -118,7 +118,7 @@ struct cxlmi_endpoint {
 
 	struct list_node entry;
 	unsigned int timeout_ms;
-	enum cxlmi_component_type type;
+	int type;
 };
 
 #if (LOG_FUNCNAME == 1)
