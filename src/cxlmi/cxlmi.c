@@ -9,13 +9,14 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <linux/types.h>
 
+#include <linux/types.h>
 #if HAVE_LINUX_MCTP_H
 #include <linux/mctp.h>
 #endif
-
+/* #if HAVE_LINUX_CXL_MEM_H */
 #include <linux/cxl_mem.h>
+/* #endif */
 
 #include <libcxlmi.h>
 

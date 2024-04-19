@@ -2,6 +2,7 @@
 #ifndef CCAN_ENDIAN_H
 #define CCAN_ENDIAN_H
 #include <stdint.h>
+#include "config.h"
 
 /**
  * BSWAP_16 - reverse bytes in a constant uint16_t value.
@@ -122,7 +123,7 @@ typedef uint32_t ENDIAN_TYPE beint32_t;
 typedef uint16_t ENDIAN_TYPE leint16_t;
 typedef uint16_t ENDIAN_TYPE beint16_t;
 
-#if 1 //HAVE_LITTLE_ENDIAN
+#if HAVE_LITTLE_ENDIAN
 /**
  * CPU_TO_LE64 - convert a constant uint64_t value to little-endian
  * @native: constant to convert
