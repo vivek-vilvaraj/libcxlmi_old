@@ -51,9 +51,9 @@ struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 /**
  * cxlmi_open() - Create an endpoint to send commands over a Mailbox.
  * @ctx: library context object to create under
- * @devname: cxl device to open
+ * @devname: cxl device to open (/under dev/cxl/<device>)
  *
- * Mailbox-specific (ioctl) endpoint initialization for MI-connected endpoints.
+ * Mailbox-specific (ioctl) endpoint initialization.
  *
  * Return: New endpoint object for @devname, or NULL on failure.
  *
@@ -65,6 +65,8 @@ struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx, const char *devname);
  * cxlmi_close() - Close an endpoint connection and release resources
  *
  * @ep: Endpoint object to close
+ *
+ * See &cxlmi_open, &cxlmi_open_mctp
  */
 void cxlmi_close(struct cxlmi_endpoint *ep);
 

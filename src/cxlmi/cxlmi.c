@@ -128,8 +128,7 @@ CXLMI_EXPORT void cxlmi_close(struct cxlmi_endpoint *ep)
 		mctp_close(ep);
 		free(ep->transport_data);
 	} else {
-		if (ep->fd > 0)
-			close(ep->fd);
+		close(ep->fd);
 		if (ep->devname)
 			free(ep->devname);
 	}
