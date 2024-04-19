@@ -778,9 +778,20 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 	struct cxlmi_cci_msg req, *rsp;
 	int rc;
 	ssize_t rsp_sz;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 
-	arm_cci_request(ep, &req, 0, IDENTIFY, MEMORY_DEVICE);
-
+	if (!mctp)
+		arm_cci_request(ep, &req, 0, IDENTIFY, MEMORY_DEVICE);
+	else {
+		req = (struct cxlmi_cci_msg) {
+			.category = CXL_MCTP_CATEGORY_REQ,
+			.tag = mctp->tag++,
+			.command = MEMORY_DEVICE,
+			.command_set = IDENTIFY,
+			.vendor_ext_status = 0xabcd,
+		};
+	}
+	
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
 
 	rsp = calloc(1, rsp_sz);
