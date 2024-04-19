@@ -14,9 +14,9 @@
 #if HAVE_LINUX_MCTP_H
 #include <linux/mctp.h>
 #endif
-/* #if HAVE_LINUX_CXL_MEM_H */
+#if HAVE_LINUX_CXL_MEM_H
 #include <linux/cxl_mem.h>
-/* #endif */
+#endif
 
 #include <libcxlmi.h>
 
