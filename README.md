@@ -63,7 +63,7 @@ Component discovery
   This will setup the path for CCI commands to be sent. By default, it will
   also probe the endpoint to get the CXL component this belongs to: either
   a Switch or a Type3 device. This auto-probing can by disabled with
-  `cxlmi_set_probe_enabled()` or with the `$LIBCXL_PROBE_ENABLED` environment
+  `cxlmi_set_probe_enabled()` or with the `$LIBCXLMI_PROBE_ENABLED` environment
   variable.
 
 - Enumerate all endpoints with `cxlmi_scan_mctp()` (scan dbus: TODO).
