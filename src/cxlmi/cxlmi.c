@@ -300,14 +300,9 @@ static int send_cmd_cci(struct cxlmi_endpoint *ep,
 	if (ep->transport_data) {
 		rc = send_mctp_direct(ep, req_msg, req_msg_sz,
 				      rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
-
-		printf("----> send_mctp_direct returned %d\n", rc);
-
 	} else {
 		rc = send_ioctl_direct(ep, req_msg, req_msg_sz,
 				       rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
-
-		printf("----> send_ioctl_direct returned %d\n", rc);
 	}
 
 	return rc;
@@ -574,7 +569,6 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 		return -1;
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	printf("----> identify send_cmd_cci returned %d\n", rc);
 	if (rc)
 		goto done;
 
@@ -648,7 +642,6 @@ CXLMI_EXPORT int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 		return -1;
 
 	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	printf("----> get ts send_cmd_cci returned %d\n", rc);
 	if (rc)
 		goto done;
 
