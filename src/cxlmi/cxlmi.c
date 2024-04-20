@@ -578,19 +578,19 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 	ssize_t rsp_sz;
 	struct cxlmi_cmd_identify *rsp_pl;
 	struct cxlmi_cci_msg req, *rsp;
-	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	/* struct cxlmi_transport_mctp *mctp = ep->transport_data; */
 
-	if (!mctp)
-		arm_cci_request(ep, &req, 0, INFOSTAT, IS_IDENTIFY);
-	else {
-		req = (struct cxlmi_cci_msg) {
-			.category = CXL_MCTP_CATEGORY_REQ,
-			.tag = mctp->tag++,
-			.command = IS_IDENTIFY,
-			.command_set = INFOSTAT,
-			.vendor_ext_status = 0xabcd,
-		};
-	}
+	/* if (!mctp) */
+	arm_cci_request(ep, &req, 0, INFOSTAT, IS_IDENTIFY);
+	/* else { */
+	/* 	req = (struct cxlmi_cci_msg) { */
+	/* 		.category = CXL_MCTP_CATEGORY_REQ, */
+	/* 		.tag = mctp->tag++, */
+	/* 		.command = IS_IDENTIFY, */
+	/* 		.command_set = INFOSTAT, */
+	/* 		.vendor_ext_status = 0xabcd, */
+	/* 	}; */
+	/* } */
 
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
 	rsp = calloc(1, rsp_sz);
