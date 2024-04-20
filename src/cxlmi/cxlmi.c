@@ -529,29 +529,39 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
 static int arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
 			   size_t req_pl_sz, uint8_t cmdset, uint8_t cmd)
 {
-	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 
-	*req = (struct cxlmi_cci_msg) { 
-		.category = CXL_MCTP_CATEGORY_REQ,
-		.tag = mctp->tag++,
-		.command = cmd,
-		.command_set = cmdset,
-		.vendor_ext_status = 0xabcd,
-	};
-	
+
+	if (ep->transport_data) {
+		struct cxlmi_transport_mctp *mctp = ep->transport_data;
+
+		*req = (struct cxlmi_cci_msg) {
+			.category = CXL_MCTP_CATEGORY_REQ,
+			.tag = mctp->tag++,
+			.command = cmd,
+			.command_set = cmdset,
+			.vendor_ext_status = 0xabcd,
+		};
+	} else {
+		*req = (struct cxlmi_cci_msg) {
+			.command = cmd,
+			.command_set = cmdset,
+			.vendor_ext_status = 0xabcd,
+		};
+	}
+
 	/* if (ep->transport_data) { */
-	/* 	struct cxlmi_transport_mctp *mctp = ep->transport_data; */
+	/*	struct cxlmi_transport_mctp *mctp = ep->transport_data; */
 
-	/* 	req->category = CXL_MCTP_CATEGORY_REQ; */
-	/* 	req->tag = mctp->tag++; */
-	/* 	req->vendor_ext_status = 0xabcd; */
+	/*	req->category = CXL_MCTP_CATEGORY_REQ; */
+	/*	req->tag = mctp->tag++; */
+	/*	req->vendor_ext_status = 0xabcd; */
 
-	/* 	if (req_pl_sz) { */
-	/* 		printf("----> arm cci request setting pl_length\n"); */
-	/* 		req->pl_length[0] = req_pl_sz & 0xff; */
-	/* 		req->pl_length[1] = (req_pl_sz >> 8) & 0xff; */
-	/* 		req->pl_length[2] = (req_pl_sz >> 16) & 0xff; */
-	/* 	} */
+	/*	if (req_pl_sz) { */
+	/*		printf("----> arm cci request setting pl_length\n"); */
+	/*		req->pl_length[0] = req_pl_sz & 0xff; */
+	/*		req->pl_length[1] = (req_pl_sz >> 8) & 0xff; */
+	/*		req->pl_length[2] = (req_pl_sz >> 16) & 0xff; */
+	/*	} */
 	/* } */
 
 	/* common to ioctl */
@@ -569,7 +579,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 	struct cxlmi_cmd_identify *rsp_pl;
 	struct cxlmi_cci_msg req, *rsp;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-	
+
 	if (!mctp)
 		arm_cci_request(ep, &req, 0, INFOSTAT, IS_IDENTIFY);
 	else {
@@ -581,7 +591,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 			.vendor_ext_status = 0xabcd,
 		};
 	}
-	
+
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
@@ -791,17 +801,17 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 
 	/* if (!mctp) */
-		arm_cci_request(ep, &req, 0, IDENTIFY, MEMORY_DEVICE);
+	arm_cci_request(ep, &req, 0, IDENTIFY, MEMORY_DEVICE);
 	/* else { */
-	/* 	req = (struct cxlmi_cci_msg) { */
-	/* 		.category = CXL_MCTP_CATEGORY_REQ, */
-	/* 		.tag = mctp->tag++, */
-	/* 		.command = MEMORY_DEVICE, */
-	/* 		.command_set = IDENTIFY, */
-	/* 		.vendor_ext_status = 0xabcd, */
-	/* 	}; */
+	/*	req = (struct cxlmi_cci_msg) { */
+	/*		.category = CXL_MCTP_CATEGORY_REQ, */
+	/*		.tag = mctp->tag++, */
+	/*		.command = MEMORY_DEVICE, */
+	/*		.command_set = IDENTIFY, */
+	/*		.vendor_ext_status = 0xabcd, */
+	/*	}; */
 	/* } */
-	
+
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
 
 	rsp = calloc(1, rsp_sz);
