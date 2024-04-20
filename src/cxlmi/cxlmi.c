@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
+
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -26,6 +27,45 @@
 #include <ccan/list/list.h>
 
 #include "private.h"
+
+#if !defined(AF_MCTP)
+#define AF_MCTP 45
+#endif
+
+#if !HAVE_LINUX_MCTP_H
+/* As of kernel v5.15, these AF_MCTP-related definitions are provided by
+ * linux/mctp.h. Keep this fallback to fail gracefully upon older standard
+ * includes.
+ * These were all introduced in the same version as AF_MCTP was defined,
+ * so we can key off the presence of that.
+ */
+
+typedef __u8			mctp_eid_t;
+
+struct mctp_addr {
+	mctp_eid_t		s_addr;
+};
+
+struct sockaddr_mctp {
+	unsigned short int	smctp_family;
+	__u16			__smctp_pad0;
+	unsigned int		smctp_network;
+	struct mctp_addr	smctp_addr;
+	__u8			smctp_type;
+	__u8			smctp_tag;
+	__u8			__smctp_pad1;
+};
+
+#define MCTP_NET_ANY		0x0
+
+#define MCTP_ADDR_NULL		0x00
+#define MCTP_ADDR_ANY		0xff
+
+#define MCTP_TAG_MASK		0x07
+#define MCTP_TAG_OWNER		0x08
+
+#endif /* !AF_MCTP */
+
 
 #define CXL_MCTP_CATEGORY_REQ 0
 #define CXL_MCTP_CATEGORY_RSP 1
