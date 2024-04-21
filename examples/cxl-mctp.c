@@ -266,18 +266,7 @@ int main(int argc, char **argv)
 {
 	struct cxlmi_ctx *ctx;
 	struct cxlmi_endpoint *ep;
-	unsigned int nid;
-	uint8_t eid;
-	int dbus = false, rc = EXIT_FAILURE;
-
-	if (argc == 1) {
-		dbus = true;
-		printf("scanning dbus...\n");
-	} else {
-		nid = atoi(argv[1]);
-		eid = atoi(argv[2]);
-		printf("ep %d:%d\n", nid, eid);
-	}
+	int rc = EXIT_FAILURE;
 
 	ctx = cxlmi_new_ctx(stdout, DEFAULT_LOGLEVEL);
 	if (!ctx) {
@@ -285,23 +274,35 @@ int main(int argc, char **argv)
 		goto exit;
 	}
 
-	if (dbus) {
+	if (argc == 1) {
 		int num_ep = cxlmi_scan_mctp(ctx);
+
+		printf("scanning dbus...\n");
 
 		if (num_ep < 0) {
 			fprintf(stderr, "dbus scan error\n");
 			goto exit_free_ctx;
 		} else if (num_ep == 0) {
 			printf("no endpoints found\n");
-			goto exit_free_ctx;
 		} else
 			printf("found %d endpoint(s)\n", num_ep);
-	} else {
+	} else if (argc == 3) {
+		unsigned int nid;
+		uint8_t eid;
+
+		nid = atoi(argv[1]);
+		eid = atoi(argv[2]);
+		printf("ep %d:%d\n", nid, eid);
+
+
 		ep = cxlmi_open_mctp(ctx, nid, eid);
 		if (!ep) {
 			fprintf(stderr, "cannot open MCTP endpoint %d:%d\n", nid, eid);
 			goto exit_free_ctx;
 		}
+	} else {
+		fprintf(stderr, "must provide MCTP endpoint nid:eid touple\n");
+		goto exit_free_ctx;
 	}
 
 	cxlmi_for_each_endpoint(ctx, ep) {
