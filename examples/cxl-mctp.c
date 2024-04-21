@@ -268,7 +268,7 @@ int main(int argc, char **argv)
 	struct cxlmi_endpoint *ep;
 	unsigned int nid;
 	uint8_t eid;
-	int dbus, rc = EXIT_FAILURE;
+	int dbus = false, rc = EXIT_FAILURE;
 
 	if (argc == 1) {
 		dbus = true;
