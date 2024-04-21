@@ -524,8 +524,7 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 {
 	bool have_eid = false, have_net = false, have_cxlmi = false;
 	mctp_eid_t eid;
-	int net;
-	int rc;
+	int net, rc;
 
 	/* for each property */
 	for (;;) {
@@ -551,6 +550,8 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 		}
 
 		dbus_message_iter_recurse(&prop, &val);
+
+		printf("propname::: %s\n\n");
 
 		if (!strcmp(propname, "EID")) {
 			rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
