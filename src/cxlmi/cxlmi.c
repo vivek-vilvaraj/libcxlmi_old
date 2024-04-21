@@ -551,7 +551,6 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 
 		dbus_message_iter_recurse(&prop, &val);
 
-		printf("propname::: %s\n\n", propname);
 
 		if (!strcmp(propname, "EID")) {
 			rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
@@ -559,6 +558,8 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 
 		} else if (!strcmp(propname, "NetworkId")) {
 			rc = read_variant_basic(&val, DBUS_TYPE_INT32, &net);
+			printf("propname::: %s\n\n", propname);
+
 			have_net = true;
 
 		} else if (!strcmp(propname, "SupportedMessageTypes")) {
