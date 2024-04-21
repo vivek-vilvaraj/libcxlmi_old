@@ -66,7 +66,8 @@ Component discovery
   `cxlmi_set_probe_enabled()` or with the `$LIBCXLMI_PROBE_ENABLED` environment
   variable.
 
-- Enumerate all endpoints with `cxlmi_scan_mctp()` (scan dbus: TODO).
+- Enumerate all MCTP endpoints with `cxlmi_scan_mctp()`. Each found endpoint
+  will be subject to the above treatment.
 
 - Individual, Linux-specific `device` endpoint by using `cxlmi_open()`. This
   is for in-band communication through ioctl for Mailbox based raw CXL commands.
@@ -232,7 +233,7 @@ Alternatively, to configure for static libraries:
 ```
 meson setup --default-library=static build
 ```
-To enable MCTP scanning, enable it with:
+Also, to configure dbus to enable MCTP scanning:
 ```
 meson setup -Dlibdbus=enabled build
 ```
