@@ -232,6 +232,11 @@ Alternatively, to configure for static libraries:
 ```
 meson setup --default-library=static build
 ```
+To enable MCTP scanning, enable it with:
+```
+meson setup -Dlibdbus=enabled build
+```
+
 Then compile it:
 ```
 meson compile -C build;

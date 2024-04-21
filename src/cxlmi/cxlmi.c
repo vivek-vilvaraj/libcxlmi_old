@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+/*
+ * This file is part of libcxlmi.
+ */
 #include <errno.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -19,18 +23,22 @@
 #include <linux/cxl_mem.h>
 #endif
 
-#include <libcxlmi.h>
+#ifdef CONFIG_DBUS
+#include <dbus/dbus.h>
+#endif
 
 #include <ccan/array_size/array_size.h>
 #include <ccan/minmax/minmax.h>
 #include <ccan/endian/endian.h>
 #include <ccan/list/list.h>
 
+#include <libcxlmi.h>
+
 #include "private.h"
 
 #if !defined(AF_MCTP)
 #define AF_MCTP 45
-#endif
+#endif /* !AF_MCTP */
 
 #if !HAVE_LINUX_MCTP_H
 /* As of kernel v5.15, these AF_MCTP-related definitions are provided by
@@ -64,8 +72,7 @@ struct sockaddr_mctp {
 #define MCTP_TAG_MASK		0x07
 #define MCTP_TAG_OWNER		0x08
 
-#endif /* !AF_MCTP */
-
+#endif /* HAVE_LINUX_MCTP_H */
 
 #define CXL_MCTP_CATEGORY_REQ 0
 #define CXL_MCTP_CATEGORY_RSP 1
@@ -79,7 +86,8 @@ struct cxlmi_transport_mctp {
 };
 
 /* 2 secs, see CXL r3.1 Section 9.20.2 */
-#define MAX_TIMEOUT_MCTP 2000
+#define MCTP_MAX_TIMEOUT 2000
+#define MCTP_TYPE_CXL_CCI 0x8
 
 static bool cxlmi_probe_enabled_default(void)
 {
@@ -135,7 +143,7 @@ static struct cxlmi_endpoint *init_endpoint(struct cxlmi_ctx *ctx)
 static int mctp_check_timeout(struct cxlmi_endpoint *ep,
 			      unsigned int timeout_ms)
 {
-	return timeout_ms > MAX_TIMEOUT_MCTP;
+	return timeout_ms > MCTP_MAX_TIMEOUT;
 }
 
 CXLMI_EXPORT int cxlmi_endpoint_set_timeout(struct cxlmi_endpoint *ep,
@@ -282,10 +290,6 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 				rsp_msg_sz == rsp_msg_sz_min, rsp_msg_sz_min);
 }
 
-/*
- * Whilst we don't send a cci_msg directly over the IOCTL, that has all the
- * information need - so transltate it to a struct cxl_send_command
- */
 static int send_ioctl_direct(struct cxlmi_endpoint *ep,
 		      struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
 		      struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
@@ -393,7 +397,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 		.smctp_family = AF_MCTP,
 		.smctp_network = netid,
 		.smctp_addr.s_addr = eid,
-		.smctp_type = 0x8, /* CXL CCI */
+		.smctp_type = MCTP_TYPE_CXL_CCI,
 		.smctp_tag = MCTP_TAG_OWNER,
 	};
 
@@ -442,7 +446,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 	}
 
 	ep->transport_data = mctp;
-	ep->timeout_ms = MAX_TIMEOUT_MCTP;
+	ep->timeout_ms = MCTP_MAX_TIMEOUT;
 	endpoint_probe(ep);
 
 	return ep;
@@ -455,6 +459,293 @@ err_close_ep:
 	return NULL;
 }
 
+#ifdef CONFIG_DBUS
+
+#define MCTP_DBUS_PATH "/xyz/openbmc_project/mctp"
+#define MCTP_DBUS_IFACE "xyz.openbmc_project.MCTP"
+#define MCTP_DBUS_IFACE_ENDPOINT "xyz.openbmc_project.MCTP.Endpoint"
+
+static int cxlmi_mctp_add(struct cxlmi_ctx *ctx, unsigned int netid, __u8 eid)
+{
+	struct cxlmi_endpoint *ep = NULL;
+
+	ep = cxlmi_open_mctp(ctx, netid, eid);
+	if (!ep)
+		return -1;
+
+	return 0;
+}
+
+static bool dbus_object_is_type(DBusMessageIter *obj, int type)
+{
+	return dbus_message_iter_get_arg_type(obj) == type;
+}
+
+static bool dbus_object_is_dict(DBusMessageIter *obj)
+{
+	return dbus_object_is_type(obj, DBUS_TYPE_ARRAY) &&
+		dbus_message_iter_get_element_type(obj) == DBUS_TYPE_DICT_ENTRY;
+}
+
+static int read_variant_basic(DBusMessageIter *var, int type, void *val)
+{
+	if (!dbus_object_is_type(var, type))
+		return -1;
+
+	dbus_message_iter_get_basic(var, val);
+
+	return 0;
+}
+
+static bool has_message_type(DBusMessageIter *prop, uint8_t type)
+{
+	DBusMessageIter inner;
+	uint8_t *types;
+	int i, n;
+
+	if (!dbus_object_is_type(prop, DBUS_TYPE_ARRAY) ||
+	    dbus_message_iter_get_element_type(prop) != DBUS_TYPE_BYTE)
+		return false;
+
+	dbus_message_iter_recurse(prop, &inner);
+
+	dbus_message_iter_get_fixed_array(&inner, &types, &n);
+
+	for (i = 0; i < n; i++) {
+		if (types[i] == type)
+			return true;
+	}
+
+	return false;
+}
+
+static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
+				DBusMessageIter *props, int *opened)
+{
+	bool have_eid = false, have_net = false, have_cxlmi = false;
+	mctp_eid_t eid;
+	int net;
+	int rc;
+
+	/* for each property */
+	for (;;) {
+		DBusMessageIter prop, val;
+		const char *propname;
+
+		dbus_message_iter_recurse(props, &prop);
+
+		if (!dbus_object_is_type(&prop, DBUS_TYPE_STRING)) {
+			cxlmi_msg(ctx, LOG_ERR,
+				 "error unmashalling object (propname)\n");
+			return -1;
+		}
+
+		dbus_message_iter_get_basic(&prop, &propname);
+
+		dbus_message_iter_next(&prop);
+
+		if (!dbus_object_is_type(&prop, DBUS_TYPE_VARIANT)) {
+			cxlmi_msg(ctx, LOG_ERR,
+				 "error unmashalling object (propval)\n");
+			return -1;
+		}
+
+		dbus_message_iter_recurse(&prop, &val);
+
+		if (!strcmp(propname, "EID")) {
+			rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
+			have_eid = true;
+
+		} else if (!strcmp(propname, "NetworkId")) {
+			rc = read_variant_basic(&val, DBUS_TYPE_INT32, &net);
+			have_net = true;
+
+		} else if (!strcmp(propname, "SupportedMessageTypes")) {
+			have_cxlmi = has_message_type(&val, MCTP_TYPE_CXL_CCI);
+		}
+
+		if (rc)
+			return rc;
+
+		if (!dbus_message_iter_next(props))
+			break;
+	}
+
+	if (have_cxlmi) {
+		if (!(have_eid && have_net)) {
+			cxlmi_msg(ctx, LOG_ERR,
+				 "Missing property for %s\n", objpath);
+			errno = ENOENT;
+			return -1;
+		}
+		rc = cxlmi_mctp_add(ctx, net, eid);
+		if (rc < 0) {
+			int errno_save = errno;
+			cxlmi_msg(ctx, LOG_ERR,
+				 "Error adding net %d eid %d: %m\n", net, eid);
+			errno = errno_save;
+		} else
+			*opened = 1;
+	} else {
+		/* Ignore other endpoints */
+		rc = 0;
+	}
+	return rc;
+}
+
+/* obj is an array of (object path, interfaces) dict entries - ie., dbus type
+ *   a{oa{sa{sv}}}
+ */
+static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
+			   int *opened)
+{
+	const char *objpath = NULL;
+	DBusMessageIter intfs;
+
+	*opened = 0;
+
+	if (!dbus_object_is_type(obj, DBUS_TYPE_OBJECT_PATH)) {
+		cxlmi_msg(ctx, LOG_ERR, "error unmashalling object (path)\n");
+		return -1;
+	}
+
+	dbus_message_iter_get_basic(obj, &objpath);
+
+	dbus_message_iter_next(obj);
+
+	if (!dbus_object_is_dict(obj)) {
+		cxlmi_msg(ctx, LOG_ERR, "error unmashalling object (intfs)\n");
+		return -1;
+	}
+
+	dbus_message_iter_recurse(obj, &intfs);
+
+	/* for each interface */
+	for (;;) {
+		DBusMessageIter props, intf;
+		const char *intfname;
+
+		dbus_message_iter_recurse(&intfs, &intf);
+
+		if (!dbus_object_is_type(&intf, DBUS_TYPE_STRING)) {
+			cxlmi_msg(ctx, LOG_ERR,
+				 "error unmashalling object (intf)\n");
+			return -1;
+		}
+
+		dbus_message_iter_get_basic(&intf, &intfname);
+
+		if (strcmp(intfname, MCTP_DBUS_IFACE_ENDPOINT)) {
+			if (!dbus_message_iter_next(&intfs))
+				break;
+			continue;
+		}
+
+		dbus_message_iter_next(&intf);
+
+		if (!dbus_object_is_dict(&intf)) {
+			cxlmi_msg(ctx, LOG_ERR,
+				 "error unmarshalling object (props)\n");
+			return -1;
+		}
+
+		dbus_message_iter_recurse(&intf, &props);
+		return handle_mctp_endpoint(ctx, objpath, &props, opened);
+	}
+
+	return 0;
+}
+
+int cxlmi_scan_mctp(struct cxlmi_ctx *ctx)
+{
+	DBusMessage *msg, *resp = NULL;
+	DBusConnection *bus = NULL;
+	DBusMessageIter args, objs;
+	dbus_bool_t drc;
+	DBusError berr;
+	int errno_save, nopen = 0, rc = -1;
+
+	dbus_error_init(&berr);
+
+	bus = dbus_bus_get(DBUS_BUS_SYSTEM, &berr);
+	if (!bus) {
+		cxlmi_msg(ctx, LOG_ERR, "Failed connecting to D-Bus: %s (%s)\n",
+			  berr.message, berr.name);
+		return -1;
+	}
+
+	msg = dbus_message_new_method_call(MCTP_DBUS_IFACE,
+					   MCTP_DBUS_PATH,
+					   "org.freedesktop.DBus.ObjectManager",
+					   "GetManagedObjects");
+	if (!msg) {
+		cxlmi_msg(ctx, LOG_ERR, "Failed creating call message\n");
+		return -1;
+	}
+
+	resp = dbus_connection_send_with_reply_and_block(bus, msg,
+							 DBUS_TIMEOUT_USE_DEFAULT,
+							 &berr);
+	dbus_message_unref(msg);
+	if (!resp) {
+		cxlmi_msg(ctx, LOG_ERR, "Failed querying MCTP D-Bus: %s (%s)\n",
+			  berr.message, berr.name);
+		goto out;
+	}
+
+	/* argument container */
+	drc = dbus_message_iter_init(resp, &args);
+	if (!drc) {
+		cxlmi_msg(ctx, LOG_ERR, "can't read dbus reply args\n");
+		goto out;
+	}
+
+	if (!dbus_object_is_dict(&args)) {
+		cxlmi_msg(ctx, LOG_ERR, "error unmashalling args\n");
+		goto out;
+	}
+
+	/* objects container */
+	dbus_message_iter_recurse(&args, &objs);
+
+	rc = 0;
+
+	do {
+		DBusMessageIter ent;
+		int opened;
+
+		dbus_message_iter_recurse(&objs, &ent);
+
+		rc = handle_mctp_obj(ctx, &ent, &opened);
+		if (rc)
+			break;
+
+		nopen += opened;
+	} while (dbus_message_iter_next(&objs));
+
+out:
+	errno_save = errno;
+	if (resp)
+		dbus_message_unref(resp);
+	if (bus)
+		dbus_connection_unref(bus);
+	dbus_error_free(&berr);
+
+	if (rc < 0)
+		errno = errno_save;
+
+	return nopen;
+}
+
+#else /* CONFIG_DBUS */
+
+int cxlmi_scan_mctp(struct cxlmi_ctx *ctx)
+{
+	return 0;
+}
+
+#endif /* CONFIG_DBUS */
+
 CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 					       const char *devname)
 {
@@ -464,7 +755,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 
 	/* ensure no duplicates */
 	cxlmi_for_each_endpoint(ctx, tmp) {
-		if (!strncmp(tmp->devname, devname, strlen(devname))) {
+		if (!strcmp(tmp->devname, devname)) {
 			cxlmi_msg(ctx, LOG_ERR,
 				  "endpoint '%s' already open\n",
 				  devname);
@@ -497,7 +788,6 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 		errno_save = errno;
 		goto err_close_ep;
 	}
-
 
 	return ep;
 err_close_ep:
@@ -561,11 +851,9 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
 	return ep ? list_next(&m->endpoints, ep, entry) : NULL;
 }
 
-static int arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
+static void arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
 			   size_t req_pl_sz, uint8_t cmdset, uint8_t cmd)
 {
-
-
 	if (ep->transport_data) {
 		struct cxlmi_transport_mctp *mctp = ep->transport_data;
 
@@ -583,14 +871,13 @@ static int arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
 			req->pl_length[2] = (req_pl_sz >> 16) & 0xff;
 		}
 	} else {
+		/* while CCIs arent sent directly over ioctl, add general info */
 		*req = (struct cxlmi_cci_msg) {
 			.command = cmd,
 			.command_set = cmdset,
 			.vendor_ext_status = 0xabcd,
 		};
 	}
-
-	return 0;
 }
 
 CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,

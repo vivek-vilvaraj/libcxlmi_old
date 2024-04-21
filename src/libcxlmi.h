@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+/*
+ * This file is part of libcxlmi.
+ */
 #ifndef __LIBCXLMI_H__
 #define __LIBCXLMI_H__
 
@@ -47,6 +51,23 @@ void cxlmi_free_ctx(struct cxlmi_ctx *ctx);
  */
 struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 				       unsigned int net, uint8_t eid);
+
+/**
+ * cxlmi_scan_mctp() - look for MCTP-connected CXL-MI endpoints.
+ * @ctx: library context object to create under
+ *
+ * Description: This function queries the system MCTP daemon ("mctpd") over
+ * D-Bus, to find MCTP endpoints that report support for CXL-MI over MCTP.
+ *
+ * This requires libcxlmi to be compiled with D-Bus support; if not, this
+ * will return -1.
+ *
+ * Return: The number of opened MCTP endpoints after the scan, or -1
+ * upon failure.
+ *
+ * See &cxlmi_open_mctp
+ */
+int cxlmi_scan_mctp(struct cxlmi_ctx *ctx);
 
 /**
  * cxlmi_open() - Create an endpoint to send commands over a Mailbox.

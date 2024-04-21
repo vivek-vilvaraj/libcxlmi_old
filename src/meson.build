@@ -1,4 +1,10 @@
-deps = [ ]
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# This file is part of libcxlmi.
+#
+# Author: Davidlohr Bueso <dave@stgolabs.net>
+#
+deps = [ libdbus_dep ]
 
 sources = [
 	'cxlmi/log.c',

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+/*
+ * This file is part of libcxlmi.
+ */
 #ifndef _LIBCXLMI_PRIVATE_H
 #define _LIBCXLMI_PRIVATE_H
 
@@ -100,7 +104,7 @@ enum cxlmi_component_type {
 struct cxlmi_ctx {
 	FILE *fp;
 	int log_level;
-	bool log_pid;
+
 	bool log_timestamp;
 	struct list_head endpoints; /* all opened endpoints */
 	bool probe_enabled; /* probe upon open, default yes */

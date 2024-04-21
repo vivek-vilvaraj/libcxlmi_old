@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+/*
+ * This file is part of libcxlmi.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -28,42 +32,37 @@ static int show_memdev_info(struct cxlmi_endpoint *ep)
        return 0;
 }
 
-static int show_some_info_from_all_devices(struct cxlmi_ctx *ctx)
+static int show_device_info(struct cxlmi_endpoint *ep)
 {
 	int rc = 0;
-	struct cxlmi_endpoint *ep;
+	struct cxlmi_cmd_identify id;
 
-	cxlmi_for_each_endpoint(ctx, ep) {
-		struct cxlmi_cmd_identify id;
+	rc = cxlmi_cmd_identify(ep, &id);
+	if (rc)
+		return rc;
 
-		rc = cxlmi_cmd_identify(ep, &id);
-		if (rc) {
-			printf("identify failed\n");
-			break;
-		}
+	printf("serial number: 0x%lx\n", (uint64_t)id.serial_num);
 
-		printf("serial number: 0x%lx\n", (uint64_t)id.serial_num);
+	switch (id.component_type) {
+	case 0x00:
+		printf("device type: CXL Switch\n");
+		printf("VID:%04x DID:%04x\n", id.vendor_id, id.device_id);
+		break;
+	case 0x03:
+		printf("device type: CXL Type3 Device\n");
+		printf("VID:%04x DID:%04x SubsysVID:%04x SubsysID:%04x\n",
+		       id.vendor_id, id.device_id,
+		       id.subsys_vendor_id, id.subsys_id);
 
-		switch (id.component_type) {
-		case 0x00:
-			printf("device type: CXL Switch\n");
-			printf("VID:%04x DID:%04x\n", id.vendor_id, id.device_id);
-			break;
-		case 0x03:
-			printf("device type: CXL Type3 Device\n");
-			printf("VID:%04x DID:%04x SubsysVID:%04x SubsysID:%04x\n",
-			       id.vendor_id, id.device_id,
-			       id.subsys_vendor_id, id.subsys_id);
-
-			show_memdev_info(ep);
-			break;
-		case 0x04:
-			printf("GFD not supported\n");
-			/* fallthrough */
-		default:
-			break;
-		}
+		show_memdev_info(ep);
+		break;
+	case 0x04:
+		printf("GFD not supported\n");
+		/* fallthrough */
+	default:
+		break;
 	}
+
 
 	return rc;
 }
@@ -215,7 +214,7 @@ static int show_cel(struct cxlmi_endpoint *ep, int cel_size)
 	if (!ret)
 		return -1;
 
-	memcpy(in.uuid, cel_uuid, sizeof(in.uuid));	
+	memcpy(in.uuid, cel_uuid, sizeof(in.uuid));
 	rc = cxlmi_cmd_get_log_cel(ep, &in, ret);
 	if (rc)
 		goto done;
@@ -269,18 +268,16 @@ int main(int argc, char **argv)
 	struct cxlmi_endpoint *ep;
 	unsigned int nid;
 	uint8_t eid;
-	int rc = EXIT_FAILURE;
+	int dbus, rc = EXIT_FAILURE;
 
-	if (argc != 3) {
-		fprintf(stderr, "Must provide a mctp identifier touple\n");
-		fprintf(stderr, "Usage: cxl-mctp <netid> <epid>\n");
-		goto exit;
+	if (argc == 1) {
+		dbus = true;
+		printf("scanning dbus...\n");
+	} else {
+		nid = atoi(argv[1]);
+		eid = atoi(argv[2]);
+		printf("ep %d:%d\n", nid, eid);
 	}
-
-	nid = strtol(argv[1], NULL, 10);
-	eid = strtol(argv[2], NULL, 10);
-
-	printf("ep %d:%d\n", nid, eid);
 
 	ctx = cxlmi_new_ctx(stdout, DEFAULT_LOGLEVEL);
 	if (!ctx) {
@@ -288,22 +285,37 @@ int main(int argc, char **argv)
 		goto exit;
 	}
 
-	ep = cxlmi_open_mctp(ctx, nid, eid);
-	if (!ep) {
-		fprintf(stderr, "cannot open MCTP endpoint %d:%d\n", nid, eid);
-		goto exit_free_ctx;
+	if (dbus) {
+		int num_ep = cxlmi_scan_mctp(ctx);
+
+		if (num_ep < 0) {
+			fprintf(stderr, "dbus scan error\n");
+			goto exit_free_ctx;
+		} else if (num_ep == 0) {
+			printf("no endpoints found\n");
+			goto exit_free_ctx;
+		} else
+			printf("found %d endpoint(s)\n", num_ep);
+	} else {
+		ep = cxlmi_open_mctp(ctx, nid, eid);
+		if (!ep) {
+			fprintf(stderr, "cannot open MCTP endpoint %d:%d\n", nid, eid);
+			goto exit_free_ctx;
+		}
 	}
 
-	/* yes, only 1 endpoint, but might add more */
-	rc = show_some_info_from_all_devices(ctx);
+	cxlmi_for_each_endpoint(ctx, ep) {
+		rc = show_device_info(ep);
 
-	rc = play_with_device_timestamp(ep);
+		/* rc = play_with_device_timestamp(ep); */
 
-	rc = get_device_logs(ep);
+		/* rc = get_device_logs(ep); */
 
-	rc = toggle_abort(ep);
+		/* rc = toggle_abort(ep); */
 
-	cxlmi_close(ep);
+		cxlmi_close(ep);
+	}
+
 exit_free_ctx:
 	cxlmi_free_ctx(ctx);
 exit:
