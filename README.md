@@ -257,7 +257,7 @@ and link with `-lcxlmi`.
 
 References
 ==========
-- This library has been influenced by cxl-fmapi-tests, libnvme and libcxl (ndctl).
+- This library has been influenced by cxl-fmapi-tests and libnvme(-mi).
 - CXL 3.1 Specification.
 - CXL Type3 Device Component Command Interface over MCTP Binding Specification (DSP0281).
 - CXL Fabric Manager API over MCTP Binding Specification (DSP0324).
