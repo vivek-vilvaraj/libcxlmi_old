@@ -148,7 +148,7 @@ Otherwise `-1` is returned to indicate a problem sending the command, while
 which can be translated to a string with `cxlmi_cmd_retcode_to_str()`.
 Upon error, the return payload is undefined and should be considered invalid.
 
-   ```
+   ```C
    err = cxlmi_cmd_identify(ep, &ret);
    if (err) {
 	   if (err > 0)
@@ -161,7 +161,7 @@ The exception to this is when a background operation has been started,
 which is considered a successful return value. The user must ensure to
 verify, when appropriate, against the `CXLMI_RET_BACKGROUND` value.
 
-   ```
+   ```C
    err = cxlmi_cmd_memdev_sanitize(ep);
    if (err && err != CXLMI_RET_BACKGROUND) {
 	   if (err > 0)
