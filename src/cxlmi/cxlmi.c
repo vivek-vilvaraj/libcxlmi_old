@@ -746,7 +746,7 @@ out:
 
 int cxlmi_scan_mctp(struct cxlmi_ctx *ctx)
 {
-	return 0;
+	return -1;
 }
 
 #endif /* CONFIG_DBUS */
@@ -851,7 +851,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m)
 }
 
 CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
-						struct cxlmi_endpoint * ep)
+						struct cxlmi_endpoint *ep)
 {
 	return ep ? list_next(&m->endpoints, ep, entry) : NULL;
 }

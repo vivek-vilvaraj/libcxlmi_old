@@ -27,7 +27,7 @@ struct cxlmi_endpoint;
  *
  * See &cxlmi_free_ctx.
  */
-struct cxlmi_ctx * cxlmi_new_ctx(FILE *fp, int log_level);
+struct cxlmi_ctx *cxlmi_new_ctx(FILE *fp, int log_level);
 
 /**
  * cxlmi_free_ctx() - Free context object.
@@ -124,7 +124,8 @@ int cxlmi_endpoint_set_timeout(struct cxlmi_endpoint *ep,
  * @m: &cxlmi_ctx object
  *
  * Return: first MI endpoint object under this context, or NULL if no endpoints
- *         are present.
+ *         are present. This library does not gurantee any order upon endpoint
+ *         enumeration.
  *
  * See: &cxlmi_next_endpoint, &cxlmi_for_each_endpoint
  */
@@ -141,7 +142,7 @@ struct cxlmi_endpoint *cxlmi_first_endpoint(struct cxlmi_ctx *m);
  * See: &cxlmi_first_endpoint, &cxlmi_for_each_endpoint
  */
  struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
-					    struct cxlmi_endpoint * ep);
+					    struct cxlmi_endpoint *ep);
 /**
  * cxlmi_for_each_endpoint - Iterator for CXL-MI endpoints.
  * @m: &cxlmi_ctx containing endpoints
