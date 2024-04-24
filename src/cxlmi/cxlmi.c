@@ -637,6 +637,9 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 
 		dbus_message_iter_get_basic(&intf, &intfname);
 
+		printf("intfname::: %s\n\n", intfname);
+
+		
 		if (strcmp(intfname, MCTP_DBUS_IFACE_ENDPOINT)) {
 			if (!dbus_message_iter_next(&intfs))
 				break;
