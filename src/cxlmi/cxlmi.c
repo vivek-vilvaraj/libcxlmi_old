@@ -613,6 +613,8 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 
 	dbus_message_iter_get_basic(obj, &objpath);
 
+	printf("objpath::: %s\n\n", objpath);	
+	
 	dbus_message_iter_next(obj);
 
 	if (!dbus_object_is_dict(obj)) {
