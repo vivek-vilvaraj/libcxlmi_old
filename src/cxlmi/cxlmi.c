@@ -550,7 +550,7 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 		}
 
 		dbus_message_iter_recurse(&prop, &val);
-
+		printf("propname::: %s\n\n", propname);
 
 		if (!strcmp(propname, "EID")) {
 			rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
@@ -558,7 +558,6 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 
 		} else if (!strcmp(propname, "NetworkId")) {
 			rc = read_variant_basic(&val, DBUS_TYPE_INT32, &net);
-			printf("propname::: %s\n\n", propname);
 
 			have_net = true;
 
@@ -613,8 +612,8 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 
 	dbus_message_iter_get_basic(obj, &objpath);
 
-	printf("objpath::: %s\n\n", objpath);	
-	
+	printf("objpath::: %s\n\n", objpath);
+
 	dbus_message_iter_next(obj);
 
 	if (!dbus_object_is_dict(obj)) {
@@ -641,7 +640,6 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 
 		printf("intfname::: %s\n\n", intfname);
 
-		
 		if (strcmp(intfname, MCTP_DBUS_IFACE_ENDPOINT)) {
 			if (!dbus_message_iter_next(&intfs))
 				break;
