@@ -698,7 +698,6 @@ int cxlmi_scan_mctp(struct cxlmi_ctx *ctx)
 		goto out;
 	}
 
-
 	/* argument container */
 	drc = dbus_message_iter_init(resp, &args);
 	if (!drc) {
@@ -716,7 +715,7 @@ int cxlmi_scan_mctp(struct cxlmi_ctx *ctx)
 
 	rc = 0;
 
-	do {
+	for (;;) {
 		DBusMessageIter ent;
 		int opened;
 
@@ -726,9 +725,12 @@ int cxlmi_scan_mctp(struct cxlmi_ctx *ctx)
 		if (rc)
 			break;
 
-		nopen += opened;
-	} while (dbus_message_iter_next(&objs));
 
+		if (!dbus_message_iter_next(&objs))
+			break;
+		nopen += opened;
+		//} while (dbus_message_iter_next(&objs));
+	}
 out:
 	errno_save = errno;
 	if (resp)
