@@ -710,14 +710,6 @@ int cxlmi_scan_mctp(struct cxlmi_ctx *ctx)
 		cxlmi_msg(ctx, LOG_ERR, "error unmashalling args\n");
 		goto out;
 	}
-
-	if (DBUS_TYPE_STRING == dbus_message_iter_get_arg_type(&args)){
-		char* str = NULL;
-		//this function is used to read basic dbus types like int, string etc. 
-		dbus_message_iter_get_basic(&args, &str);
-		printf("basic dbus info::: %s\n", str);
-	}
-
 	
 	/* objects container */
 	dbus_message_iter_recurse(&args, &objs);
