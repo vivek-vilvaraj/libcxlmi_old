@@ -552,8 +552,6 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 		}
 
 		dbus_message_iter_recurse(&prop, &val);
-		dbus_message_iter_get_basic(&prop, &propname2);
-		printf("\t\tpropname2::: %s\n\n", propname2);
 
 		if (!strcmp(propname, "EID")) {
 			rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
@@ -571,8 +569,10 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 		if (rc)
 			return rc;
 
-		if (!dbus_message_iter_next(props))
+		if (!dbus_message_iter_next(props)) {
+			printf("bulla\n\n")''
 			break;
+		}
 	}
 
 	if (have_cxlmi) {
