@@ -639,7 +639,7 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 
 		dbus_message_iter_get_basic(&intf, &intfname);
 
-		printf("intfname::: %s\n\n", intfname);
+		printf("\tintfname::: %s\n\n", intfname);
 
 		if (strcmp(intfname, MCTP_DBUS_IFACE_ENDPOINT)) {
 			if (!dbus_message_iter_next(&intfs))
@@ -647,7 +647,7 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 			continue;
 		}
 
-		dbus_message_iter_next(&intf);
+		/* dbus_message_iter_next(&intf); */
 
 		/* if (!dbus_object_is_dict(&intf)) { */
 		/* 	cxlmi_msg(ctx, LOG_ERR, */
