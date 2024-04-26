@@ -802,7 +802,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 	snprintf(filename, sizeof(filename), "/dev/cxl/%s", devname);
 
 	ep->fd = open(filename, O_RDWR);
-	if (ep->fd < 0) {
+	if (ep->fd <= 0) {
 		errno_save = errno;
 		cxlmi_msg(ctx, LOG_ERR, "could not open %s\n", devname);
 		goto err_close_ep;
