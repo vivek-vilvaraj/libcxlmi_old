@@ -530,7 +530,7 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 	/* for each property */
 	for (;;) {
 		DBusMessageIter prop, val;
-		const char *propname, *propname2;
+		const char *propname;
 
 		dbus_message_iter_recurse(props, &prop);
 
@@ -553,8 +553,8 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 
 		dbus_message_iter_recurse(&prop, &val);
 
-		dbus_message_iter_get_basic(&prop, &propname2);
-		printf("\t\tpropname2::: %s\n\n", propname2);
+		/* dbus_message_iter_get_basic(&prop, &propname2); */
+		/* printf("\t\tpropname2::: %s\n\n", propname2); */
 
 		
 		if (!strcmp(propname, "EID")) {
