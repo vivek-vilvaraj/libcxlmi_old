@@ -551,7 +551,7 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 		}
 
 		dbus_message_iter_recurse(&prop, &val);
-		printf("propname::: %s\n\n", propname);
+		printf("\t\tpropname::: %s\n\n", propname);
 
 		if (!strcmp(propname, "EID")) {
 			rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
@@ -639,7 +639,7 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 
 		dbus_message_iter_get_basic(&intf, &intfname);
 
-		printf("\tintfname::: %s\n\n", intfname);
+		printf("\tintfname::: %s\n", intfname);
 
 		if (strcmp(intfname, MCTP_DBUS_IFACE_ENDPOINT)) {
 			if (!dbus_message_iter_next(&intfs))
@@ -649,13 +649,13 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 
 		dbus_message_iter_next(&intf);
 
-		/* if (!dbus_object_is_dict(&intf)) { */
-		/* 	cxlmi_msg(ctx, LOG_ERR, */
-		/* 		 "error unmarshalling object (props)\n"); */
-		/* 	return -1; */
-		/* } */
+		if (!dbus_object_is_dict(&intf)) {
+			cxlmi_msg(ctx, LOG_ERR,
+				 "error unmarshalling object (props)\n");
+			return -1;
+		}
 
-		/* dbus_message_iter_recurse(&intf, &props); */
+		dbus_message_iter_recurse(&intf, &props);
 		return handle_mctp_endpoint(ctx, objpath, &props, opened);
 	}
 
