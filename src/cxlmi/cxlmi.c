@@ -463,8 +463,8 @@ err_close_ep:
 
 #define MCTP_DBUS_PATH "/xyz/openbmc_project/mctp"
 #define MCTP_DBUS_IFACE "xyz.openbmc_project.MCTP"
-//#define MCTP_DBUS_IFACE_ENDPOINT "au.com.CodeConstruct.MCTP.Endpoint"
-#define MCTP_DBUS_IFACE_ENDPOINT "xyz.openbmc_project.MCTP.Endpoint"
+#define MCTP_DBUS_IFACE_ENDPOINT "au.com.CodeConstruct.MCTP.Endpoint"
+//#define MCTP_DBUS_IFACE_ENDPOINT "xyz.openbmc_project.MCTP.Endpoint"
 
 static int cxlmi_mctp_add(struct cxlmi_ctx *ctx, unsigned int netid, __u8 eid)
 {
@@ -546,17 +546,13 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 		dbus_message_iter_next(&prop);
 
 		/* if (!dbus_object_is_type(&prop, DBUS_TYPE_VARIANT)) { */
-		/* 	cxlmi_msg(ctx, LOG_ERR, */
-		/* 		 "error unmashalling object (propval)\n"); */
-		/* 	return -1; */
+		/*	cxlmi_msg(ctx, LOG_ERR, */
+		/*		 "error unmashalling object (propval)\n"); */
+		/*	return -1; */
 		/* } */
 
 		dbus_message_iter_recurse(&prop, &val);
 
-		/* dbus_message_iter_get_basic(&prop, &propname2); */
-		/* printf("\t\tpropname2::: %s\n\n", propname2); */
-
-		
 		if (!strcmp(propname, "EID")) {
 			rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
 			have_eid = true;
@@ -568,15 +564,17 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 
 		} else if (!strcmp(propname, "SupportedMessageTypes")) {
 			have_cxlmi = has_message_type(&val, MCTP_TYPE_CXL_CCI);
+		} else if (!strcmp(propname, "Connectivity")) {
+			printf("lalala\n");
+			/* rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid); */
+			/* have_eid = true; */
 		}
-
+		
 		if (rc)
 			return rc;
 
-		if (!dbus_message_iter_next(props)) {
-			printf("bulla\n\n");
+		if (!dbus_message_iter_next(props))
 			break;
-		}
 	}
 
 	if (have_cxlmi) {
@@ -722,7 +720,7 @@ int cxlmi_scan_mctp(struct cxlmi_ctx *ctx)
 
 	rc = 0;
 
-	for (;;) {
+	do {
 		DBusMessageIter ent;
 		int opened;
 
@@ -732,12 +730,8 @@ int cxlmi_scan_mctp(struct cxlmi_ctx *ctx)
 		if (rc)
 			break;
 
-
-		if (!dbus_message_iter_next(&objs))
-			break;
 		nopen += opened;
-		//} while (dbus_message_iter_next(&objs));
-	}
+	} while (dbus_message_iter_next(&objs));
 out:
 	errno_save = errno;
 	if (resp)
@@ -748,8 +742,10 @@ out:
 
 	if (rc < 0)
 		errno = errno_save;
+	else
+		rc = nopen;
 
-	return nopen;
+	return rc;
 }
 
 #else /* CONFIG_DBUS */
