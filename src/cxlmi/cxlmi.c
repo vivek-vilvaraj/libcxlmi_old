@@ -570,7 +570,7 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 			return rc;
 
 		if (!dbus_message_iter_next(props)) {
-			printf("bulla\n\n")''
+			printf("bulla\n\n");
 			break;
 		}
 	}
