@@ -545,11 +545,11 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 
 		dbus_message_iter_next(&prop);
 
-		if (!dbus_object_is_type(&prop, DBUS_TYPE_VARIANT)) {
-			cxlmi_msg(ctx, LOG_ERR,
-				 "error unmashalling object (propval)\n");
-			return -1;
-		}
+		/* if (!dbus_object_is_type(&prop, DBUS_TYPE_VARIANT)) { */
+		/* 	cxlmi_msg(ctx, LOG_ERR, */
+		/* 		 "error unmashalling object (propval)\n"); */
+		/* 	return -1; */
+		/* } */
 
 		dbus_message_iter_recurse(&prop, &val);
 
