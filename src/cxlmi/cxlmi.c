@@ -565,10 +565,20 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 		} else if (!strcmp(propname, "SupportedMessageTypes")) {
 			have_cxlmi = has_message_type(&val, MCTP_TYPE_CXL_CCI);
 		} else if (!strcmp(propname, "Connectivity")) {
-			rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
+			if (dbus_object_is_type(&val, DBUS_TYPE_BYTE))
+				printf("dbus type byte\n");
+
+			if (dbus_object_is_type(&val, DBUS_TYPE_INT32))
+				printf("dbus type int\n");
+
+			if (dbus_object_is_type(&val, DBUS_TYPE_VARIANT))
+				printf("dbus type variant\n");
+
+
+			//rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
 			/* have_eid = true; */
 		}
-		
+
 		if (rc)
 			return rc;
 
