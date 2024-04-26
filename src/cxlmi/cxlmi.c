@@ -545,11 +545,11 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 
 		dbus_message_iter_next(&prop);
 
-		/* if (!dbus_object_is_type(&prop, DBUS_TYPE_VARIANT)) { */
-		/*	cxlmi_msg(ctx, LOG_ERR, */
-		/*		 "error unmashalling object (propval)\n"); */
-		/*	return -1; */
-		/* } */
+		if (!dbus_object_is_type(&prop, DBUS_TYPE_VARIANT)) {
+			cxlmi_msg(ctx, LOG_ERR,
+				 "error unmashalling object (propval)\n");
+			return -1;
+		}
 
 		dbus_message_iter_recurse(&prop, &val);
 
@@ -565,8 +565,7 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 		} else if (!strcmp(propname, "SupportedMessageTypes")) {
 			have_cxlmi = has_message_type(&val, MCTP_TYPE_CXL_CCI);
 		} else if (!strcmp(propname, "Connectivity")) {
-			printf("lalala\n");
-			/* rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid); */
+			rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
 			/* have_eid = true; */
 		}
 		
