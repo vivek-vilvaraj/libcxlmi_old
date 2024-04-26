@@ -462,8 +462,8 @@ err_close_ep:
 #ifdef CONFIG_DBUS
 
 #define MCTP_DBUS_PATH "/xyz/openbmc_project/mctp"
-#define MCTP_DBUS_IFACE "au.com.CodeConstruct.MCTP.Endpoint"
-//#define MCTP_DBUS_IFACE_ENDPOINT ""
+#define MCTP_DBUS_IFACE "xyz.openbmc_project.MCTP"
+//#define MCTP_DBUS_IFACE_ENDPOINT "au.com.CodeConstruct.MCTP.Endpoint"
 #define MCTP_DBUS_IFACE_ENDPOINT "xyz.openbmc_project.MCTP.Endpoint"
 
 static int cxlmi_mctp_add(struct cxlmi_ctx *ctx, unsigned int netid, __u8 eid)
@@ -649,11 +649,11 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 
 		dbus_message_iter_next(&intf);
 
-		if (!dbus_object_is_dict(&intf)) {
-			cxlmi_msg(ctx, LOG_ERR,
-				 "error unmarshalling object (props)\n");
-			return -1;
-		}
+		/* if (!dbus_object_is_dict(&intf)) { */
+		/* 	cxlmi_msg(ctx, LOG_ERR, */
+		/* 		 "error unmarshalling object (props)\n"); */
+		/* 	return -1; */
+		/* } */
 
 		dbus_message_iter_recurse(&intf, &props);
 		return handle_mctp_endpoint(ctx, objpath, &props, opened);
