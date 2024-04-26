@@ -647,7 +647,7 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 			continue;
 		}
 
-		/* dbus_message_iter_next(&intf); */
+		dbus_message_iter_next(&intf);
 
 		/* if (!dbus_object_is_dict(&intf)) { */
 		/* 	cxlmi_msg(ctx, LOG_ERR, */
@@ -655,7 +655,7 @@ static int handle_mctp_obj(struct cxlmi_ctx *ctx, DBusMessageIter *obj,
 		/* 	return -1; */
 		/* } */
 
-		dbus_message_iter_recurse(&intf, &props);
+		/* dbus_message_iter_recurse(&intf, &props); */
 		return handle_mctp_endpoint(ctx, objpath, &props, opened);
 	}
 
