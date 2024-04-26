@@ -463,7 +463,8 @@ err_close_ep:
 
 #define MCTP_DBUS_PATH "/xyz/openbmc_project/mctp"
 #define MCTP_DBUS_IFACE "xyz.openbmc_project.MCTP"
-#define MCTP_DBUS_IFACE_ENDPOINT "xyz.openbmc_project.MCTP.Endpoint"
+#define MCTP_DBUS_IFACE_ENDPOINT "au.com.CodeConstruct.MCTP.Endpoint"
+//#define MCTP_DBUS_IFACE_ENDPOINT "xyz.openbmc_project.MCTP.Endpoint"
 
 static int cxlmi_mctp_add(struct cxlmi_ctx *ctx, unsigned int netid, __u8 eid)
 {
@@ -709,7 +710,7 @@ int cxlmi_scan_mctp(struct cxlmi_ctx *ctx)
 		cxlmi_msg(ctx, LOG_ERR, "error unmashalling args\n");
 		goto out;
 	}
-	
+
 	/* objects container */
 	dbus_message_iter_recurse(&args, &objs);
 
