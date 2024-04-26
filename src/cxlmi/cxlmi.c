@@ -788,12 +788,16 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 	if (!ep)
 		return NULL;
 
-	if (!strncmp(devname, "switch", strlen("switch")))
+	if (!strncmp(devname, "switch", strlen("switch"))) {
+		printf("found switch\n");
 		ep->type = CXLMI_SWITCH;
-	else if (!strncmp(devname, "mem", strlen("mem")))
+	} else if (!strncmp(devname, "mem", strlen("mem"))) {
+		printf("found memdev\n");
 		ep->type = CXLMI_TYPE3;
-	else
+	} else {
 		ep->type = -1;
+		printf("wtf\n");
+	}
 
 	snprintf(filename, sizeof(filename), "/dev/cxl/%s", devname);
 
