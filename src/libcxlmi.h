@@ -120,6 +120,16 @@ int cxlmi_endpoint_set_timeout(struct cxlmi_endpoint *ep,
 			       unsigned int timeout_ms);
 
 /**
+ * cxlmi_endpoint_has_fmapi - determine whether or not the underlying
+ * cxl component supports FM-API.
+ * @ep: MI endpoint object
+ *
+ * Returns true if the FM-API commands are accepted/supported by this
+ * device. Otherwise, false.
+ **/
+bool cxlmi_endpoint_has_fmapi(struct cxlmi_endpoint *ep);
+
+/**
  * cxlmi_first_endpoint - Start endpoint iterator
  * @m: &cxlmi_ctx object
  *

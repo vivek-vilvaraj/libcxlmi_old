@@ -78,16 +78,20 @@ struct sockaddr_mctp {
 #define CXL_MCTP_CATEGORY_RSP 1
 
 struct cxlmi_transport_mctp {
-	int	net;
+	int	nid;
 	uint8_t	eid;
 	int	sd;
+	int	fmapi_sd;
 	struct sockaddr_mctp addr;
+	struct sockaddr_mctp fmapi_addr;
 	int tag;
 };
 
 /* 2 secs, see CXL r3.1 Section 9.20.2 */
 #define MCTP_MAX_TIMEOUT 2000
-#define MCTP_TYPE_CXL_CCI 0x8
+
+#define MCTP_TYPE_CXL_FMAPI 0x7
+#define MCTP_TYPE_CXL_CCI   0x8
 
 static bool cxlmi_probe_enabled_default(void)
 {
@@ -165,9 +169,23 @@ CXLMI_EXPORT unsigned int cxlmi_endpoint_get_timeout(struct cxlmi_endpoint *ep)
 	return ep->timeout_ms;
 }
 
+CXLMI_EXPORT bool cxlmi_endpoint_has_fmapi(struct cxlmi_endpoint *ep)
+{
+	if (ep->transport_data) {
+		struct cxlmi_transport_mctp *mctp = ep->transport_data;
+
+		return fcntl(mctp->fmapi_sd, F_GETFD) != -1;
+	} else {
+		return true;
+	}
+}
+
 static void mctp_close(struct cxlmi_endpoint *ep)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+
+	if (cxlmi_endpoint_has_fmapi(ep))
+		close(mctp->fmapi_sd);
 
 	close(mctp->sd);
 }
@@ -358,9 +376,17 @@ CXLMI_EXPORT void cxlmi_set_probe_enabled(struct cxlmi_ctx *ctx, bool enabled)
 }
 
 /* probe cxl component for basic device info */
-static void endpoint_probe(struct cxlmi_endpoint *ep)
+static void endpoint_probe_mctp(struct cxlmi_endpoint *ep)
 {
 	struct cxlmi_cmd_identify id;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct sockaddr_mctp fmapi_addr = {
+		.smctp_family = AF_MCTP,
+		.smctp_network = mctp->nid,
+		.smctp_addr.s_addr = mctp->eid,
+		.smctp_type = MCTP_TYPE_CXL_FMAPI,
+		.smctp_tag = MCTP_TAG_OWNER,
+	};
 
 	if (!ep->ctx->probe_enabled)
 		return;
@@ -383,8 +409,20 @@ static void endpoint_probe(struct cxlmi_endpoint *ep)
 		break;
 	default:
 		ep->type = -1;
-		break;
+		cxlmi_msg(ep->ctx, LOG_INFO,
+			  "mctp probe found unsupported cxl component\n");
+		return;
 	}
+
+	/* FMAPI errors are ignored and the CCI will only be available */
+	mctp->fmapi_sd = socket(AF_MCTP, SOCK_DGRAM, 0);
+	if (mctp->fmapi_sd < 0)
+		return;
+	if (bind(mctp->fmapi_sd, (struct sockaddr *)&fmapi_addr,
+		 sizeof(fmapi_addr)))
+		return;
+
+	mctp->fmapi_addr = fmapi_addr;
 }
 
 CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
@@ -392,7 +430,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 {
 	struct cxlmi_endpoint *ep, *tmp;
 	struct cxlmi_transport_mctp *mctp;
-	int errno_save;
+	int rc, errno_save;
 	struct sockaddr_mctp cci_addr = {
 		.smctp_family = AF_MCTP,
 		.smctp_network = netid,
@@ -406,9 +444,9 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 		if (tmp->transport_data) {
 			struct cxlmi_transport_mctp *mctp = tmp->transport_data;
 
-			if (mctp->net == netid && mctp->eid == eid) {
+			if (mctp->nid == netid && mctp->eid == eid) {
 				cxlmi_msg(ctx, LOG_ERR,
-					  "mctp endpoint %d:%d already open\n",
+					  "mctp endpoint %d:%d already opened\n",
 					  netid, eid);
 				return NULL;
 			}
@@ -425,10 +463,6 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 		goto err_close_ep;
 	}
 
-	mctp->net = netid;
-	mctp->eid = eid;
-	mctp->addr = cci_addr;
-
 	mctp->sd = socket(AF_MCTP, SOCK_DGRAM, 0);
 	if (mctp->sd < 0) {
 		errno_save = errno;
@@ -437,17 +471,21 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 			  netid, eid);
 		goto err_free_mctp;
 	}
-	if (bind(mctp->sd,
-		 (struct sockaddr *)&cci_addr, sizeof(cci_addr))) {
+	rc = bind(mctp->sd, (struct sockaddr *)&cci_addr, sizeof(cci_addr));
+	if (rc) {
 		errno_save = errno;
 		cxlmi_msg(ctx, LOG_ERR,
 			  "cannot bind for mctp endpoint %d:%d\n", netid, eid);
 		goto err_free_mctp;
 	}
 
+	mctp->nid = netid;
+	mctp->eid = eid;
+	mctp->addr = cci_addr;
+
 	ep->transport_data = mctp;
 	ep->timeout_ms = MCTP_MAX_TIMEOUT;
-	endpoint_probe(ep);
+	endpoint_probe_mctp(ep);
 
 	return ep;
 
@@ -556,28 +594,14 @@ static int handle_mctp_endpoint(struct cxlmi_ctx *ctx, const char* objpath,
 		if (!strcmp(propname, "EID")) {
 			rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
 			have_eid = true;
-
 		} else if (!strcmp(propname, "NetworkId")) {
 			rc = read_variant_basic(&val, DBUS_TYPE_INT32, &net);
 
 			printf("t\t\t\tnetworkid: %d\n", net);
 
 			have_net = true;
-
 		} else if (!strcmp(propname, "SupportedMessageTypes")) {
 			have_cxlmi = has_message_type(&val, MCTP_TYPE_CXL_CCI);
-		} else if (!strcmp(propname, "Connectivity")) {
-			if (dbus_object_is_type(&val, DBUS_TYPE_BYTE))
-				printf("dbus type byte\n");
-
-			if (dbus_object_is_type(&val, DBUS_TYPE_INT32))
-				printf("dbus type int\n");
-
-			if (dbus_object_is_type(&val, DBUS_TYPE_VARIANT))
-				printf("dbus type variant\n");
-
-			//rc = read_variant_basic(&val, DBUS_TYPE_BYTE, &eid);
-			/* have_eid = true; */
 		}
 
 		if (rc)
@@ -789,14 +813,11 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 		return NULL;
 
 	if (!strncmp(devname, "switch", strlen("switch"))) {
-		printf("found switch\n");
 		ep->type = CXLMI_SWITCH;
 	} else if (!strncmp(devname, "mem", strlen("mem"))) {
-		printf("found memdev\n");
 		ep->type = CXLMI_TYPE3;
 	} else {
 		ep->type = -1;
-		printf("wtf\n");
 	}
 
 	snprintf(filename, sizeof(filename), "/dev/cxl/%s", devname);
@@ -804,7 +825,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 	ep->fd = open(filename, O_RDWR);
 	if (ep->fd <= 0) {
 		errno_save = errno;
-		cxlmi_msg(ctx, LOG_ERR, "could not open %s\n", devname);
+		cxlmi_msg(ctx, LOG_ERR, "could not open %s\n", filename);
 		goto err_close_ep;
 	}
 
