@@ -456,9 +456,6 @@ static void endpoint_probe_mctp(struct cxlmi_endpoint *ep)
 		.smctp_tag = MCTP_TAG_OWNER,
 	};
 
-	if (!ep->ctx->probe_enabled)
-		return;
-
 	if (cxlmi_cmd_identify(ep, &id))
 		return;
 
@@ -477,10 +474,13 @@ static void endpoint_probe_mctp(struct cxlmi_endpoint *ep)
 		break;
 	default:
 		ep->type = -1;
-		cxlmi_msg(ep->ctx, LOG_INFO,
+		cxlmi_msg(ep->ctx, LOG_WARNING,
 			  "mctp probe found unsupported cxl component\n");
 		return;
 	}
+
+	cxlmi_msg(ep->ctx, LOG_WARNING, "detected %s device\n",
+		  ep->type == CXLMI_SWITCH ? "switch":"type3");
 
 	/* FMAPI errors are ignored and the CCI will only be available */
 	mctp->fmapi_sd = socket(AF_MCTP, SOCK_DGRAM, 0);
