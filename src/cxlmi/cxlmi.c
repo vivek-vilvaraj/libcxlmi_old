@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 #include <poll.h>
 
 #include <sys/ioctl.h>
@@ -127,6 +128,53 @@ CXLMI_EXPORT void cxlmi_free_ctx(struct cxlmi_ctx *ctx)
 	free(ctx);
 }
 
+static const int nsec_per_sec = 1000 * 1000 * 1000;
+/* timercmp and timersub, but for struct timespec */
+#define timespec_cmp(a, b, CMP)						\
+	(((a)->tv_sec == (b)->tv_sec)					\
+		? ((a)->tv_nsec CMP (b)->tv_nsec)			\
+		: ((a)->tv_sec CMP (b)->tv_sec))
+
+#define timespec_sub(a, b, result)					\
+	do {								\
+		(result)->tv_sec = (a)->tv_sec - (b)->tv_sec;		\
+		(result)->tv_nsec = (a)->tv_nsec - (b)->tv_nsec;	\
+		if ((result)->tv_nsec < 0) {				\
+			--(result)->tv_sec;				\
+			(result)->tv_nsec += nsec_per_sec;		\
+		}							\
+	} while (0)
+
+static void cxlmi_insert_delay(struct cxlmi_endpoint *ep)
+{
+	struct timespec now, next, delay;
+	int rc;
+
+	if (!ep->last_resp_time_valid)
+		return;
+
+	/* calculate earliest next command time */
+	next.tv_nsec = ep->last_resp_time.tv_nsec + ep->inter_command_us * 1000;
+	next.tv_sec = ep->last_resp_time.tv_sec;
+	if (next.tv_nsec > nsec_per_sec) {
+		next.tv_nsec -= nsec_per_sec;
+		next.tv_sec += 1;
+	}
+
+	rc = clock_gettime(CLOCK_MONOTONIC, &now);
+	if (rc) {
+		/* not much we can do; continue immediately */
+		return;
+	}
+
+	if (timespec_cmp(&now, &next, >=))
+		return;
+
+	timespec_sub(&next, &now, &delay);
+
+	nanosleep(&delay, NULL);
+}
+
 static struct cxlmi_endpoint *init_endpoint(struct cxlmi_ctx *ctx)
 {
 	struct cxlmi_endpoint *ep;
@@ -168,6 +216,12 @@ CXLMI_EXPORT unsigned int cxlmi_endpoint_get_timeout(struct cxlmi_endpoint *ep)
 {
 	return ep->timeout_ms;
 }
+
+static bool cxlmi_ep_has_quirk(struct cxlmi_endpoint *ep, unsigned long quirk)
+{
+	return ep->quirks & quirk;
+}
+
 
 CXLMI_EXPORT bool cxlmi_endpoint_has_fmapi(struct cxlmi_endpoint *ep)
 {
@@ -352,12 +406,23 @@ err:
 	return -1;
 }
 
+static void cxlmi_record_resp_time(struct cxlmi_endpoint *ep)
+{
+	int rc;
+
+	rc = clock_gettime(CLOCK_MONOTONIC, &ep->last_resp_time);
+	ep->last_resp_time_valid = !rc;
+}
+
 static int send_cmd_cci(struct cxlmi_endpoint *ep,
 			struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
 			struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
 			size_t rsp_msg_sz_min)
 {
 	int rc;
+
+	if (cxlmi_ep_has_quirk(ep, CXLMI_QUIRK_MIN_INTER_COMMAND_TIME))
+		cxlmi_insert_delay(ep);
 
 	if (ep->transport_data) {
 		rc = send_mctp_direct(ep, req_msg, req_msg_sz,
@@ -366,6 +431,9 @@ static int send_cmd_cci(struct cxlmi_endpoint *ep,
 		rc = send_ioctl_direct(ep, req_msg, req_msg_sz,
 				       rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
 	}
+
+	if (cxlmi_ep_has_quirk(ep, CXLMI_QUIRK_MIN_INTER_COMMAND_TIME))
+		cxlmi_record_resp_time(ep);
 
 	return rc;
 }
@@ -423,6 +491,30 @@ static void endpoint_probe_mctp(struct cxlmi_endpoint *ep)
 		return;
 
 	mctp->fmapi_addr = fmapi_addr;
+}
+
+static void endpoint_probe(struct cxlmi_endpoint *ep)
+{
+	if (!ep->ctx->probe_enabled)
+		return;
+
+	/* XXX: quirk machinery is there, but no currently known quirks */
+	ep->quirks = 0;
+
+	/*
+	 * If we're quirking for the inter-command time, record the last
+	 * command time now, so we don't conflict with the just-sent identify.
+	 */
+	if (ep->quirks & CXLMI_QUIRK_MIN_INTER_COMMAND_TIME)
+		cxlmi_record_resp_time(ep);
+
+	if (ep->quirks) {
+		cxlmi_msg(ep->ctx, LOG_DEBUG,
+			  "endpoint: applying quirks 0x%08lx\n", ep->quirks);
+	}
+
+	if (ep->transport_data)
+		endpoint_probe_mctp(ep);
 }
 
 CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
@@ -485,7 +577,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,
 
 	ep->transport_data = mctp;
 	ep->timeout_ms = MCTP_MAX_TIMEOUT;
-	endpoint_probe_mctp(ep);
+	endpoint_probe(ep);
 
 	return ep;
 
@@ -834,6 +926,8 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 		errno_save = errno;
 		goto err_close_ep;
 	}
+
+	endpoint_probe(ep);
 
 	return ep;
 err_close_ep:

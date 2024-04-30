@@ -110,6 +110,12 @@ struct cxlmi_ctx {
 	bool probe_enabled; /* probe upon open, default yes */
 };
 
+/* Set a minimum time between receiving a response from one command and
+ * sending the next request. Some devices may ignore new commands sent too soon
+ * after the previous request, so manually insert a delay
+ */
+#define CXLMI_QUIRK_MIN_INTER_COMMAND_TIME	(1 << 0)
+
 struct cxlmi_endpoint {
 	struct cxlmi_ctx *ctx;
 
@@ -120,9 +126,15 @@ struct cxlmi_endpoint {
 	int fd;
 	char *devname;
 
+	int type;
 	struct list_node entry;
 	unsigned int timeout_ms;
-	int type;
+	unsigned long quirks;
+
+	/* inter-command delay, for CXLMI_QUIRK_MIN_INTER_COMMAND_TIME */
+	unsigned int inter_command_us;
+	struct timespec last_resp_time;
+	bool last_resp_time_valid;
 };
 
 #if (LOG_FUNCNAME == 1)
