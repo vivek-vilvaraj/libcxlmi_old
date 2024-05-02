@@ -319,7 +319,7 @@ static int sanity_check_mctp_rsp(struct cxlmi_endpoint *ep,
 	return 0;
 }
 
-static int send_mctp_direct(struct cxlmi_endpoint *ep,
+static int send_mctp_direct(struct cxlmi_endpoint *ep, bool fmapi,
 			    struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
 			    struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
 			    size_t rsp_msg_sz_min)
@@ -330,13 +330,14 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	struct pollfd pollfds[1];
 	int timeout = ep->timeout_ms ? ep->timeout_ms : -1;
+	int sd = !fmapi ? mctp->sd : mctp->fmapi_sd;
 
 	memset(rsp_msg, 0, rsp_msg_sz);
 
-	len = sendto(mctp->sd, req_msg, req_msg_sz, 0,
+	len = sendto(sd, req_msg, req_msg_sz, 0,
 		     (struct sockaddr *)&mctp->addr, sizeof(mctp->addr));
 
-	pollfds[0].fd = mctp->sd;
+	pollfds[0].fd = sd;
 	pollfds[0].events = POLLIN;
 	while (1) {
 		rc = poll(pollfds, 1, timeout);
@@ -355,7 +356,7 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep,
 		}
 	}
 
-	len = recvfrom(mctp->sd, rsp_msg, rsp_msg_sz, 0,
+	len = recvfrom(sd, rsp_msg, rsp_msg_sz, 0,
 		       (struct sockaddr *)&addrrx, &addrlen);
 
 	return sanity_check_mctp_rsp(ep, req_msg, rsp_msg, len,
@@ -414,18 +415,32 @@ static void cxlmi_record_resp_time(struct cxlmi_endpoint *ep)
 	ep->last_resp_time_valid = !rc;
 }
 
+static bool cxlmi_cmd_is_fmapi(int cmdset)
+{
+	switch(cmdset) {
+	case PHYSICAL_SWITCH:
+	case TUNNEL:
+	case MHD:
+	case DCD_MANAGEMENT:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static int send_cmd_cci(struct cxlmi_endpoint *ep,
 			struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
 			struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
 			size_t rsp_msg_sz_min)
 {
 	int rc;
+	bool fmapi_cmd = cxlmi_cmd_is_fmapi(req_msg->command_set);
 
 	if (cxlmi_ep_has_quirk(ep, CXLMI_QUIRK_MIN_INTER_COMMAND_TIME))
 		cxlmi_insert_delay(ep);
 
 	if (ep->transport_data) {
-		rc = send_mctp_direct(ep, req_msg, req_msg_sz,
+		rc = send_mctp_direct(ep, fmapi_cmd, req_msg, req_msg_sz,
 				      rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
 	} else {
 		rc = send_ioctl_direct(ep, req_msg, req_msg_sz,
