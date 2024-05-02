@@ -327,9 +327,9 @@ int main(int argc, char **argv)
 		}
 
 		if (cxlmi_endpoint_has_fmapi(ep)) {
-			printf("FM-API supported");
+			printf("FM-API supported\n");
 		} else
-			printf("FM-API unsupported");
+			printf("FM-API unsupported\n");
 	} else {
 		fprintf(stderr, "must provide MCTP endpoint nid:eid touple\n");
 		goto exit_free_ctx;
