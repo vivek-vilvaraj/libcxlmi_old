@@ -79,27 +79,14 @@ enum {
 	#define MANAGEMENT_COMMAND     0x0
     MHD = 0x55,
 	#define GET_MHD_INFO 0x0
-    DCD_MANAGEMENT = 0x56
-	#define GET_DCD_INFO 0x0
-	#define GET_HOST_DC_REGION_CONFIG 0x1
-	#define SET_DC_REGION_CONFIG 0x2
-	#define GET_DC_REGION_EXTENT_LIST 0x3
-	#define INITIATE_DC_ADD 0x4
-	#define INITIATE_DC_RELEASE 0x5
+    DCD_MANAGEMENT = 0x56,
+	#define GET_DCD_INFO                0x0
+	#define GET_HOST_DC_REGION_CONFIG   0x1
+	#define SET_DC_REGION_CONFIG        0x2
+	#define GET_DC_REGION_EXTENT_LIST   0x3
+	#define INITIATE_DC_ADD             0x4
+	#define INITIATE_DC_RELEASE         0x5
 };
-
-/* CXL r3.1 Figure 7-19: CCI Message Format */
-struct cxlmi_cci_msg {
-	uint8_t category;
-	uint8_t tag;
-	uint8_t rsv1;
-	uint8_t command;
-	uint8_t command_set;
-	uint8_t pl_length[3]; /* 20 bit little endian, BO bit at bit 23 */
-	uint16_t return_code;
-	uint16_t vendor_ext_status;
-	uint8_t payload[];
-} __attribute__ ((packed));
 
 enum cxlmi_component_type {
 	CXLMI_SWITCH,

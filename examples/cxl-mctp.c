@@ -16,7 +16,7 @@ static int show_memdev_info(struct cxlmi_endpoint *ep)
 	int rc;
 	struct cxlmi_cmd_memdev_identify id;
 
-	rc = cxlmi_cmd_memdev_identify(ep, &id);
+	rc = cxlmi_cmd_memdev_identify(ep, NULL, &id);
 	if (rc)
 		return rc;
 
@@ -37,7 +37,7 @@ static int show_device_info(struct cxlmi_endpoint *ep)
 	int rc = 0;
 	struct cxlmi_cmd_identify id;
 
-	rc = cxlmi_cmd_identify(ep, &id);
+	rc = cxlmi_cmd_identify(ep, NULL, &id);
 	if (rc)
 		return rc;
 
@@ -72,14 +72,14 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 	int rc;
 	struct cxlmi_cmd_bg_op_status sts;
 
-	rc = cxlmi_cmd_bg_op_status(ep, &sts);
+	rc = cxlmi_cmd_bg_op_status(ep, NULL, &sts);
 	if (rc)
 		goto done;
 
 	if (!(sts.status & (1 << 0))) {
 		printf("no background operation in progress...\n");
 
-		rc = cxlmi_cmd_memdev_sanitize(ep);
+		rc = cxlmi_cmd_memdev_sanitize(ep, NULL);
 		if (rc && rc != CXLMI_RET_BACKGROUND) {
 			printf("could not start sanitize: %s\n",
 			       cxlmi_cmd_retcode_tostr(rc));
@@ -90,7 +90,7 @@ static int toggle_abort(struct cxlmi_endpoint *ep)
 		}
 	}
 
-	rc = cxlmi_cmd_request_bg_op_abort(ep);
+	rc = cxlmi_cmd_request_bg_op_abort(ep, NULL);
 	if (rc) {
 		if (rc > 0)
 			printf("request_bg_operation_abort error: %s\n",
@@ -110,25 +110,25 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 		.timestamp = 946684800, /* Jan 1, 2000 */
 	};
 
-	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
+	rc = cxlmi_cmd_get_timestamp(ep, NULL, &get_ts);
 	if (rc)
 		return rc;
 	printf("device timestamp: %lu\n", get_ts.timestamp);
 	orig_ts = get_ts.timestamp;
 
-	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
+	rc = cxlmi_cmd_set_timestamp(ep, NULL, &set_ts);
 	if (rc)
 		return rc;
 
 	memset(&get_ts, 0, sizeof(get_ts));
-	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
+	rc = cxlmi_cmd_get_timestamp(ep, NULL, &get_ts);
 	if (rc)
 		return rc;
 	printf("new device timestamp: %lu\n", get_ts.timestamp);
 
 	memset(&set_ts, 0, sizeof(set_ts));
 	set_ts.timestamp = orig_ts;
-	rc = cxlmi_cmd_set_timestamp(ep, &set_ts);
+	rc = cxlmi_cmd_set_timestamp(ep, NULL, &set_ts);
 	if (rc) {
 		if (rc > 0)
 			printf("set_timestamp error: %s\n",
@@ -137,7 +137,7 @@ static int play_with_device_timestamp(struct cxlmi_endpoint *ep)
 	}
 
 	memset(&get_ts, 0, sizeof(get_ts));
-	rc = cxlmi_cmd_get_timestamp(ep, &get_ts);
+	rc = cxlmi_cmd_get_timestamp(ep, NULL, &get_ts);
 	if (rc)
 		return rc;
 	printf("reset back to original device timestamp: %lu\n", get_ts.timestamp);
@@ -215,7 +215,7 @@ static int show_cel(struct cxlmi_endpoint *ep, int cel_size)
 		return -1;
 
 	memcpy(in.uuid, cel_uuid, sizeof(in.uuid));
-	rc = cxlmi_cmd_get_log_cel(ep, &in, ret);
+	rc = cxlmi_cmd_get_log_cel(ep, NULL, &in, ret);
 	if (rc)
 		goto done;
 
@@ -246,7 +246,7 @@ static int get_device_logs(struct cxlmi_endpoint *ep)
 	if (!gsl)
 		return -1;
 
-	rc = cxlmi_cmd_get_supported_logs(ep, gsl);
+	rc = cxlmi_cmd_get_supported_logs(ep, NULL, gsl);
 	if (rc)
 		return rc;
 

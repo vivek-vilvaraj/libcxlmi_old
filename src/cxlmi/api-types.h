@@ -6,6 +6,19 @@
 
 #include <linux/types.h>
 
+/* CXL r3.1 Figure 7-19: CCI Message Format */
+struct cxlmi_cci_msg {
+	uint8_t category;
+	uint8_t tag;
+	uint8_t rsv1;
+	uint8_t command;
+	uint8_t command_set;
+	uint8_t pl_length[3]; /* 20 bit little endian, BO bit at bit 23 */
+	uint16_t return_code;
+	uint16_t vendor_ext_status;
+	uint8_t payload[];
+} __attribute__ ((packed));
+
 /* CXL r3.1 Section 8.2.9.1.1: Identify (Opcode 0001h) */
 struct cxlmi_cmd_identify {
 	uint16_t vendor_id;
@@ -163,6 +176,22 @@ struct cxlmi_cmd_fmapi_identify_switch_device {
 	uint16_t num_total_vppb;
 	uint16_t num_active_vppb;
 	uint8_t num_hdm_decoder_per_usp;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 7.6.7.3.2: Tunnel Management Command (Opcode 5300h) */
+struct cxl_fmapi_tunnel_command_req {
+	uint8_t id; /* Port or LD ID as appropriate */
+	uint8_t target_type;
+#define TUNNEL_TARGET_TYPE_PORT_OR_LD  0
+#define TUNNEL_TARGET_TYPE_LD_POOL_CCI 1
+	uint16_t command_size;
+	struct cxlmi_cci_msg message[];
+} __attribute__((packed));
+
+struct cxl_fmapi_tunnel_command_rsp {
+	uint16_t length;
+	uint16_t resv;
+	struct cxlmi_cci_msg message[]; /* only one but lets closs over that */
 } __attribute__((packed));
 
 #endif

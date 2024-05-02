@@ -73,7 +73,7 @@ struct sockaddr_mctp {
 #define MCTP_TAG_MASK		0x07
 #define MCTP_TAG_OWNER		0x08
 
-#endif /* HAVE_LINUX_MCTP_H */
+#endif /* !HAVE_LINUX_MCTP_H */
 
 #define CXL_MCTP_CATEGORY_REQ 0
 #define CXL_MCTP_CATEGORY_RSP 1
@@ -363,6 +363,159 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep, bool fmapi,
 				rsp_msg_sz == rsp_msg_sz_min, rsp_msg_sz_min);
 }
 
+static void extract_rsp_msg_from_tunnel(struct cxlmi_cci_msg *tunnel_msg,
+					struct cxlmi_cci_msg *extracted_msg,
+					size_t extracted_msg_size)
+{
+	struct cxl_fmapi_tunnel_command_rsp *rsp =
+		(struct cxl_fmapi_tunnel_command_rsp *)tunnel_msg->payload;
+
+	memcpy(extracted_msg, &rsp->message, extracted_msg_size);
+}
+
+static int build_tunnel_req(struct cxlmi_endpoint *ep, int port_or_ld,
+		    struct cxlmi_cci_msg *payload_in, size_t payload_in_sz,
+		    struct cxlmi_cci_msg **payload_out, size_t *payload_out_sz)
+{
+	struct cxl_fmapi_tunnel_command_req *t_req;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct cxlmi_cci_msg *req;
+	size_t t_req_sz = sizeof(*t_req) + payload_in_sz;
+	size_t req_sz = sizeof(*req) + t_req_sz;
+
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	*req = (struct cxlmi_cci_msg) {
+		.category = CXL_MCTP_CATEGORY_REQ,
+		.tag = mctp->tag++,
+		.command = MANAGEMENT_COMMAND,
+		.command_set = TUNNEL,
+		.vendor_ext_status = 0xabcd,
+		.pl_length = {
+			t_req_sz & 0xff,
+			(t_req_sz >> 8) & 0xff,
+			(t_req_sz >> 16) & 0xff,
+		}
+	};
+
+	t_req = (struct cxl_fmapi_tunnel_command_req *)req->payload;
+	*t_req = (struct cxl_fmapi_tunnel_command_req) {
+		.target_type = TUNNEL_TARGET_TYPE_PORT_OR_LD,
+		.id = port_or_ld,
+		.command_size = payload_in_sz,
+	};
+	if (payload_in_sz)
+		memcpy(t_req->message, payload_in, payload_in_sz);
+	*payload_out = req;
+	*payload_out_sz = req_sz;
+
+	return 0;
+}
+
+static int send_mctp_tunnel1(struct cxlmi_endpoint *ep,
+			     struct cxlmi_tunnel_info *ti,
+			     struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
+			     struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
+			     size_t rsp_msg_sz_min)
+{
+	struct cxl_fmapi_tunnel_command_req *t_req;
+	struct cxl_fmapi_tunnel_command_rsp *t_rsp;
+	struct cxlmi_cci_msg *t_req_msg, *t_rsp_msg;
+	struct sockaddr_mctp addrrx;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct pollfd pollfds[1];
+	int timeout = ep->timeout_ms ? ep->timeout_ms : -1;
+	size_t t_req_msg_sz, t_rsp_msg_sz, len_max, len_min;
+	int len, rc, errno_save;
+	socklen_t addrlen;
+
+	rc = build_tunnel_req(ep, ti->port, req_msg, req_msg_sz, &t_req_msg,
+			 &t_req_msg_sz);
+	if (rc)
+		return rc;
+
+	/* Outer CCI message + tunnel header + inner message */
+	t_rsp_msg_sz = sizeof(*t_rsp_msg) + sizeof(*t_rsp) + rsp_msg_sz;
+	/* These length will be update as tunnel unwound */
+	len_min = sizeof(*t_rsp_msg) + sizeof(*t_rsp) + rsp_msg_sz_min;
+	len_max = sizeof(*t_rsp_msg) + sizeof(*t_rsp) + rsp_msg_sz;
+	t_rsp_msg = calloc(1, t_rsp_msg_sz);
+	if (!t_rsp_msg) {
+		rc = -1;
+		goto free_req;
+	}
+
+	len = sendto(mctp->fmapi_sd, t_req_msg, t_req_msg_sz, 0,
+		     (struct sockaddr *)&mctp->fmapi_addr,
+		     sizeof(mctp->fmapi_addr));
+	if (len != t_req_msg_sz) {
+		cxlmi_msg(ep->ctx, LOG_ERR, "Failed to send whole request\n");
+		rc = -1;
+		goto free_rsp;
+	}
+
+	pollfds[0].fd = mctp->fmapi_sd;
+	pollfds[0].events = POLLIN;
+	while (1) {
+		rc = poll(pollfds, 1, timeout);
+		if (rc > 0)
+			break;
+		else if (rc == 0) {
+			cxlmi_msg(ep->ctx, LOG_DEBUG, "Timeout on MCTP socket");
+			errno = ETIMEDOUT;
+			rc = -1;
+			goto free_rsp;
+		} else if (errno != EINTR) {
+			errno_save = errno;
+			cxlmi_msg(ep->ctx, LOG_ERR,
+				  "Failed polling on MCTP socket");
+			errno = errno_save;
+			rc = -1;
+			goto free_rsp;
+		}
+	}
+
+	len = recvfrom(mctp->fmapi_sd, t_rsp_msg, t_rsp_msg_sz, 0,
+		       (struct sockaddr *)&addrrx, &addrlen);
+
+	rc = sanity_check_mctp_rsp(ep, t_req_msg, t_rsp_msg, len,
+				   len_min == len_max, len_min);
+	if (rc)
+		goto free_rsp;
+
+	/* Update lengths to unwind the outer tunnel */
+	len -= sizeof(*t_rsp_msg) + sizeof(*t_rsp);
+	len_max -= sizeof(*t_rsp_msg) + sizeof(*t_rsp);
+	len_min -= sizeof(*t_rsp_msg) + sizeof(*t_rsp);
+
+	/* Unwind one level of tunnel */
+	t_req = (struct cxl_fmapi_tunnel_command_req *)t_req_msg->payload;
+	t_rsp = (struct cxl_fmapi_tunnel_command_rsp *)t_rsp_msg->payload;
+
+	if (t_rsp->length != len) {
+		cxlmi_msg(ep->ctx, LOG_ERR,
+		  "Tunnel length is not consistent with received length\n");
+		rc = -1;
+		goto free_rsp;
+	}
+
+	/* Need to exclude the tunneled command header from sizes as used for PL check */
+	rc = sanity_check_mctp_rsp(ep, t_req->message, t_rsp->message, len,
+			      len_min == len_max, len_min);
+	if (rc)
+		goto free_rsp;
+
+	extract_rsp_msg_from_tunnel(t_rsp_msg, rsp_msg, rsp_msg_sz);
+
+ free_rsp:
+	free(t_rsp_msg);
+ free_req:
+	free(t_req_msg);
+	return rc;
+}
+
 static int send_ioctl_direct(struct cxlmi_endpoint *ep,
 		      struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
 		      struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
@@ -428,20 +581,30 @@ static bool cxlmi_cmd_is_fmapi(int cmdset)
 	}
 }
 
-static int send_cmd_cci(struct cxlmi_endpoint *ep,
+static int send_cmd_cci(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
 			struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
 			struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
 			size_t rsp_msg_sz_min)
 {
-	int rc;
+	int rc = -1;
 	bool fmapi_cmd = cxlmi_cmd_is_fmapi(req_msg->command_set);
+
+	/* ensure valid tunnel info before anything else */
+	if (ti) {
+		if (ti->level > 2)
+			return -1;
+	}
 
 	if (cxlmi_ep_has_quirk(ep, CXLMI_QUIRK_MIN_INTER_COMMAND_TIME))
 		cxlmi_insert_delay(ep);
 
 	if (ep->transport_data) {
-		rc = send_mctp_direct(ep, fmapi_cmd, req_msg, req_msg_sz,
+		if (!ti || ti->level == 0)
+			rc = send_mctp_direct(ep, fmapi_cmd, req_msg, req_msg_sz,
 				      rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
+		else if (ti->level == 1)
+			rc = send_mctp_tunnel1(ep, ti, req_msg, req_msg_sz,
+				       rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
 	} else {
 		rc = send_ioctl_direct(ep, req_msg, req_msg_sz,
 				       rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
@@ -471,7 +634,7 @@ static void endpoint_probe_mctp(struct cxlmi_endpoint *ep)
 		.smctp_tag = MCTP_TAG_OWNER,
 	};
 
-	if (cxlmi_cmd_identify(ep, &id))
+	if (cxlmi_cmd_identify(ep, NULL, &id))
 		return;
 
 	switch (id.component_type) {
@@ -1036,6 +1199,7 @@ static void arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req
 }
 
 CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
+				    struct cxlmi_tunnel_info *ti,
 				    struct cxlmi_cmd_identify *ret)
 {
 	int rc;
@@ -1052,7 +1216,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto done;
 
@@ -1071,6 +1235,7 @@ done:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
+				struct cxlmi_tunnel_info *ti,
 				struct cxlmi_cmd_bg_op_status *ret)
 {
 	struct cxlmi_cmd_bg_op_status *rsp_pl;
@@ -1087,7 +1252,7 @@ CXLMI_EXPORT int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto done;
 
@@ -1102,7 +1267,8 @@ done:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_get_response_msg_limit(struct cxlmi_endpoint *ep,
-				 struct cxlmi_cmd_get_response_msg_limit *ret)
+				  struct cxlmi_tunnel_info *ti,
+				  struct cxlmi_cmd_get_response_msg_limit *ret)
 {
 	struct cxlmi_cmd_get_response_msg_limit *rsp_pl;
 	struct cxlmi_cci_msg req, *rsp;
@@ -1116,7 +1282,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_response_msg_limit(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto done;
 
@@ -1127,8 +1293,9 @@ done:
 	return rc;
 }
 
-CXLMI_EXPORT int  cxlmi_cmd_set_response_msg_limit(struct cxlmi_endpoint *ep,
-					 struct cxlmi_cmd_set_response_msg_limit *in)
+CXLMI_EXPORT int cxlmi_cmd_set_response_msg_limit(struct cxlmi_endpoint *ep,
+					  struct cxlmi_tunnel_info *ti,
+					  struct cxlmi_cmd_set_response_msg_limit *in)
 {
 	struct cxlmi_cmd_get_response_msg_limit *req_pl;
 	struct cxlmi_cci_msg *req, rsp;
@@ -1145,23 +1312,25 @@ CXLMI_EXPORT int  cxlmi_cmd_set_response_msg_limit(struct cxlmi_endpoint *ep,
 	req_pl = (struct cxlmi_cmd_get_response_msg_limit *)req->payload;
 	req_pl->limit = in->limit;
 
-	rc = send_cmd_cci(ep, req, req_sz,
-			  &rsp, sizeof(rsp), sizeof(rsp));
+	rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
+
 	free(req);
 	return rc;
 }
 
-CXLMI_EXPORT int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep)
+CXLMI_EXPORT int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep,
+					       struct cxlmi_tunnel_info *ti)
 {
 	struct cxlmi_cci_msg req, rsp;
 
 	arm_cci_request(ep, &req, 0, INFOSTAT, BACKGROUND_OPERATION_ABORT);
 
-	return send_cmd_cci(ep, &req, sizeof(req),
+	return send_cmd_cci(ep, ti, &req, sizeof(req),
 			    &rsp, sizeof(rsp), sizeof(rsp));
 }
 
 CXLMI_EXPORT int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
+					 struct cxlmi_tunnel_info *ti,
 					 struct cxlmi_cmd_get_timestamp *ret)
 {
 	struct cxlmi_cmd_get_timestamp *rsp_pl;
@@ -1178,7 +1347,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto done;
 
@@ -1190,6 +1359,7 @@ done:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
+					 struct cxlmi_tunnel_info *ti,
 					 struct cxlmi_cmd_set_timestamp *in)
 {
 	struct cxlmi_cmd_set_timestamp *req_pl;
@@ -1209,7 +1379,7 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	req_pl = (struct cxlmi_cmd_set_timestamp *)req->payload;
 	req_pl->timestamp = cpu_to_le64(in->timestamp);
 
-	rc = send_cmd_cci(ep, req, req_sz,
+	rc = send_cmd_cci(ep, ti, req, req_sz,
 			  &rsp, sizeof(rsp), sizeof(rsp));
 	free(req);
 	return rc;
@@ -1217,6 +1387,7 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 
 static const int maxlogs = 10; /* Only 7 in CXL r3.1 but let us leave room */
 CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
+				      struct cxlmi_tunnel_info *ti,
 				      struct cxlmi_cmd_get_supported_logs *ret)
 {
 	struct cxlmi_cmd_get_supported_logs *rsp_pl;
@@ -1231,7 +1402,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz,
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz,
 			  sizeof(*rsp) + sizeof(*rsp_pl));
 	if (rc)
 		goto done;
@@ -1254,6 +1425,7 @@ done:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
+				       struct cxlmi_tunnel_info *ti,
 				       struct cxlmi_cmd_get_log *in,
 				       struct cxlmi_cmd_get_log_cel_rsp *ret)
 {
@@ -1280,7 +1452,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		goto done_free_req;
 
-	rc = send_cmd_cci(ep, req, req_sz, rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, ti, req, req_sz, rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto done_free;
 
@@ -1300,6 +1472,7 @@ done_free_req:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_clear_log(struct cxlmi_endpoint *ep,
+				     struct cxlmi_tunnel_info *ti,
 				     struct cxlmi_cmd_clear_log *in)
 {
 	struct cxlmi_cmd_clear_log *req_pl;
@@ -1317,14 +1490,15 @@ CXLMI_EXPORT int cxlmi_cmd_clear_log(struct cxlmi_endpoint *ep,
 	req_pl = (struct cxlmi_cmd_clear_log *)req->payload;
 	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
 
-	rc = send_cmd_cci(ep, req, req_sz,
+	rc = send_cmd_cci(ep, ti, req, req_sz,
 			  &rsp, sizeof(rsp), sizeof(rsp));
 	free(req);
 	return rc;
 }
 
 CXLMI_EXPORT int cxlmi_cmd_populate_log(struct cxlmi_endpoint *ep,
-				     struct cxlmi_cmd_populate_log *in)
+				struct cxlmi_tunnel_info *ti,
+				struct cxlmi_cmd_populate_log *in)
 {
 	struct cxlmi_cmd_populate_log *req_pl;
 	struct cxlmi_cci_msg *req, rsp;
@@ -1341,7 +1515,7 @@ CXLMI_EXPORT int cxlmi_cmd_populate_log(struct cxlmi_endpoint *ep,
 	req_pl = (struct cxlmi_cmd_populate_log *)req->payload;
 	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
 
-	rc = send_cmd_cci(ep, req, req_sz,
+	rc = send_cmd_cci(ep, ti, req, req_sz,
 			  &rsp, sizeof(rsp), sizeof(rsp));
 	free(req);
 	return rc;
@@ -1349,8 +1523,9 @@ CXLMI_EXPORT int cxlmi_cmd_populate_log(struct cxlmi_endpoint *ep,
 
 CXLMI_EXPORT int
 cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
-			struct cxlmi_cmd_get_supported_logs_sublist_in *in,
-			struct cxlmi_cmd_get_supported_logs_sublist_out *ret)
+		     struct cxlmi_tunnel_info *ti,
+		     struct cxlmi_cmd_get_supported_logs_sublist_in *in,
+		     struct cxlmi_cmd_get_supported_logs_sublist_out *ret)
 {
 	struct cxlmi_cmd_get_supported_logs_sublist_in *req_pl;
 	struct cxlmi_cmd_get_supported_logs_sublist_out *rsp_pl;
@@ -1374,7 +1549,7 @@ cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		goto done_free_req;
 
-	rc = send_cmd_cci(ep, req, req_sz, rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, ti, req, req_sz, rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto done_free;
 
@@ -1401,6 +1576,7 @@ done_free_req:
 
 
 CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
+				   struct cxlmi_tunnel_info *ti,
 				   struct cxlmi_cmd_memdev_identify *ret)
 {
 	struct cxlmi_cmd_memdev_identify *rsp_pl;
@@ -1418,7 +1594,7 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto done;
 
@@ -1449,6 +1625,7 @@ done:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_memdev_get_health_info(struct cxlmi_endpoint *ep,
+				  struct cxlmi_tunnel_info *ti,
 				  struct cxlmi_cmd_memdev_get_health_info *ret)
 {
 	struct cxlmi_cmd_memdev_get_health_info *rsp_pl;
@@ -1464,7 +1641,7 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_get_health_info(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto done;
 
@@ -1487,7 +1664,8 @@ done:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_memdev_get_alert_config(struct cxlmi_endpoint *ep,
-				  struct cxlmi_cmd_memdev_get_alert_config *ret)
+				   struct cxlmi_tunnel_info *ti,
+				   struct cxlmi_cmd_memdev_get_alert_config *ret)
 {
 	struct cxlmi_cmd_memdev_get_alert_config *rsp_pl;
 	struct cxlmi_cci_msg req, *rsp;
@@ -1502,7 +1680,7 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_get_alert_config(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto done;
 
@@ -1534,7 +1712,8 @@ done:
 }
 
 CXLMI_EXPORT int cxlmi_cmd_memdev_set_alert_config(struct cxlmi_endpoint *ep,
-				  struct cxlmi_cmd_memdev_set_alert_config *in)
+				   struct cxlmi_tunnel_info *ti,
+				   struct cxlmi_cmd_memdev_set_alert_config *in)
 {
 	struct cxlmi_cmd_memdev_set_alert_config *req_pl;
 	struct cxlmi_cci_msg *req, rsp;
@@ -1563,22 +1742,24 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_set_alert_config(struct cxlmi_endpoint *ep,
 	req_pl->corrected_persistent_mem_error_programmable_warning_threshold =
 		cpu_to_le16(in->corrected_persistent_mem_error_programmable_warning_threshold);
 
-	rc = send_cmd_cci(ep, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
+	rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
 	free(req);
 	return rc;
 }
 
-CXLMI_EXPORT int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep)
+CXLMI_EXPORT int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep,
+					   struct cxlmi_tunnel_info *ti)
 {
 	struct cxlmi_cci_msg req, rsp;
 
 	arm_cci_request(ep, &req, 0, SANITIZE, SANITIZE);
 
-	return send_cmd_cci(ep, &req, sizeof(req),
+	return send_cmd_cci(ep, ti, &req, sizeof(req),
 			    &rsp, sizeof(rsp), sizeof(rsp));
 }
 
 CXLMI_EXPORT int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
+			    struct cxlmi_tunnel_info *ti,
 			    struct cxlmi_cmd_fmapi_identify_switch_device *ret)
 {
 	int rc;
@@ -1595,7 +1776,7 @@ CXLMI_EXPORT int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
 	if (!rsp)
 		return -1;
 
-	rc = send_cmd_cci(ep, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
 		goto done;
 
