@@ -331,11 +331,12 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep, bool fmapi,
 	struct pollfd pollfds[1];
 	int timeout = ep->timeout_ms ? ep->timeout_ms : -1;
 	int sd = !fmapi ? mctp->sd : mctp->fmapi_sd;
+	struct sockaddr_mctp addr = !fmapi ? mctp->addr : mctp->fmapi_addr;
 
 	memset(rsp_msg, 0, rsp_msg_sz);
 
 	len = sendto(sd, req_msg, req_msg_sz, 0,
-		     (struct sockaddr *)&mctp->addr, sizeof(mctp->addr));
+		     (struct sockaddr *)&addr, sizeof(addr));
 
 	pollfds[0].fd = sd;
 	pollfds[0].events = POLLIN;
