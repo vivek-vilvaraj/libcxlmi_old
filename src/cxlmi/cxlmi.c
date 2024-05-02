@@ -1028,6 +1028,8 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 	struct cxlmi_cmd_identify *rsp_pl;
 	struct cxlmi_cci_msg req, *rsp;
 
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 18);
+
 	arm_cci_request(ep, &req, 0, INFOSTAT, IS_IDENTIFY);
 
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
@@ -1060,6 +1062,8 @@ CXLMI_EXPORT int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
 	struct cxlmi_cci_msg req, *rsp;
 	ssize_t rsp_sz;
 	int rc;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 8);
 
 	arm_cci_request(ep, &req, 0, INFOSTAT, BACKGROUND_OPERATION_STATUS);
 
@@ -1150,6 +1154,8 @@ CXLMI_EXPORT int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 	ssize_t rsp_sz;
 	int rc;
 
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 8);
+
 	arm_cci_request(ep, &req, 0, TIMESTAMP, GET);
 
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
@@ -1175,6 +1181,8 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	struct cxlmi_cci_msg *req, rsp;
 	size_t req_sz;
 	int rc = 0;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*in) != 8);
 
 	req_sz = sizeof(*req) + sizeof(*in);
 	req = calloc(1, req_sz);
@@ -1385,6 +1393,8 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 	int rc;
 	ssize_t rsp_sz;
 
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 0x45);
+
 	arm_cci_request(ep, &req, 0, IDENTIFY, MEMORY_DEVICE);
 
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
@@ -1560,6 +1570,8 @@ CXLMI_EXPORT int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
 	ssize_t rsp_sz;
 	struct cxlmi_cmd_fmapi_identify_switch_device *rsp_pl;
 	struct cxlmi_cci_msg req, *rsp;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 0x49);
 
 	arm_cci_request(ep, &req, 0, PHYSICAL_SWITCH, IDENTIFY_SWITCH_DEVICE);
 

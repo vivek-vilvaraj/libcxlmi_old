@@ -158,4 +158,8 @@ __cxlmi_msg(struct cxlmi_ctx *c, int lvl, const char *func, const char *format, 
 				   format, ##__VA_ARGS__);		\
 	} while (0)
 
+
+#define CXLMI_BUILD_BUG_MSG(x, msg) _Static_assert(!(x), msg)
+#define CXLMI_BUILD_BUG_ON(x) CXLMI_BUILD_BUG_MSG(x, "not expecting: " #x)
+
 #endif /* _LIBCXLMI_PRIVATE_H */
