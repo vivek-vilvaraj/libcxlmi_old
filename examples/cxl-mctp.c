@@ -32,6 +32,30 @@ static int show_memdev_info(struct cxlmi_endpoint *ep)
        return 0;
 }
 
+static int show_switch_info(struct cxlmi_endpoint *ep)
+{
+	int rc;
+	uint8_t *b;
+	struct cxlmi_cmd_fmapi_identify_switch_device sw_id;
+
+	rc = cxlmi_cmd_fmapi_identify_sw_device(ep, NULL, &sw_id);
+	if (rc)
+		return rc;
+
+	printf("\tNum tot vppb %d, Num Bound vPPB %d, Num HDM dec per USP %d\n",
+	       sw_id.num_total_vppb, sw_id.num_active_vppb,
+	       sw_id.num_hdm_decoder_per_usp);
+	printf("\tPorts %d\n", sw_id.num_physical_ports);
+
+	b = sw_id.active_port_bitmask;
+	printf("\tActivePortMask ");
+	for (int i = 0; i < 32; i++)
+		printf("%02x", b[i]);
+	printf("\n");
+
+	return rc;
+}
+
 static int show_device_info(struct cxlmi_endpoint *ep)
 {
 	int rc = 0;
@@ -47,6 +71,8 @@ static int show_device_info(struct cxlmi_endpoint *ep)
 	case 0x00:
 		printf("device type: CXL Switch\n");
 		printf("VID:%04x DID:%04x\n", id.vendor_id, id.device_id);
+
+		show_switch_info(ep);
 		break;
 	case 0x03:
 		printf("device type: CXL Type3 Device\n");
@@ -294,12 +320,16 @@ int main(int argc, char **argv)
 		eid = atoi(argv[2]);
 		printf("ep %d:%d\n", nid, eid);
 
-
 		ep = cxlmi_open_mctp(ctx, nid, eid);
 		if (!ep) {
 			fprintf(stderr, "cannot open MCTP endpoint %d:%d\n", nid, eid);
 			goto exit_free_ctx;
 		}
+
+		if (cxlmi_endpoint_has_fmapi(ep)) {
+			printf("FM-API supported");
+		} else
+			printf("FM-API unsupported");
 	} else {
 		fprintf(stderr, "must provide MCTP endpoint nid:eid touple\n");
 		goto exit_free_ctx;
