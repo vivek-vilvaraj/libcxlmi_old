@@ -303,9 +303,12 @@ const char *cxlmi_cmd_retcode_tostr(enum cxlmi_cmd_retcode code);
  */
 int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 		       struct cxlmi_cmd_identify *ret);
-
 int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
 			   struct cxlmi_cmd_bg_op_status *ret);
+int cxlmi_cmd_get_response_msg_limit(struct cxlmi_endpoint *ep,
+			     struct cxlmi_cmd_get_response_msg_limit *ret);
+int cxlmi_cmd_set_response_msg_limit(struct cxlmi_endpoint *ep,
+			     struct cxlmi_cmd_set_response_msg_limit *in);
 int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep);
 
 int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
@@ -318,18 +321,34 @@ int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 			  struct cxlmi_cmd_get_log *in,
 			  struct cxlmi_cmd_get_log_cel_rsp *ret);
+int cxlmi_cmd_clear_log(struct cxlmi_endpoint *ep,
+			struct cxlmi_cmd_clear_log *in);
+int cxlmi_cmd_populate_log(struct cxlmi_endpoint *ep,
+			   struct cxlmi_cmd_populate_log *in);
+int cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
+			  struct cxlmi_cmd_get_supported_logs_sublist_in *in,
+			  struct cxlmi_cmd_get_supported_logs_sublist_out *ret);
+
 
 /*
  * Definitions for Memory Device Commands, per CXL r3.1 Table 8-126.
  */
 int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 			      struct cxlmi_cmd_memdev_identify *ret);
+int cxlmi_cmd_memdev_get_health_info(struct cxlmi_endpoint *ep,
+			     struct cxlmi_cmd_memdev_get_health_info *ret);
+int cxlmi_cmd_memdev_get_alert_config(struct cxlmi_endpoint *ep,
+			     struct cxlmi_cmd_memdev_get_alert_config *ret);
+int cxlmi_cmd_memdev_set_alert_config(struct cxlmi_endpoint *ep,
+			     struct cxlmi_cmd_memdev_set_alert_config *in);
 int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep);
 
 
 /*
  * Definitions for FMAPI Commands. per CXL r3.1 Table 8-215.
  */
+int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
+		       struct cxlmi_cmd_fmapi_identify_switch_device *ret);
 
 #ifdef __cplusplus
 }

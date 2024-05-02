@@ -19,17 +19,16 @@
 
 #define CXLMI_EXPORT __attribute__ ((visibility("default")))
 
-/* define cmd-set and cmds, ala qemu */
 enum {
     INFOSTAT    = 0x00,
-	#define IS_IDENTIFY   0x1
+	#define IS_IDENTIFY                    0x1
 	#define BACKGROUND_OPERATION_STATUS    0x2
 	#define GET_RESP_MSG_LIMIT             003
-	#define SET_RSP_MSG_LIMIT              0x4
+	#define SET_RESP_MSG_LIMIT             0x4
 	#define BACKGROUND_OPERATION_ABORT     0x5
     EVENTS      = 0x01,
-	#define GET_RECORDS     0x0
-	#define CLEAR_RECORDS   0x1
+	#define GET_RECORDS            0x0
+	#define CLEAR_RECORDS          0x1
 	#define GET_INTERRUPT_POLICY   0x2
 	#define SET_INTERRUPT_POLICY   0x3
     FIRMWARE_UPDATE = 0x02,
@@ -43,13 +42,19 @@ enum {
 	#define GET_LOG_CAPS  0x2
 	#define CLEAR_LOG     0x3
 	#define POPULATE_LOG  0x4
-	#define GET_SUPPORTED_SUBULIST 0x5
+	#define GET_SUPPORTED_SUBLIST  0x5
     IDENTIFY    = 0x40,
 	#define MEMORY_DEVICE 0x0
     CCLS        = 0x41,
 	#define GET_PARTITION_INFO     0x0
-	#define GET_LSA       0x2
-	#define SET_LSA       0x3
+	#define GET_LSA                0x2
+	#define SET_LSA                0x3
+    HEALTH_INFO_ALERTS = 0x42,
+	#define GET_HEALTH_INFO        0x0
+	#define GET_ALERT_CONFIG       0x1
+	#define SET_ALERT_CONFIG       0x2
+	#define GET_SHUTDOWN_STATE     0x3
+	#define SET_SHUTDOWN_STATE     0x4
     SANITIZE    = 0x44,
 	#define SANITIZE      0x0
 	#define SECURE_ERASE  0x1

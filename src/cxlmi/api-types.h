@@ -58,7 +58,7 @@ struct cxlmi_cmd_get_supported_logs {
 	struct cxlmi_supported_log_entry entries[];
 } __attribute__((packed));
 
-/*  CXL r3.1 Section 8.2.9.5.2: Get Log (Opcode 0401h) */
+/* CXL r3.1 Section 8.2.9.5.2: Get Log (Opcode 0401h) */
 struct cxlmi_cmd_get_log {
 	uint8_t uuid[0x10];
 	uint32_t offset;
@@ -70,7 +70,32 @@ struct cxlmi_cmd_get_log_cel_rsp {
 	uint16_t command_effect;
 } __attribute__((packed));
 
-/*  CXL r3.1 Section 8.2.9.9.1.1: Identify Memory Device (Opcode 4000h) */
+/* CXL r3.1 Section 8.2.9.5.4: Clear Log (Opcode 0403h) */
+struct cxlmi_cmd_clear_log {
+	uint8_t uuid[0x10];
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.5.4: Populate Log (Opcode 0404h) */
+struct cxlmi_cmd_populate_log {
+	uint8_t uuid[0x10];
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.5.5: Get Supported Logs Sub-List (Opcode 0405h) */
+struct cxlmi_cmd_get_supported_logs_sublist_in {
+	uint8_t max_supported_log_entries;
+	uint8_t start_log_entry_index;
+} __attribute__((packed));
+
+struct cxlmi_cmd_get_supported_logs_sublist_out {
+	uint8_t num_supported_log_entries;
+	uint8_t rsvd1;
+	uint16_t total_num_supported_log_entries;
+	uint8_t start_log_entry_index;
+	uint8_t rsvd2[0x3];
+	struct cxlmi_supported_log_entry entries[];
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.9.1.1: Identify Memory Device (Opcode 4000h) */
 struct cxlmi_cmd_memdev_identify {
 	char fw_revision[0x10];
 	uint64_t total_capacity;
@@ -87,6 +112,57 @@ struct cxlmi_cmd_memdev_identify {
 	uint8_t poison_caps;
 	uint8_t qos_telemetry_caps;
 	uint16_t dc_event_log_size;
-}  __attribute__((packed));
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.9.3.1: Get Health Info (Opcode 4200h) */
+struct cxlmi_cmd_memdev_get_health_info {
+	uint8_t health_status;
+	uint8_t media_status;
+	uint8_t additional_status;
+	uint8_t life_used;
+	uint16_t device_temperature;
+	uint32_t dirty_shutdown_count;
+	uint32_t corrected_volatile_error_count;
+	uint32_t corrected_persistent_error_count;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.9.3.2: Get Alert Config (Opcode 4201h) */
+struct cxlmi_cmd_memdev_get_alert_config {
+	uint8_t valid_alerts;
+	uint8_t programmable_alerts;
+	uint8_t life_used_critical_alert_threshold;
+	uint8_t life_used_programmable_warning_threshold;
+	uint16_t device_over_temperature_critical_alert_threshold;
+	uint16_t device_under_temperature_critical_alert_threshold;
+	uint16_t device_over_temperature_programmable_warning_threshold;
+	uint16_t device_under_temperature_programmable_warning_threshold;
+	uint16_t corrected_volatile_mem_error_programmable_warning_threshold;
+	uint16_t corrected_persistent_mem_error_programmable_warning_threshold;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.9.3.3: Set Alert Config (Opcode 4202h) */
+struct cxlmi_cmd_memdev_set_alert_config {
+	uint8_t valid_alert_actions;
+	uint8_t enable_alert_actions;
+	uint8_t life_used_programmable_warning_threshold;
+	uint8_t rsvd1;
+	uint16_t device_over_temperature_programmable_warning_threshold;
+	uint16_t device_under_temperature_programmable_warning_threshold;
+	uint16_t corrected_volatile_mem_error_programmable_warning_threshold;
+	uint16_t corrected_persistent_mem_error_programmable_warning_threshold;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 7.6.7.1.1: Identify Switch Device (Opcode 5100h) */
+struct cxlmi_cmd_fmapi_identify_switch_device {
+	uint8_t ingres_port_id;
+	uint8_t rsv1;
+	uint8_t num_physical_ports;
+	uint8_t num_vcs;
+	uint8_t active_port_bitmask[32];
+	uint8_t active_vcs_bitmask[32];
+	uint16_t num_total_vppb;
+	uint16_t num_active_vppb;
+	uint8_t num_hdm_decoder_per_usp;
+} __attribute__((packed));
 
 #endif
