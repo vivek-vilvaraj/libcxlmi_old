@@ -22,6 +22,7 @@ static int verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 			num_ep, expected);
 		return -1;
 	}
+	
 	return 0;
 }
 
@@ -89,8 +90,8 @@ static int test_ep_duplicates_ioctl(char *devname)
 	}
 
 	cxlmi_close(ep1);
-free_ctx:
 	rc = verify_num_endpoints(ctx, 0);
+free_ctx:
 	cxlmi_free_ctx(ctx);
 	return rc;
 }
@@ -124,10 +125,9 @@ static int test_mixed_ep(unsigned int nid, int8_t eid, char *devname)
 	}
 
 	rc = verify_num_endpoints(ctx, 2);
-
 	cxlmi_close(ep2);
 	cxlmi_close(ep1);
-	verify_num_endpoints(ctx, 0);
+	rc = verify_num_endpoints(ctx, 0);
 free_ctx:
 	cxlmi_free_ctx(ctx);
 	return rc;
