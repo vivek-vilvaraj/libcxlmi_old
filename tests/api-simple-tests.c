@@ -58,7 +58,7 @@ static int test_ep_duplicates_ioctl(char *devname)
 
 	ep1 = cxlmi_open(ctx, devname);
 	if (!ep1) {
-		fprintf(stderr, "cannot open endpoint\n");
+		fprintf(stderr, "cannot open '%s' endpoint\n", devname);
 		goto free_ctx;
 	}
 
@@ -76,11 +76,44 @@ free_ctx:
 	return rc;
 }
 
+static int test_mixed_ep(unsigned int nid, int8_t eid, char *devname)
+{
+
+	struct cxlmi_endpoint *ep1, *ep2;
+	struct cxlmi_ctx *ctx;
+	int rc = -1;
+
+	ctx = cxlmi_new_ctx(stdout, DEFAULT_LOGLEVEL);
+	if (!ctx) {
+		fprintf(stderr, "cannot create new context object\n");
+		return -1;
+	}
+
+	ep1 = cxlmi_open_mctp(ctx, nid, eid);
+	if (!ep1) {
+		fprintf(stderr, "cannot open endpoint\n");
+		goto free_ctx;
+	}
+
+	ep2 = cxlmi_open(ctx, devname);
+	if (!ep2) {
+		fprintf(stderr,
+			"[FAIL] mixed endpoints should be allowed\n");
+	} else {
+		cxlmi_close(ep2);
+		rc = 0;
+	}
+
+	cxlmi_close(ep1);
+free_ctx:
+	cxlmi_free_ctx(ctx);
+	return rc;
+}
 
 /*
  * Ways to run these tests are determined by the passed arguments:
  *
- * api-simple-tests 23 5 <--- mctp tests
+ * api-simple-tests 13 5 <--- mctp tests
  * api-simple-tests switch0 <--- ioctl tests
  * api-simple-tests 23 8 mem2 <--- mctp + ioctl tests
  */
@@ -106,12 +139,14 @@ int main(int argc, char **argv)
 		eid = atoi(argv[2]);
 
 		rc = test_ep_duplicates_mctp(nid, eid);
-	} else if (argc == 4) {
+	} else if (argc == 4) { /* both */
 		nid = atoi(argv[1]);
 		eid = atoi(argv[2]);
 
 		rc = test_ep_duplicates_mctp(nid, eid);
 		rc = test_ep_duplicates_ioctl(argv[3]);
+
+		rc = test_mixed_ep(nid, eid, argv[3]);
 	}
 
 	if (rc)
