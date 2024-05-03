@@ -510,9 +510,9 @@ static int send_mctp_tunnel1(struct cxlmi_endpoint *ep,
 
 	extract_rsp_msg_from_tunnel(t_rsp_msg, rsp_msg, rsp_msg_sz);
 
- free_rsp:
+free_rsp:
 	free(t_rsp_msg);
- free_req:
+free_req:
 	free(t_req_msg);
 	return rc;
 }
@@ -772,7 +772,6 @@ err_close_ep:
 
 #define MCTP_DBUS_PATH "/xyz/openbmc_project/mctp"
 #define MCTP_DBUS_IFACE "xyz.openbmc_project.MCTP"
-//#define MCTP_DBUS_IFACE_ENDPOINT "au.com.CodeConstruct.MCTP.Endpoint"
 #define MCTP_DBUS_IFACE_ENDPOINT "xyz.openbmc_project.MCTP.Endpoint"
 
 static int cxlmi_mctp_add(struct cxlmi_ctx *ctx, unsigned int netid, __u8 eid)
@@ -1276,6 +1275,8 @@ CXLMI_EXPORT int cxlmi_cmd_get_response_msg_limit(struct cxlmi_endpoint *ep,
 	ssize_t rsp_sz;
 	int rc;
 
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 1);
+
 	arm_cci_request(ep, &req, 0, INFOSTAT, GET_RESP_MSG_LIMIT);
 
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
@@ -1302,6 +1303,8 @@ CXLMI_EXPORT int cxlmi_cmd_set_response_msg_limit(struct cxlmi_endpoint *ep,
 	struct cxlmi_cci_msg *req, rsp;
 	size_t req_sz;
 	int rc = 0;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*in) != 1);
 
 	req_sz = sizeof(*req) + sizeof(*in);
 	req = calloc(1, req_sz);
@@ -1525,11 +1528,11 @@ CXLMI_EXPORT int cxlmi_cmd_populate_log(struct cxlmi_endpoint *ep,
 CXLMI_EXPORT int
 cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
 		     struct cxlmi_tunnel_info *ti,
-		     struct cxlmi_cmd_get_supported_logs_sublist_in *in,
-		     struct cxlmi_cmd_get_supported_logs_sublist_out *ret)
+		     struct cxlmi_cmd_get_supported_logs_sublist_req *in,
+		     struct cxlmi_cmd_get_supported_logs_sublist_rsp *ret)
 {
-	struct cxlmi_cmd_get_supported_logs_sublist_in *req_pl;
-	struct cxlmi_cmd_get_supported_logs_sublist_out *rsp_pl;
+	struct cxlmi_cmd_get_supported_logs_sublist_req *req_pl;
+	struct cxlmi_cmd_get_supported_logs_sublist_rsp *rsp_pl;
 	struct cxlmi_cci_msg *req, *rsp;
 	ssize_t req_sz, rsp_sz;
 	int i, rc = -1;
@@ -1540,7 +1543,7 @@ cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
 		return -1;
 
 	arm_cci_request(ep, req, sizeof(*req_pl), LOGS, GET_SUPPORTED_SUBLIST);
-	req_pl = (struct cxlmi_cmd_get_supported_logs_sublist_in *)req->payload;
+	req_pl = (struct cxlmi_cmd_get_supported_logs_sublist_req *)req->payload;
 
 	req_pl->max_supported_log_entries = in->max_supported_log_entries;
 	req_pl->start_log_entry_index = in->start_log_entry_index;
@@ -1554,7 +1557,7 @@ cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
 	if (rc)
 		goto done_free;
 
-	rsp_pl = (struct cxlmi_cmd_get_supported_logs_sublist_out *)rsp->payload;
+	rsp_pl = (struct cxlmi_cmd_get_supported_logs_sublist_rsp *)rsp->payload;
 	memset(ret, 0, sizeof(*ret));
 
 	ret->num_supported_log_entries = rsp_pl->num_supported_log_entries;
@@ -1795,5 +1798,71 @@ CXLMI_EXPORT int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
 	ret->num_hdm_decoder_per_usp = rsp_pl->num_hdm_decoder_per_usp;
 done:
 	free(rsp);
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_fmapi_get_phys_port_state(struct cxlmi_endpoint *ep,
+				     struct cxlmi_tunnel_info *ti,
+				     struct cxlmi_cmd_fmapi_get_phys_port_state_req *in,
+				     struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret)
+{
+	struct cxlmi_cmd_fmapi_get_phys_port_state_req *req_pl;
+	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *rsp_pl;
+	struct cxlmi_cci_msg *req, *rsp;
+	ssize_t req_sz, rsp_sz;
+	int i, rc = -1;
+
+	req_sz = sizeof(*req_pl) + in->num_ports + sizeof(*req);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*req_pl),
+			PHYSICAL_SWITCH, GET_PHYSICAL_PORT_STATE);
+	req_pl = (struct cxlmi_cmd_fmapi_get_phys_port_state_req *)req->payload;
+
+	req_pl->num_ports = in->num_ports;
+	for (i = 0; i < in->num_ports; i++)
+		req_pl->ports[i] = in->ports[i];
+
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) +
+		in->num_ports * sizeof(*rsp_pl->ports);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		goto done_free_req;
+
+	rc = send_cmd_cci(ep, ti, req, req_sz, rsp, rsp_sz, rsp_sz);
+	if (rc)
+		goto done_free;
+
+	rsp_pl = (struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *)rsp->payload;
+	memset(ret, 0, sizeof(*ret));
+
+	ret->num_ports = rsp_pl->num_ports;
+	for (i = 0; i < rsp_pl->num_ports; i++) {
+		ret->ports[i].port_id = rsp_pl->ports[i].port_id;
+		ret->ports[i].config_state = rsp_pl->ports[i].config_state;
+		ret->ports[i].conn_dev_cxl_ver = rsp_pl->ports[i].conn_dev_cxl_ver;
+		ret->ports[i].conn_dev_type = rsp_pl->ports[i].conn_dev_type;
+		ret->ports[i].port_cxl_ver_bitmask =
+			rsp_pl->ports[i].port_cxl_ver_bitmask;
+		ret->ports[i].max_link_width = rsp_pl->ports[i].max_link_width;
+		ret->ports[i].negotiated_link_width =
+			rsp_pl->ports[i].negotiated_link_width;
+		ret->ports[i].supported_link_speeds_vector =
+			rsp_pl->ports[i].supported_link_speeds_vector;
+		ret->ports[i].max_link_speed = rsp_pl->ports[i].max_link_speed;
+		ret->ports[i].current_link_speed =
+			rsp_pl->ports[i].current_link_speed;
+		ret->ports[i].ltssm_state = rsp_pl->ports[i].ltssm_state;
+		ret->ports[i].first_lane_num = rsp_pl->ports[i].first_lane_num;
+		ret->ports[i].link_state = le16_to_cpu(rsp_pl->ports[i].link_state);
+		ret->ports[i].supported_ld_count = rsp_pl->ports[i].supported_ld_count;
+	}
+
+done_free:
+	free(rsp);
+done_free_req:
+	free(req);
 	return rc;
 }

@@ -32,29 +32,41 @@ static int show_memdev_info(struct cxlmi_endpoint *ep)
        return 0;
 }
 
-static int show_switch_info(struct cxlmi_endpoint *ep)
-{
-	int rc;
-	uint8_t *b;
-	struct cxlmi_cmd_fmapi_identify_switch_device sw_id;
+/* static int show_switch_info(struct cxlmi_endpoint *ep) */
+/* { */
+/* 	int rc, i, num_ports; */
+/* 	uint8_t *b; */
+/* 	struct cxlmi_cmd_fmapi_identify_switch_device sw_id; */
+/* 	struct cxlmi_cmd_fmapi_get_phys_port_state_req *in; */
+/* 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret; */
 
-	rc = cxlmi_cmd_fmapi_identify_sw_device(ep, NULL, &sw_id);
-	if (rc)
-		return rc;
+/* 	rc = cxlmi_cmd_fmapi_identify_sw_device(ep, NULL, &sw_id); */
+/* 	if (rc) */
+/* 		return rc; */
 
-	printf("\tNum tot vppb %d, Num Bound vPPB %d, Num HDM dec per USP %d\n",
-	       sw_id.num_total_vppb, sw_id.num_active_vppb,
-	       sw_id.num_hdm_decoder_per_usp);
-	printf("\tPorts %d\n", sw_id.num_physical_ports);
+/* 	printf("Num tot vppb %d, Num Bound vPPB %d, Num HDM dec per USP %d\n", */
+/* 	       sw_id.num_total_vppb, sw_id.num_active_vppb, */
+/* 	       sw_id.num_hdm_decoder_per_usp); */
+/* 	printf("\tPorts %d\n", sw_id.num_physical_ports); */
 
-	b = sw_id.active_port_bitmask;
-	printf("\tActivePortMask ");
-	for (int i = 0; i < 32; i++)
-		printf("%02x", b[i]);
-	printf("\n");
+/* 	b = sw_id.active_port_bitmask; */
+/* 	printf("\tActivePortMask "); */
+/* 	for (int i = 0; i < 32; i++) */
+/* 		printf("%02x", b[i]); */
+/* 	printf("\n"); */
 
-	return rc;
-}
+/* 	num_ports = sw_id.num_physical_ports; */
+
+/* 	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, NULL, in, ret); */
+/* 	if (rc) */
+/* 		return rc; */
+
+/* 	for (i = 0; i < num_ports; i++) { */
+/* 		; */
+/* 	} */
+
+/* 	return rc; */
+/* } */
 
 static int show_device_info(struct cxlmi_endpoint *ep)
 {
@@ -72,7 +84,49 @@ static int show_device_info(struct cxlmi_endpoint *ep)
 		printf("device type: CXL Switch\n");
 		printf("VID:%04x DID:%04x\n", id.vendor_id, id.device_id);
 
-		show_switch_info(ep);
+//		show_switch_info(ep);
+		break;
+	case 0x03:
+		printf("device type: CXL Type3 Device\n");
+		printf("VID:%04x DID:%04x SubsysVID:%04x SubsysID:%04x\n",
+		       id.vendor_id, id.device_id,
+		       id.subsys_vendor_id, id.subsys_id);
+
+		show_memdev_info(ep);
+		break;
+	case 0x04:
+		printf("GFD not supported\n");
+		/* fallthrough */
+	default:
+		break;
+	}
+
+	return rc;
+}
+
+static int show_tunnel_device_info(struct cxlmi_endpoint *ep)
+{
+	int rc = 0;
+	struct cxlmi_tunnel_info ti = {
+		.level = 1,
+		.port = 0,
+		.id = 0,
+	};
+	struct cxlmi_cmd_identify id;
+
+	printf("\n1 Level tunneled Identify Device Request\n");
+	rc = cxlmi_cmd_identify(ep, &ti, &id);
+	if (rc)
+		return rc;
+
+	printf("serial number: 0x%lx\n", (uint64_t)id.serial_num);
+
+	switch (id.component_type) {
+	case 0x00:
+		printf("device type: CXL Switch\n");
+		printf("VID:%04x DID:%04x\n", id.vendor_id, id.device_id);
+
+//		show_switch_info(ep);
 		break;
 	case 0x03:
 		printf("device type: CXL Type3 Device\n");
@@ -90,8 +144,10 @@ static int show_device_info(struct cxlmi_endpoint *ep)
 	}
 
 
+
 	return rc;
 }
+
 
 static int toggle_abort(struct cxlmi_endpoint *ep)
 {
@@ -337,6 +393,7 @@ int main(int argc, char **argv)
 
 	cxlmi_for_each_endpoint(ctx, ep) {
 		rc = show_device_info(ep);
+		rc = show_tunnel_device_info(ep);
 
 		/* rc = play_with_device_timestamp(ep); */
 

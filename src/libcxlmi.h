@@ -352,8 +352,8 @@ int cxlmi_cmd_populate_log(struct cxlmi_endpoint *ep,
 			   struct cxlmi_cmd_populate_log *in);
 int cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
 			  struct cxlmi_tunnel_info *ti,
-			  struct cxlmi_cmd_get_supported_logs_sublist_in *in,
-			  struct cxlmi_cmd_get_supported_logs_sublist_out *ret);
+			  struct cxlmi_cmd_get_supported_logs_sublist_req *in,
+			  struct cxlmi_cmd_get_supported_logs_sublist_rsp *ret);
 
 
 /*
@@ -381,6 +381,10 @@ int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep,
 int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
 		       struct cxlmi_tunnel_info *ti,
 		       struct cxlmi_cmd_fmapi_identify_switch_device *ret);
+int cxlmi_cmd_fmapi_get_phys_port_state(struct cxlmi_endpoint *ep,
+			struct cxlmi_tunnel_info *ti,
+			struct cxlmi_cmd_fmapi_get_phys_port_state_req *in,
+			struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret);
 
 #ifdef __cplusplus
 }

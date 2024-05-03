@@ -94,12 +94,12 @@ struct cxlmi_cmd_populate_log {
 } __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.5.5: Get Supported Logs Sub-List (Opcode 0405h) */
-struct cxlmi_cmd_get_supported_logs_sublist_in {
+struct cxlmi_cmd_get_supported_logs_sublist_req {
 	uint8_t max_supported_log_entries;
 	uint8_t start_log_entry_index;
 } __attribute__((packed));
 
-struct cxlmi_cmd_get_supported_logs_sublist_out {
+struct cxlmi_cmd_get_supported_logs_sublist_rsp {
 	uint8_t num_supported_log_entries;
 	uint8_t rsvd1;
 	uint16_t total_num_supported_log_entries;
@@ -176,6 +176,36 @@ struct cxlmi_cmd_fmapi_identify_switch_device {
 	uint16_t num_total_vppb;
 	uint16_t num_active_vppb;
 	uint8_t num_hdm_decoder_per_usp;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 7.6.7.1.2: Get Physical Port State (Opcode 5101h) */
+struct cxlmi_cmd_fmapi_get_phys_port_state_req {
+	uint8_t num_ports; /* TODO: check may get too large for MCTP message size */
+	uint8_t ports[];
+} __attribute__((packed));
+
+struct cxlmi_fmapi_port_state_info_block {
+	uint8_t port_id;
+	uint8_t config_state;
+	uint8_t conn_dev_cxl_ver;
+	uint8_t rsv1;
+	uint8_t conn_dev_type;
+	uint8_t port_cxl_ver_bitmask;
+	uint8_t max_link_width;
+	uint8_t negotiated_link_width;
+	uint8_t supported_link_speeds_vector;
+	uint8_t max_link_speed;
+	uint8_t current_link_speed;
+	uint8_t ltssm_state;
+	uint8_t first_lane_num;
+	uint16_t link_state;
+	uint8_t supported_ld_count;
+} __attribute__((packed));
+
+struct cxlmi_cmd_fmapi_get_phys_port_state_rsp {
+	uint8_t num_ports;
+	uint8_t rsv1[3];
+	struct cxlmi_fmapi_port_state_info_block ports[];
 } __attribute__((packed));
 
 /* CXL r3.1 Section 7.6.7.3.2: Tunnel Management Command (Opcode 5300h) */
