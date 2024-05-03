@@ -114,7 +114,6 @@ static int test_mixed_ep(unsigned int nid, int8_t eid, char *devname)
 		rc = 0;
 	}
 
-
 	cxlmi_close(ep2);
 	cxlmi_close(ep1);
 free_ctx:

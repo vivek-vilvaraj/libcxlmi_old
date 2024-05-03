@@ -1,10 +1,9 @@
 Pending features before a first release.
 
 - Add all commands as of latest CXL Spec.
-- Add unit tests.
+- Current testing is very simple, add more unit tests.
 - More examples.
-- Support FMAPI.
-- Support tunneling.
+- DBus scanning is broken (endpoints are not found).
 
 Others:
 - Implement missing commands to qemu.
