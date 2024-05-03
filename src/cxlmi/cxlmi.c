@@ -1070,7 +1070,7 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 
 	/* ensure no duplicates */
 	cxlmi_for_each_endpoint(ctx, tmp) {
-		if (!strcmp(tmp->devname, devname)) {
+		if (tmp->devname && !strcmp(tmp->devname, devname)) {
 			cxlmi_msg(ctx, LOG_ERR,
 				  "endpoint '%s' already open\n",
 				  devname);
