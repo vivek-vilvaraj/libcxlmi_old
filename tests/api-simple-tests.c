@@ -43,7 +43,7 @@ free_ctx:
 	return rc;
 }
 
-static int test_ep_duplicates_ioctl(const char *devname)
+static int test_ep_duplicates_ioctl(char *devname)
 {
 
 	struct cxlmi_endpoint *ep1, *ep2;
@@ -56,13 +56,13 @@ static int test_ep_duplicates_ioctl(const char *devname)
 		return -1;
 	}
 
-	ep1 = cxlmi_open_mctp(ctx, nid, eid);
+	ep1 = cxlmi_open(ctx, devname);
 	if (!ep1) {
 		fprintf(stderr, "cannot open endpoint\n");
 		goto free_ctx;
 	}
 
-	ep2 = cxlmi_open_mctp(ctx, nid, eid);
+	ep2 = cxlmi_open(ctx, devname);
 	if (ep2) {
 		fprintf(stderr,
 			"[FAIL] no duplicate endpoints should be allowed\n");
@@ -79,34 +79,41 @@ free_ctx:
 
 /*
  * Ways to run these tests are determined by the passed arguments:
- * 
- * api-simple-tests 11 9 <--- mctp tests
+ *
+ * api-simple-tests 23 5 <--- mctp tests
  * api-simple-tests switch0 <--- ioctl tests
- * api-simple-tests 11 8 mem2 <--- mctp + ioctl tests
+ * api-simple-tests 23 8 mem2 <--- mctp + ioctl tests
  */
 int main(int argc, char **argv)
 {
-	int rc, errs = 0;
+	int rc = 0, errs = 0;
 	unsigned int nid;
 	uint8_t eid;
 
-	if (argc == 2) { /* ioctl */
-		rc = test_ep_duplicates_ioctl(argv[1]);
+	if (argc == 1 || argc > 4) {
+		fprintf(stderr,
+		"Must provide mctp-endpoint and/or a Linux device (ie: mem0)\n");
+		fprintf(stderr, "Usage: api-simple-tests <nid> <eid>\n");
+		fprintf(stderr, "Usage: api-simple-tests <device>\n");
+		fprintf(stderr, "Usage: api-simple-tests <nid> <eid> <device>\n");
+		return EXIT_FAILURE;
 	}
 
-	else if (argc == 3) { /* mctp */
+	if (argc == 2) { /* ioctl */
+		rc = test_ep_duplicates_ioctl(argv[1]);
+	} else if (argc == 3) { /* mctp */
 		nid = atoi(argv[1]);
 		eid = atoi(argv[2]);
 
 		rc = test_ep_duplicates_mctp(nid, eid);
+	} else if (argc == 4) {
+		nid = atoi(argv[1]);
+		eid = atoi(argv[2]);
+
+		rc = test_ep_duplicates_mctp(nid, eid);
+		rc = test_ep_duplicates_ioctl(argv[3]);
 	}
 
-	else if (argc == 4) {
-		
-	}
-	
-
-	rc = test_ep_duplicates(nid, eid);
 	if (rc)
 		errs++;
 
