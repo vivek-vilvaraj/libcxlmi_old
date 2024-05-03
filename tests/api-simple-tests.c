@@ -9,6 +9,17 @@
 
 #include <libcxlmi.h>
 
+static bool verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
+{
+	int num_ep = 0;
+	struct cxlmi_endpoint *ep;
+
+	cxlmi_for_each_endpoint(ctx, ep)
+		num_ep++;
+
+	return num_ep == expected;
+}
+
 /* Ensure no duplicate mctp endpoints are opened */
 static int test_ep_duplicates_mctp(unsigned int nid, int8_t eid)
 {
@@ -39,6 +50,7 @@ static int test_ep_duplicates_mctp(unsigned int nid, int8_t eid)
 
 	cxlmi_close(ep1);
 free_ctx:
+	rc = verify_num_endpoints(ctx, 0);
 	cxlmi_free_ctx(ctx);
 	return rc;
 }
@@ -73,6 +85,7 @@ static int test_ep_duplicates_ioctl(char *devname)
 
 	cxlmi_close(ep1);
 free_ctx:
+	rc = verify_num_endpoints(ctx, 0);
 	cxlmi_free_ctx(ctx);
 	return rc;
 }
@@ -81,9 +94,9 @@ free_ctx:
 static int test_mixed_ep(unsigned int nid, int8_t eid, char *devname)
 {
 
-	struct cxlmi_endpoint *ep1, *ep2, *tmp;
+	struct cxlmi_endpoint *ep1, *ep2;
 	struct cxlmi_ctx *ctx;
-	int rc = -1, n_endpoints = 0;
+	int rc = -1;
 
 	ctx = cxlmi_new_ctx(stdout, DEFAULT_LOGLEVEL);
 	if (!ctx) {
@@ -105,17 +118,11 @@ static int test_mixed_ep(unsigned int nid, int8_t eid, char *devname)
 		goto free_ctx;
 	}
 
-	cxlmi_for_each_endpoint(ctx, tmp)
-		n_endpoints++;
-	if (n_endpoints != 2) {
-		fprintf(stderr, "[FAIL] unexpected number of endpoints (%d)",
-			n_endpoints);
-	} else {
-		rc = 0;
-	}
+	rc = verify_num_endpoints(ctx, 2);
 
 	cxlmi_close(ep2);
 	cxlmi_close(ep1);
+	verify_num_endpoints(ctx, 0);
 free_ctx:
 	cxlmi_free_ctx(ctx);
 	return rc;
