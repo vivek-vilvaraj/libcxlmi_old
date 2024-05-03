@@ -228,7 +228,7 @@ CXLMI_EXPORT bool cxlmi_endpoint_has_fmapi(struct cxlmi_endpoint *ep)
 	if (ep->transport_data) {
 		struct cxlmi_transport_mctp *mctp = ep->transport_data;
 
-		return fcntl(mctp->fmapi_sd, F_GETFD) != -1;
+		return fcntl(mctp->fmapi_sd, F_GETFD) != -1 || errno != EBADF;
 	} else {
 		return true;
 	}
@@ -640,7 +640,7 @@ static void endpoint_probe_mctp(struct cxlmi_endpoint *ep)
 
 	switch (id.component_type) {
 	case 0x00:
-		/* TODO: tunneling from an OoB switch mailbox CCI */
+		/* TODO: ioctl tunneling from a switch mailbox CCI */
 		ep->type = CXLMI_SWITCH;
 		break;
 	case 0x03:
