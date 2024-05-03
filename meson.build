@@ -154,6 +154,9 @@ add_project_arguments(
 subdir('ccan')
 subdir('src')
 subdir('examples')
+if get_option('tests')
+    subdir('tests')
+endif
 
 ################################################################################
 if meson.version().version_compare('>=0.53.0')
