@@ -9,7 +9,7 @@
 
 #include <libcxlmi.h>
 
-static bool verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
+static int verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 {
 	int num_ep = 0;
 	struct cxlmi_endpoint *ep;
