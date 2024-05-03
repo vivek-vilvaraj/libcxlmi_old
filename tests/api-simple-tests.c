@@ -18,7 +18,9 @@ static bool verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 		num_ep++;
 
 	if (num_ep != expected)
-		printf("%d vs %d\n", expected, num_ep);
+		fprintf(stderr, "[FAIL] have %d endpoints, expected %d\n",
+			num_ep, expected);
+
 	return num_ep == expected;
 }
 
