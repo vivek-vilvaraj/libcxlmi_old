@@ -17,6 +17,8 @@ static bool verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 	cxlmi_for_each_endpoint(ctx, ep)
 		num_ep++;
 
+	if (num_ep != expected)
+		printf("%d vs %d\n", expected, num_ep);
 	return num_ep == expected;
 }
 
