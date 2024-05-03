@@ -43,6 +43,7 @@ free_ctx:
 	return rc;
 }
 
+/* ensure no duplicate ioctl endpoints are opened */
 static int test_ep_duplicates_ioctl(char *devname)
 {
 
@@ -76,12 +77,13 @@ free_ctx:
 	return rc;
 }
 
+/* ensure mctp and ioctl endpoints can co-exist */
 static int test_mixed_ep(unsigned int nid, int8_t eid, char *devname)
 {
 
-	struct cxlmi_endpoint *ep1, *ep2;
+	struct cxlmi_endpoint *ep1, *ep2, *tmp;
 	struct cxlmi_ctx *ctx;
-	int rc = -1;
+	int rc = -1, n_endpoints = 0;
 
 	ctx = cxlmi_new_ctx(stdout, DEFAULT_LOGLEVEL);
 	if (!ctx) {
@@ -91,7 +93,8 @@ static int test_mixed_ep(unsigned int nid, int8_t eid, char *devname)
 
 	ep1 = cxlmi_open_mctp(ctx, nid, eid);
 	if (!ep1) {
-		fprintf(stderr, "cannot open endpoint\n");
+		fprintf(stderr,
+			"[FAIL] cannot open '%d:%d' endpoint\n", nid, eid);
 		goto free_ctx;
 	}
 
@@ -99,11 +102,20 @@ static int test_mixed_ep(unsigned int nid, int8_t eid, char *devname)
 	if (!ep2) {
 		fprintf(stderr,
 			"[FAIL] mixed endpoints should be allowed\n");
+		goto free_ctx;
+	}
+
+	cxlmi_for_each_endpoint(ctx, tmp)
+		n_endpoints++;
+	if (n_endpoints != 2) {
+		fprintf(stderr, "[FAIL] unexpected number of endpoints (%d)",
+			n_endpoints);
 	} else {
-		cxlmi_close(ep2);
 		rc = 0;
 	}
 
+
+	cxlmi_close(ep2);
 	cxlmi_close(ep1);
 free_ctx:
 	cxlmi_free_ctx(ctx);
