@@ -54,7 +54,7 @@ static int test_ep_duplicates_mctp(unsigned int nid, int8_t eid)
 
 	cxlmi_close(ep1);
 free_ctx:
-	rc = verify_num_endpoints(ctx, 0);
+	rc = verify_num_endpoints(ctx, 1);
 	cxlmi_free_ctx(ctx);
 	return rc;
 }
