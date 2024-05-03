@@ -17,11 +17,12 @@ static bool verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 	cxlmi_for_each_endpoint(ctx, ep)
 		num_ep++;
 
-	if (num_ep != expected)
+	if (num_ep != expected) {
 		fprintf(stderr, "[FAIL] have %d endpoints, expected %d\n",
 			num_ep, expected);
-
-	return num_ep == expected;
+		return -1;
+	}
+	return 0;
 }
 
 /* Ensure no duplicate mctp endpoints are opened */
@@ -54,7 +55,7 @@ static int test_ep_duplicates_mctp(unsigned int nid, int8_t eid)
 
 	cxlmi_close(ep1);
 free_ctx:
-	rc = verify_num_endpoints(ctx, 1);
+	rc = verify_num_endpoints(ctx, 0);
 	cxlmi_free_ctx(ctx);
 	return rc;
 }
