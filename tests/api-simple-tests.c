@@ -88,8 +88,8 @@ static int test_ep_duplicates_mctp(unsigned int nid, int8_t eid)
 		goto free_ctx;
 
 	cxlmi_close(ep1);
-free_ctx:
 	verify_num_endpoints(ctx, 0);
+free_ctx:
 	cxlmi_free_ctx(ctx);
 	return rc;
 }
