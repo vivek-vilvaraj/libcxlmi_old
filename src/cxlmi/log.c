@@ -42,8 +42,8 @@ __cxlmi_msg(struct cxlmi_ctx *c, int lvl,
 		"[%s] <%s>%s ",
 		"[%s] <%s> %s: ",
 	};
-	char *header = NULL;
-	char *message = NULL;
+	_cleanup_free_ char *header = NULL;
+	_cleanup_free_ char *message = NULL;
 	int idx = 0;
 
 	if (!c)

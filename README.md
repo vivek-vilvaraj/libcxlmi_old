@@ -123,7 +123,7 @@ responses require the user to already provide the output payload buffer.
    struct cxlmi_cmd_get_log in = {
 	   .offset = 0,
 	   .length = cel_size,
-   } ;
+   };
    struct cxlmi_cmd_get_log_cel_rsp *ret = calloc(1, cel_size);
 
    memcpy(in.uuid, cel_uuid, sizeof(in.uuid));

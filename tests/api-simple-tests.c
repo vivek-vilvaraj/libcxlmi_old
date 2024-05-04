@@ -26,6 +26,7 @@ static int verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 	return 0;
 }
 
+/* basic sanity tests for toggling fmapi */
 static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 {
 	if (cxlmi_endpoint_has_fmapi(ep) && cxlmi_endpoint_disable_fmapi(ep)) {
@@ -65,7 +66,7 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 	return 0;
 }
 
-/* Ensure no duplicate mctp endpoints are opened */
+/* ensure no duplicate mctp endpoints are opened */
 static int test_ep_duplicates_mctp(unsigned int nid, int8_t eid)
 {
 
