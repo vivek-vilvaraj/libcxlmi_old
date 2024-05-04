@@ -1249,7 +1249,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 	int rc;
 	ssize_t rsp_sz;
 	struct cxlmi_cmd_identify *rsp_pl;
-	struct cxlmi_cci_msg req, *rsp;
+	struct cxlmi_cci_msg req, _cleanup_free_ *rsp;
 
 	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 18);
 
@@ -1262,7 +1262,8 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 
 	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
 	if (rc)
-		goto done;
+		return -1;
+		/* goto done; */
 
 	rsp_pl = (struct cxlmi_cmd_identify *)rsp->payload;
 
@@ -1273,8 +1274,8 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 	ret->serial_num = le64_to_cpu(rsp_pl->serial_num);
 	ret->max_msg_size = rsp_pl->max_msg_size;
 	ret->component_type = rsp_pl->component_type;
-done:
-	free(rsp);
+/* done: */
+	/* free(rsp); */
 	return rc;
 }
 
