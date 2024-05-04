@@ -28,7 +28,7 @@ static int verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 
 static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 {
-	/* if (cxlmi_endpoint_has_fmapi(ep) && cxlmi_endpoint_disable_fmapi(ep)) { */
+	if (cxlmi_endpoint_has_fmapi(ep) && cxlmi_endpoint_disable_fmapi(ep)) {
 		int rc;
 		struct cxlmi_cmd_identify id;
 		struct cxlmi_tunnel_info ti = {
@@ -38,7 +38,7 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 		};
 
 		rc = cxlmi_cmd_identify(ep, &ti, &id);
-		if (rc != CXLMI_RET_UNSUPPORTED) {
+		if (rc > 0 && rc != CXLMI_RET_UNSUPPORTED) {
 			fprintf(stderr,
 				"[FAIL] unexpected return code (0x%x)\n", rc);
 			return -1;
@@ -50,7 +50,7 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 		}
 
 		cxlmi_endpoint_enable_fmapi(ep);
-	/* } */
+	}
 
 	return 0;
 }
