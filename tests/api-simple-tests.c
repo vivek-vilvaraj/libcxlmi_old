@@ -22,7 +22,36 @@ static int verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 			num_ep, expected);
 		return -1;
 	}
-	
+
+	return 0;
+}
+
+static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
+{
+	if (cxlmi_endpoint_has_fmapi(ep) && cxlmi_endpoint_disable_fmapi(ep)) {
+		int rc;
+		struct cxlmi_cmd_identify id;
+		struct cxlmi_tunnel_info ti = {
+			.level = 1,
+			.port = 0,
+			.id = 0,
+		};
+
+		rc = cxlmi_cmd_identify(ep, &ti, &id);
+		if (rc != CXLMI_RET_UNSUPPORTED) {
+			fprintf(stderr,
+				"[FAIL] unexpected return code (0x%x)\n", rc);
+			return -1;
+		}
+
+		if (cxlmi_endpoint_has_fmapi(ep)) {
+			fprintf(stderr, "[FAIL] FM-API is enabled\n");
+			return -1;
+		}
+
+		cxlmi_endpoint_enable_fmapi(ep);
+	}
+
 	return 0;
 }
 
@@ -54,9 +83,13 @@ static int test_ep_duplicates_mctp(unsigned int nid, int8_t eid)
 		rc = -1;
 	}
 
+	rc = verify_ep_fmapi(ep1);
+	if (rc)
+		goto free_ctx;
+
 	cxlmi_close(ep1);
 free_ctx:
-	rc = verify_num_endpoints(ctx, 0);
+	verify_num_endpoints(ctx, 0);
 	cxlmi_free_ctx(ctx);
 	return rc;
 }
@@ -90,8 +123,8 @@ static int test_ep_duplicates_ioctl(char *devname)
 	}
 
 	cxlmi_close(ep1);
-	rc = verify_num_endpoints(ctx, 0);
 free_ctx:
+	rc = verify_num_endpoints(ctx, 0);
 	cxlmi_free_ctx(ctx);
 	return rc;
 }

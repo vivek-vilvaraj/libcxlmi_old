@@ -222,7 +222,6 @@ static bool cxlmi_ep_has_quirk(struct cxlmi_endpoint *ep, unsigned long quirk)
 	return ep->quirks & quirk;
 }
 
-
 CXLMI_EXPORT bool cxlmi_endpoint_has_fmapi(struct cxlmi_endpoint *ep)
 {
 	if (ep->transport_data) {
@@ -234,13 +233,58 @@ CXLMI_EXPORT bool cxlmi_endpoint_has_fmapi(struct cxlmi_endpoint *ep)
 	}
 }
 
+CXLMI_EXPORT bool cxlmi_endpoint_enable_fmapi(struct cxlmi_endpoint *ep)
+{
+	if (cxlmi_endpoint_has_fmapi(ep)) /* nop */
+		return true;
+
+	if (ep->transport_data) {
+		struct cxlmi_transport_mctp *mctp = ep->transport_data;
+		struct sockaddr_mctp fmapi_addr = {
+			.smctp_family = AF_MCTP,
+			.smctp_network = mctp->nid,
+			.smctp_addr.s_addr = mctp->eid,
+			.smctp_type = MCTP_TYPE_CXL_FMAPI,
+			.smctp_tag = MCTP_TAG_OWNER,
+		};
+
+		mctp->fmapi_sd = socket(AF_MCTP, SOCK_DGRAM, 0);
+		if (bind(mctp->fmapi_sd, (struct sockaddr *)&fmapi_addr,
+			 sizeof(fmapi_addr))) {
+			cxlmi_msg(ep->ctx, LOG_INFO, "FM-API unsupported\n");
+			return false;
+		}
+
+		mctp->fmapi_addr = fmapi_addr;
+		return true;
+	} else {
+		return true;
+	}
+}
+
+CXLMI_EXPORT bool cxlmi_endpoint_disable_fmapi(struct cxlmi_endpoint *ep)
+{
+	if (!cxlmi_endpoint_has_fmapi(ep)) /* nop */
+		return true;
+
+	if (ep->transport_data) {
+		struct cxlmi_transport_mctp *mctp = ep->transport_data;
+
+		close(mctp->fmapi_sd);
+		memset(&mctp->fmapi_addr, 0, sizeof(mctp->fmapi_addr));
+		return true;
+	} else {
+		return false;
+	}
+}
+
 static void mctp_close(struct cxlmi_endpoint *ep)
 {
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
-
+	
 	if (cxlmi_endpoint_has_fmapi(ep))
 		close(mctp->fmapi_sd);
-
+		
 	close(mctp->sd);
 }
 
@@ -661,7 +705,7 @@ static void endpoint_probe_mctp(struct cxlmi_endpoint *ep)
 	cxlmi_msg(ep->ctx, LOG_INFO, "detected %s device\n",
 		  ep->type == CXLMI_SWITCH ? "switch":"type3");
 
-	/* FMAPI errors are ignored and the CCI will only be available */
+	/* FM-API errors are ignored and the CCI will only be available */
 	mctp->fmapi_sd = socket(AF_MCTP, SOCK_DGRAM, 0);
 	if (bind(mctp->fmapi_sd, (struct sockaddr *)&fmapi_addr,
 		 sizeof(fmapi_addr))) {
