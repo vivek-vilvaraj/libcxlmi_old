@@ -4,16 +4,17 @@ CXL Management Interface library (libcxlmi).
 
 CXL Management Interface utility library, which provides type definitions
 for CXL specification structures, enumerations and helper functions to
-construct, send and decode commands (CCI) and payloads over an out-of-band
-(OoB) link, typically MCTP-based CCIs over I2C or VDM. As such, users will
-mostly be BMC, firmware and/or fabric managers, targeting: Type3 SLD,
-Type3 MLD (FM owned) or a CXL Switch.
+construct, send and decode commands (CCI) and payloads over both
+traditional in-band (Linux) an out-of-band (OoB) link, typically
+MCTP-based CCIs over I2C or VDM. As such, users will mostly be BMC,
+firmware and/or fabric managers, targeting: Type3 SLD, Type3 MLD
+(FM owned) or a CXL Switch.
 
 CXL Manageability Model defines a CXL device to be the managed entity,
-through various command sets, which can have sensor or effector
-semantics, depending on whether the it affects device state (read-only)
-or not. These can be accessed either in-band or out-of-band. As such,
-CXL supports various management interfaces and interconnects.
+through various command sets, which can have sensor/effector semantics,
+depending on whether the it affects device state (read-only). These can
+be accessed either in-band or out-of-band. As such, CXL supports various
+management interfaces and interconnects.
 
 Actual management of CXL components is done through the Component Command
 Interface (CCI), which represents a command, and can be either Mailbox
@@ -33,7 +34,7 @@ Unlike the actual CCI commands described below, the library provided
 abstractions (data structures) listed here are opaque, and therefore
 individual members cannot be directly referenced.
 
-- `struct cxlmi_ctx`: library context object - holds general information
+- `struct cxlmi_ctx`C: library context object - holds general information
 common to all opened/tracked endpoints as well as library settings. Before
 component enumeration, a new context must be created via `cxlmi_new_ctx()`,
 providing basic logging information. And once finished with it, the
@@ -170,6 +171,17 @@ verify, when appropriate, against the `CXLMI_RET_BACKGROUND` value.
    }
    ```
 
+FM-API Management
+-----------------
+By default, an endpoint will allow FM-API commands, *if* supported by the
+CXL component (or implicitly by disabling probing, see Component Discovery
+section above). To check if such commands are supported, `cxlmi_endpoint_has_fmapi()`
+can be called. Similarly, to control it enable/disable it dynamically,
+`cxlmi_endpoint_disable_fmapi()` and `cxlmi_endpoint_enable_fmapi()` can be used.
+This will impact on whether or not tunneling is available as a form of sending
+commands. If FM-API is disabled, the tunneled command will fail (unsupported)
+after passing a `struct cxlmi_tunnel_info` parameter.
+
 Logging
 -------
 Library internal logging information is set upon context creation, using `stderr`
@@ -198,8 +210,6 @@ change, such as Conventional Resets.
 - CXL r3.1 + DMTF binding specs are not clear on what Message type is used for the
 generic command set - these can be issued to either a switch or a type 3 device.
 The assumption here is that for those command either smctp_type is fine.
-
-- FMAPI command set (used to manage/tunnel CXL Switches) is TODO.
 
 
 Requirements
