@@ -19,7 +19,7 @@
 
 #define CXLMI_EXPORT __attribute__ ((visibility("default")))
 
-#define __cleanup__(fn) 
+#define __cleanup__(fn)
 #define _cleanup_free_ __cleanup__(freep)
 
 enum {
