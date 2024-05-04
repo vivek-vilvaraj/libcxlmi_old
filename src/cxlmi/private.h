@@ -19,8 +19,11 @@
 
 #define CXLMI_EXPORT __attribute__ ((visibility("default")))
 
-#define __cleanup__(fn)
-#define _cleanup_free_ __cleanup__(freep)
+static inline void freep(void *p)
+{
+	free(*(void **)p);
+}
+#define _cleanup_free_ __attribute__((cleanup(freep)))
 
 enum {
     INFOSTAT    = 0x00,
