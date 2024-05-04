@@ -51,14 +51,11 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 
 		if (cxlmi_endpoint_enable_fmapi(ep)) {
 			rc = cxlmi_cmd_identify(ep, &ti, &id);
-			if (rc == -1) {
+			if (rc) {
 				fprintf(stderr,
-				"[FAIL] unexpected return code (0x%x)\n", rc);
+					"[FAIL] unexpected return code (0x%x)\n", rc);
 				return -1;
 			}
-			//if (rc > 0) {
-			fprintf(stderr, "[SUCCESS]  return code (0x%x)\n", rc);
-				//}
 		}
 	}
 
