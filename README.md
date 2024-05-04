@@ -100,7 +100,7 @@ responses require the user to already provide the output payload buffer.
 	  .timestamp = 946684800, /* Jan 1, 2000 */
    };
 
-   err = cxlmi_cmd_set_timestamp(ep, &ts);
+   err = cxlmi_cmd_set_timestamp(ep, NULL, &ts);
    if (err) {
 	   /* handle error */
    }
@@ -111,8 +111,8 @@ responses require the user to already provide the output payload buffer.
    ```C
    struct cxlmi_cmd_get_timestamp ts;
 
-   err = cxlmi_cmd_get_timestamp(ep, &ts);
-   if (err == 0) {
+   err = cxlmi_cmd_get_timestamp(ep, NULL, &ts);
+   if (!err) {
 	   /* do something with ts.timestamp */
    }
    ```
@@ -127,7 +127,7 @@ responses require the user to already provide the output payload buffer.
    struct cxlmi_cmd_get_log_cel_rsp *ret = calloc(1, cel_size);
 
    memcpy(in.uuid, cel_uuid, sizeof(in.uuid));
-   err = cxlmi_cmd_get_log(ep, &in, ret);
+   err = cxlmi_cmd_get_log(ep, NULL, &in, ret);
    if (err == 0) {
 	   /* do something with ret[i].opcode */
    }
@@ -137,7 +137,7 @@ responses require the user to already provide the output payload buffer.
 4. No input, no output payload
 
    ```C
-   err = cxlmi_cmd_request_bg_operation_abort(ep);
+   err = cxlmi_cmd_request_bg_operation_abort(ep, NULL);
    if (err) {
 	   /* handle error */
    }
@@ -150,7 +150,7 @@ which can be translated to a string with `cxlmi_cmd_retcode_to_str()`.
 Upon error, the return payload is undefined and should be considered invalid.
 
    ```C
-   err = cxlmi_cmd_identify(ep, &ret);
+   err = cxlmi_cmd_fmapi_identify_switch_device(ep, NULL, &ret);
    if (err) {
 	   if (err > 0)
 		   fprintf(stderr, "%s", cxlmi_cmd_retcode_to_str(err));
@@ -163,7 +163,7 @@ which is considered a successful return value. The user must ensure to
 verify, when appropriate, against the `CXLMI_RET_BACKGROUND` value.
 
    ```C
-   err = cxlmi_cmd_memdev_sanitize(ep);
+   err = cxlmi_cmd_memdev_sanitize(ep, NULL);
    if (err && err != CXLMI_RET_BACKGROUND) {
 	   if (err > 0)
 		   fprintf(stderr, "%s", cxlmi_cmd_retcode_tostr(err));
