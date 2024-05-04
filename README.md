@@ -222,12 +222,13 @@ Requirements
 3. Enabling use of aspeed-i2c with ACPI **out-of-tree** series
    https://lore.kernel.org/all/20230531100600.13543-1-Jonathan.Cameron@huawei.com/
 
-4. The following kernel configuration enabled:
+4. Kernel configurations enabled (and RAW command support for ioctl):
    ```
    CONFIG_MCTP_TRANSPORT_I2C=y
    CONFIG_MCTP=y
    CONFIG_MCTP_FLOWS=y
    CONFIG_I2C_ASPEED=y
+   CONFIG_CXL_MEM_RAW_COMMANDS=y
    ```
 
 For more info, refer to https://gitlab.com/jic23/cxl-fmapi-tests
