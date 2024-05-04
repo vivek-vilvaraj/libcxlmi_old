@@ -38,21 +38,28 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 		};
 
 		rc = cxlmi_cmd_identify(ep, &ti, &id);
-		if (rc == 0)
-			fprintf(stderr, "[FAIL] tunnel command did not fail\n");
-		else if (rc > 0 && rc != CXLMI_RET_UNSUPPORTED) {
+
+		if (rc != -1) {
 			fprintf(stderr,
 				"[FAIL] unexpected return code (0x%x)\n", rc);
 			return -1;
-		} else if (rc == -1)
-			printf("skipping\n");
-			
+		}
 		if (cxlmi_endpoint_has_fmapi(ep)) {
 			fprintf(stderr, "[FAIL] FM-API is enabled\n");
 			return -1;
 		}
 
-		cxlmi_endpoint_enable_fmapi(ep);
+		if (cxlmi_endpoint_enable_fmapi(ep)) {
+			rc = cxlmi_cmd_identify(ep, &ti, &id);
+			if (rc == -1) {
+				fprintf(stderr,
+				"[FAIL] unexpected return code (0x%x)\n", rc);
+				return -1;
+			}
+			//if (rc > 0) {
+			fprintf(stderr, "[SUCCESS]  return code (0x%x)\n", rc);
+				//}
+		}
 	}
 
 	return 0;
