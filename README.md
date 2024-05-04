@@ -34,7 +34,7 @@ Unlike the actual CCI commands described below, the library provided
 abstractions (data structures) listed here are opaque, and therefore
 individual members cannot be directly referenced.
 
-- `struct cxlmi_ctx`C: library context object - holds general information
+- `struct cxlmi_ctx`: library context object - holds general information
 common to all opened/tracked endpoints as well as library settings. Before
 component enumeration, a new context must be created via `cxlmi_new_ctx()`,
 providing basic logging information. And once finished with it, the
@@ -162,7 +162,7 @@ The exception to this is when a background operation has been started,
 which is considered a successful return value. The user must ensure to
 verify, when appropriate, against the `CXLMI_RET_BACKGROUND` value.
 
-   ```
+   ```C
    err = cxlmi_cmd_memdev_sanitize(ep);
    if (err && err != CXLMI_RET_BACKGROUND) {
 	   if (err > 0)
