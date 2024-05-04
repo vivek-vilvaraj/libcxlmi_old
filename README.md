@@ -162,7 +162,7 @@ The exception to this is when a background operation has been started,
 which is considered a successful return value. The user must ensure to
 verify, when appropriate, against the `CXLMI_RET_BACKGROUND` value.
 
-   ```C
+   ```
    err = cxlmi_cmd_memdev_sanitize(ep);
    if (err && err != CXLMI_RET_BACKGROUND) {
 	   if (err > 0)
