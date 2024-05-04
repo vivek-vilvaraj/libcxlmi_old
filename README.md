@@ -175,12 +175,14 @@ FM-API Management
 -----------------
 By default, an endpoint will allow FM-API commands, *if* supported by the
 CXL component (or implicitly by disabling probing, see Component Discovery
-section above). To check if such commands are supported, `cxlmi_endpoint_has_fmapi()`
+section above). To check if such command set is supported, `cxlmi_endpoint_has_fmapi()`
 can be called. Similarly, to control it enable/disable it dynamically,
 `cxlmi_endpoint_disable_fmapi()` and `cxlmi_endpoint_enable_fmapi()` can be used.
 This will impact on whether or not tunneling is available as a form of sending
-commands. If FM-API is disabled, the tunneled command will fail (unsupported)
-after passing a `struct cxlmi_tunnel_info` parameter.
+commands.
+
+Naturally, if FM-API is disabled, the tunneled command will fail at a CXL
+component level, specificaly returning `CXLMI_RET_UNSUPPORTED`.
 
 Logging
 -------
