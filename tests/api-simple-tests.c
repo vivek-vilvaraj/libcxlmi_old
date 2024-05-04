@@ -38,7 +38,8 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 		};
 
 		rc = cxlmi_cmd_identify(ep, &ti, &id);
-		if (rc > 0 && rc != CXLMI_RET_UNSUPPORTED) {
+		//if (rc > 0 && rc != CXLMI_RET_UNSUPPORTED) {
+		if (rc) {
 			fprintf(stderr,
 				"[FAIL] unexpected return code (0x%x)\n", rc);
 			return -1;
