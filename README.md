@@ -181,8 +181,7 @@ can be called. Similarly, to control it enable/disable it dynamically,
 This will impact on whether or not tunneling is available as a form of sending
 commands.
 
-Naturally, if FM-API is disabled, the tunneled command will fail at a CXL
-component level, specificaly returning `CXLMI_RET_UNSUPPORTED`.
+Naturally, if FM-API is disabled, any tunneled command will fail.
 
 Logging
 -------
