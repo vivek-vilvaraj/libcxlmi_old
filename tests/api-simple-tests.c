@@ -28,7 +28,7 @@ static int verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 
 static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 {
-	if (cxlmi_endpoint_has_fmapi(ep) && cxlmi_endpoint_disable_fmapi(ep)) {
+	/* if (cxlmi_endpoint_has_fmapi(ep) && cxlmi_endpoint_disable_fmapi(ep)) { */
 		int rc;
 		struct cxlmi_cmd_identify id;
 		struct cxlmi_tunnel_info ti = {
@@ -50,7 +50,7 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 		}
 
 		cxlmi_endpoint_enable_fmapi(ep);
-	}
+	/* } */
 
 	return 0;
 }
@@ -169,9 +169,9 @@ free_ctx:
 /*
  * Ways to run these tests are determined by the passed arguments:
  *
- * api-simple-tests 13 5 <--- mctp tests
- * api-simple-tests switch0 <--- ioctl tests
- * api-simple-tests 23 8 mem2 <--- mctp + ioctl tests
+ * api-simple-tests 13 5        <--- mctp tests
+ * api-simple-tests switch0     <--- ioctl tests
+ * api-simple-tests 23 8 mem2   <--- mctp + ioctl tests
  */
 int main(int argc, char **argv)
 {
