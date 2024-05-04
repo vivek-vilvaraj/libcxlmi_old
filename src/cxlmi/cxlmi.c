@@ -1249,7 +1249,7 @@ CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
 	int rc;
 	ssize_t rsp_sz;
 	struct cxlmi_cmd_identify *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp;
+	struct cxlmi_cci_msg req, *rsp;
 
 	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 18);
 
