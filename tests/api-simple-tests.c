@@ -29,14 +29,10 @@ static int verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 {
 	int i, rc, nerr = 0;
+	int *ds_dev_types;
 	uint8_t *port_list;
 	struct cxlmi_cmd_fmapi_get_phys_port_state_req *in;
 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret;
-	struct cxlmi_tunnel_info  ti = {
-		.level = 2,
-		.port = 0,
-		.id = 0,
-	};
 	size_t ret_sz = sizeof(*ret) + num_ports * sizeof(*ret->ports);
 
 	/* Done like this to allow easy testing of nonsequential lists */
@@ -61,13 +57,35 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 		goto free_input;
 
 	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, NULL, in, ret);
-	printf("phys port ret %d\n", rc);
-			
-	if (rc > 0) {
-		fprintf(stderr,
-			"[FAIL] unexpected return code (0x%x)\n", rc);
-		nerr++;
+	if (rc)
+		goto free_ret;
+
+	ds_dev_types = malloc(sizeof(*ds_dev_types) * num_ports);
+	if (!ds_dev_types)
+		goto free_ret;
+	
+	for (i = 0; i < num_ports; i++) {
+		struct cxlmi_cmd_identify id;
+		struct cxlmi_tunnel_info ti = {
+			.level = 2,
+			.port = i,
+			.id = 0,
+		};
+		
+		if (ds_dev_types[i] != 5)
+			continue;
+		
+		/* MLD port, query FM-owned LD */
+		rc = cxlmi_cmd_identify(ep, &ti, &id);
+		printf("tunnel2 ret code %d\n", rc);
+		if (!rc)
+			printf("------> type %d", id.component_type);
 	}
+
+
+	
+	free(ds_dev_types);
+free_ret:
 	free(ret);
 free_input:
 	free(in);
