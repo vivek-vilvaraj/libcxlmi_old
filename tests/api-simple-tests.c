@@ -34,9 +34,6 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 	struct cxlmi_cmd_fmapi_get_phys_port_state_req *in;
 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret;
 	size_t ret_sz = sizeof(*ret) + num_ports * sizeof(*ret->ports);
-
-	printf("num_ports: %d\n", num_ports);
-
 	
 	/* Done like this to allow easy testing of nonsequential lists */
 	port_list = calloc(1, sizeof(*port_list) * num_ports);
@@ -59,9 +56,12 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 	if (!ret)
 		goto free_input;
 
+	printf("num_ports: %d\n", num_ports);
+	
 	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, NULL, in, ret);
 	if (rc)
 		goto free_ret;
+	printf("num2_ports: %d\n", num_ports);
 
 	ds_dev_types = malloc(sizeof(*ds_dev_types) * num_ports);
 	if (!ds_dev_types)
