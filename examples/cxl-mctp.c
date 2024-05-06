@@ -37,7 +37,7 @@ static int show_switch_info(struct cxlmi_endpoint *ep)
 	int rc, i, num_ports;
 	int *ds_dev_types;
 	uint8_t *b;
-	struct cxlmi_cmd_fmapi_identify_switch_device sw_id;
+	struct cxlmi_cmd_fmapi_identify_sw_device sw_id;
 	struct cxlmi_cmd_fmapi_get_phys_port_state_req *in;
 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret;
 

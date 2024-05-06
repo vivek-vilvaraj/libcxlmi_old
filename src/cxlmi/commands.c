@@ -549,11 +549,11 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep,
 
 CXLMI_EXPORT int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
 			    struct cxlmi_tunnel_info *ti,
-			    struct cxlmi_cmd_fmapi_identify_switch_device *ret)
+			    struct cxlmi_cmd_fmapi_identify_sw_device *ret)
 {
 	int rc;
 	ssize_t rsp_sz;
-	struct cxlmi_cmd_fmapi_identify_switch_device *rsp_pl;
+	struct cxlmi_cmd_fmapi_identify_sw_device *rsp_pl;
 	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
 
 	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 0x49);
@@ -569,7 +569,7 @@ CXLMI_EXPORT int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
 	if (rc)
 		return -1;
 
-	rsp_pl = (struct cxlmi_cmd_fmapi_identify_switch_device *)rsp->payload;
+	rsp_pl = (struct cxlmi_cmd_fmapi_identify_sw_device *)rsp->payload;
 
 	ret->ingres_port_id = rsp_pl->ingres_port_id;
 	ret->num_physical_ports = rsp_pl->num_physical_ports;

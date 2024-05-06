@@ -400,7 +400,7 @@ int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep,
  */
 int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
 		       struct cxlmi_tunnel_info *ti,
-		       struct cxlmi_cmd_fmapi_identify_switch_device *ret);
+		       struct cxlmi_cmd_fmapi_identify_sw_device *ret);
 int cxlmi_cmd_fmapi_get_phys_port_state(struct cxlmi_endpoint *ep,
 			struct cxlmi_tunnel_info *ti,
 			struct cxlmi_cmd_fmapi_get_phys_port_state_req *in,
