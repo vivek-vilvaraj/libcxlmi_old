@@ -35,6 +35,9 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret;
 	size_t ret_sz = sizeof(*ret) + num_ports * sizeof(*ret->ports);
 
+	printf("num_ports: %d\n", num_ports);
+
+	
 	/* Done like this to allow easy testing of nonsequential lists */
 	port_list = calloc(1, sizeof(*port_list) * num_ports);
 	if (!port_list)
@@ -143,8 +146,6 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 								NULL, &ret);
 				if (rc)
 					goto done;
-
-				printf("num_ports: %d\n", ret.num_physical_ports);
 				
 				nerr += query_mld_from_switch(ep,
 						      ret.num_physical_ports);
