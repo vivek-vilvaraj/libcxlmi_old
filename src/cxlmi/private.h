@@ -25,15 +25,6 @@ static inline void freep(void *p)
 }
 #define _cleanup_free_ __attribute__((cleanup(freep)))
 
-/* for commands.c */
-struct cxlmi_cci_msg;
-void arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
-		     size_t req_pl_sz, uint8_t cmdset, uint8_t cmd);
-int send_cmd_cci(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
-		 struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
-		 struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
-		 size_t rsp_msg_sz_min);
-
 enum {
     INFOSTAT    = 0x00,
 	#define IS_IDENTIFY                    0x1
@@ -164,5 +155,15 @@ __cxlmi_msg(struct cxlmi_ctx *c, int lvl, const char *func, const char *format, 
 
 #define CXLMI_BUILD_BUG_MSG(x, msg) _Static_assert(!(x), msg)
 #define CXLMI_BUILD_BUG_ON(x) CXLMI_BUILD_BUG_MSG(x, "not expecting: " #x)
+
+/* for commands.c */
+struct cxlmi_cci_msg;
+struct cxlmi_tunnel_info;
+void arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
+		     size_t req_pl_sz, uint8_t cmdset, uint8_t cmd);
+int send_cmd_cci(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
+		 struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
+		 struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
+		 size_t rsp_msg_sz_min);
 
 #endif /* _LIBCXLMI_PRIVATE_H */
