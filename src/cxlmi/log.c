@@ -80,7 +80,7 @@ __cxlmi_msg(struct cxlmi_ctx *c, int lvl,
 		message = NULL;
 	va_end(ap);
 
-	fprintf(fp, "%s%s",
+	fprintf(fp, "libcxlmi: %s%s",
 		header ? header : "<error>",
 		message ? message : "<error>");
 }
