@@ -30,26 +30,26 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 {
 	int i, rc, nerr = 0;
 	int *ds_dev_types;
-	uint8_t *port_list;
+	/* uint8_t *port_list; */
 	struct cxlmi_cmd_fmapi_get_phys_port_state_req *in;
 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret;
 	size_t ret_sz = sizeof(*ret) + num_ports * sizeof(*ret->ports);
 
 	/* Done like this to allow easy testing of nonsequential lists */
-	port_list = calloc(1, sizeof(*port_list) * num_ports);
-	if (!port_list)
-		goto done;
-	for (i = 0; i < num_ports; i++) {
-		port_list[i] = i;
-	}
+	/* port_list = calloc(1, sizeof(*port_list) * num_ports); */
+	/* if (!port_list) */
+	/* 	goto done; */
+	/* for (i = 0; i < num_ports; i++) { */
+	/* 	port_list[i] = i; */
+	/* } */
 
 	/* arm input for phys_port_state */
 	in = calloc(1, num_ports + sizeof(*in));
 	if (!in)
-		goto free_port_list;
+		goto done;
 	in->num_ports = num_ports;
 	for (i = 0; i < num_ports; i++)
-		in->ports[i] = port_list[i];
+		in->ports[i] = i;
 
 	/* prepare output buffer for phy_port_state */
 	ret = calloc(1, ret_sz);
@@ -80,6 +80,7 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 
 		/* MLD port, query FM-owned LD */
 		rc = cxlmi_cmd_identify(ep, &ti, &id);
+		printf("-----: %d\n", rc);
 		if (rc > 0) {
 			fprintf(stderr,
 				"[FAIL] unexpected return code (0x%x)\n", rc);
@@ -92,8 +93,8 @@ free_ret:
 	free(ret);
 free_input:
 	free(in);
-free_port_list:
-	free(port_list);
+
+	/* free(port_list); */
 done:
 	return nerr;
 }
