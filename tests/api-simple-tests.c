@@ -59,7 +59,6 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 			 * length of response), so don't check for -1 here.
 			 */
 			rc = cxlmi_cmd_identify(ep, &ti, &id);
-			printf("->tunnel: %d\n", rc);
 			if (rc > 0) {
 				fprintf(stderr,
 					"[FAIL] unexpected return code (0x%x)\n", rc);
