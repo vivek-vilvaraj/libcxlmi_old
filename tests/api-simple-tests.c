@@ -34,7 +34,7 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 	struct cxlmi_cmd_fmapi_get_phys_port_state_req *in;
 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret;
 	size_t ret_sz = sizeof(*ret) + num_ports * sizeof(*ret->ports);
-	
+
 	/* Done like this to allow easy testing of nonsequential lists */
 	port_list = calloc(1, sizeof(*port_list) * num_ports);
 	if (!port_list)
@@ -57,18 +57,20 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 		goto free_input;
 
 	printf("--> num_ports: %d\n", in->num_ports);
-	
+
 	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, NULL, in, ret);
 	if (rc)
 		goto free_ret;
 	printf("<-- num2_ports: %d\n", in->num_ports);
 
-	ds_dev_types = malloc(sizeof(*ds_dev_types) * num_ports);
+	ds_dev_types = calloc(1, sizeof(*ds_dev_types) * num_ports);
 	if (!ds_dev_types)
 		goto free_ret;
-	
-	for (i = 0; i < num_ports; i++) {
+
+	/* query ports */
+	for (i = 0; i < ret->num_ports; i++) {
 		struct cxlmi_cmd_identify id;
+		struct cxlmi_cmd_fmapi_port_state_info_block *port;
 		struct cxlmi_tunnel_info ti = {
 			.level = 2,
 			.port = i,
@@ -76,8 +78,11 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 		};
 
 		printf("<-->  %d\n", i);
-		
-		if (ds_dev_types[i] != 5)
+
+		port = &ret->ports[i];
+		/* ds_dev_types[i] = port->conn_dev_type; */
+
+		if (port->conn_dev_type != 5)
 			continue;
 
 		/* MLD port, query FM-owned LD */
@@ -148,7 +153,7 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 								NULL, &ret);
 				if (rc)
 					goto done;
-				
+
 				nerr += query_mld_from_switch(ep,
 						      ret.num_physical_ports);
 			}

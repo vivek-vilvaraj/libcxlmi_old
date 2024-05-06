@@ -184,7 +184,7 @@ struct cxlmi_cmd_fmapi_get_phys_port_state_req {
 	uint8_t ports[];
 } __attribute__((packed));
 
-struct cxlmi_fmapi_port_state_info_block {
+struct cxlmi_cmd_fmapi_port_state_info_block {
 	uint8_t port_id;
 	uint8_t config_state;
 	uint8_t conn_dev_cxl_ver;
@@ -205,7 +205,7 @@ struct cxlmi_fmapi_port_state_info_block {
 struct cxlmi_cmd_fmapi_get_phys_port_state_rsp {
 	uint8_t num_ports;
 	uint8_t rsv1[3];
-	struct cxlmi_fmapi_port_state_info_block ports[];
+	struct cxlmi_cmd_fmapi_port_state_info_block ports[];
 } __attribute__((packed));
 
 /* CXL r3.1 Section 7.6.7.3.2: Tunnel Management Command (Opcode 5300h) */

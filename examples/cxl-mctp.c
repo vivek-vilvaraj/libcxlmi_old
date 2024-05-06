@@ -88,7 +88,7 @@ static int show_switch_info(struct cxlmi_endpoint *ep)
 		return rc;
 
 	for (i = 0; i < num_ports; i++) {
-		struct cxlmi_fmapi_port_state_info_block *port = &ret->ports[i];
+		struct cxlmi_cmd_fmapi_port_state_info_block *port = &ret->ports[i];
 		const char *port_states[] = {
 			[0x0] = "Disabled",
 			[0x1] = "Bind in progress",
