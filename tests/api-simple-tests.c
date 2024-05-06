@@ -67,6 +67,8 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 	if (!ds_dev_types)
 		goto free_ret;
 
+	printf("<--> num3_ports: %d\n", num_ports);
+	
 	for (i = 0; i < num_ports; i++) {
 		struct cxlmi_cmd_identify id;
 		struct cxlmi_tunnel_info ti = {
