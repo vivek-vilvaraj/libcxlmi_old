@@ -56,12 +56,9 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 	if (!ret)
 		goto free_input;
 
-	printf("--> num_ports: %d\n", in->num_ports);
-
 	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, NULL, in, ret);
 	if (rc)
 		goto free_ret;
-	printf("<-- num2_ports: %d\n", in->num_ports);
 
 	ds_dev_types = calloc(1, sizeof(*ds_dev_types) * num_ports);
 	if (!ds_dev_types)
@@ -77,19 +74,17 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 			.id = 0,
 		};
 
-		printf("<-->  %d\n", i);
-
 		port = &ret->ports[i];
-		/* ds_dev_types[i] = port->conn_dev_type; */
-
 		if (port->conn_dev_type != 5)
 			continue;
 
 		/* MLD port, query FM-owned LD */
 		rc = cxlmi_cmd_identify(ep, &ti, &id);
-		printf("tunnel2 ret code %d\n", rc);
-		if (!rc)
-			printf("------> type %d", id.component_type);
+		if (rc > 0) {
+			fprintf(stderr,
+				"[FAIL] unexpected return code (0x%x)\n", rc);
+			nerr++;
+		}
 	}
 
 	free(ds_dev_types);
@@ -147,15 +142,15 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 			 * switch + mld port scenario.
 			 */
 			if (id.component_type == 0x0) {
-				struct cxlmi_cmd_fmapi_identify_sw_device ret;
+				struct cxlmi_cmd_fmapi_identify_sw_device idsw;
 
 				rc = cxlmi_cmd_fmapi_identify_sw_device(ep,
-								NULL, &ret);
+								NULL, &idsw);
 				if (rc)
 					goto done;
 
 				nerr += query_mld_from_switch(ep,
-						      ret.num_physical_ports);
+						      idsw.num_physical_ports);
 			}
 		} else {
 			fprintf(stderr, "[FAIL] could not re-emable FM-API\n");
