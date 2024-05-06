@@ -56,12 +56,12 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 	if (!ret)
 		goto free_input;
 
-	printf("num_ports: %d\n", num_ports);
+	printf("--> num_ports: %d\n", in->num_ports);
 	
 	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, NULL, in, ret);
 	if (rc)
 		goto free_ret;
-	printf("num2_ports: %d\n", num_ports);
+	printf("<-- num2_ports: %d\n", in->num_ports);
 
 	ds_dev_types = malloc(sizeof(*ds_dev_types) * num_ports);
 	if (!ds_dev_types)

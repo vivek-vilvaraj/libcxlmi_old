@@ -339,14 +339,14 @@ static int sanity_check_mctp_rsp(struct cxlmi_endpoint *ep,
 	if (fixed_length) {
 		if (len != min_length) {
 			cxlmi_msg(ctx, LOG_ERR,
-				  "Not expected fixed length of response. %ld %ld\n",
+				  "Unexpected fixed length of response. %ld %ld\n",
 				  len, min_length);
 			return -1;
 		}
 	} else {
 		if (len < min_length) {
 			cxlmi_msg(ctx, LOG_ERR,
-				  "Not expected minimum length of response\n");
+				  "Unexpected minimum length of response\n");
 			return -1;
 		}
 	}
@@ -590,7 +590,6 @@ static int send_mctp_tunnel2(struct cxlmi_endpoint *ep,
 
 	rc = build_tunnel_req(ep, ti->port, inner_req, inner_req_sz,
 			      &outer_req, &outer_req_sz);
-
 	if (rc)
 		goto free_inner_req;
 
