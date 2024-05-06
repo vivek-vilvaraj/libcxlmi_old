@@ -144,6 +144,8 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 				if (rc)
 					goto done;
 
+				printf("num_ports: %d\n", ret.num_physical_ports);
+				
 				nerr += query_mld_from_switch(ep,
 						      ret.num_physical_ports);
 			}
