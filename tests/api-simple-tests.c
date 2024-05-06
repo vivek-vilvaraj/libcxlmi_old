@@ -61,6 +61,8 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 		goto free_input;
 
 	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, &ti, in, ret);
+	printf("phys port ret %d\n", rc);
+			
 	if (rc > 0) {
 		fprintf(stderr,
 			"[FAIL] unexpected return code (0x%x)\n", rc);
