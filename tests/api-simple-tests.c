@@ -60,7 +60,7 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 	if (!ret)
 		goto free_input;
 
-	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, &ti, in, ret);
+	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, NULL, in, ret);
 	printf("phys port ret %d\n", rc);
 			
 	if (rc > 0) {
