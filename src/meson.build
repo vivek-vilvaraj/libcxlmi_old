@@ -2,12 +2,11 @@
 #
 # This file is part of libcxlmi.
 #
-# Author: Davidlohr Bueso <dave@stgolabs.net>
-#
 deps = [ libdbus_dep ]
 
 sources = [
 	'cxlmi/log.c',
+	'cxlmi/commands.c',	
 	'cxlmi/cxlmi.c'
 ]
 

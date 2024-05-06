@@ -30,7 +30,6 @@
 
 #include <ccan/array_size/array_size.h>
 #include <ccan/minmax/minmax.h>
-#include <ccan/endian/endian.h>
 #include <ccan/list/list.h>
 
 #include <libcxlmi.h>
@@ -412,8 +411,8 @@ static void extract_rsp_msg_from_tunnel(struct cxlmi_cci_msg *tunnel_msg,
 					struct cxlmi_cci_msg *extracted_msg,
 					size_t extracted_msg_size)
 {
-	struct cxl_fmapi_tunnel_command_rsp *rsp =
-		(struct cxl_fmapi_tunnel_command_rsp *)tunnel_msg->payload;
+	struct cxlmi_cmd_fmapi_tunnel_command_rsp *rsp =
+		(struct cxlmi_cmd_fmapi_tunnel_command_rsp *)tunnel_msg->payload;
 
 	memcpy(extracted_msg, &rsp->message, extracted_msg_size);
 }
@@ -422,7 +421,7 @@ static int build_tunnel_req(struct cxlmi_endpoint *ep, int port_or_ld,
 		    struct cxlmi_cci_msg *payload_in, size_t payload_in_sz,
 		    struct cxlmi_cci_msg **payload_out, size_t *payload_out_sz)
 {
-	struct cxl_fmapi_tunnel_command_req *t_req;
+	struct cxlmi_cmd_fmapi_tunnel_command_req *t_req;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
 	struct cxlmi_cci_msg *req;
 	size_t t_req_sz = sizeof(*t_req) + payload_in_sz;
@@ -445,8 +444,8 @@ static int build_tunnel_req(struct cxlmi_endpoint *ep, int port_or_ld,
 		}
 	};
 
-	t_req = (struct cxl_fmapi_tunnel_command_req *)req->payload;
-	*t_req = (struct cxl_fmapi_tunnel_command_req) {
+	t_req = (struct cxlmi_cmd_fmapi_tunnel_command_req *)req->payload;
+	*t_req = (struct cxlmi_cmd_fmapi_tunnel_command_req) {
 		.target_type = TUNNEL_TARGET_TYPE_PORT_OR_LD,
 		.id = port_or_ld,
 		.command_size = payload_in_sz,
@@ -465,8 +464,8 @@ static int send_mctp_tunnel1(struct cxlmi_endpoint *ep,
 			     struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
 			     size_t rsp_msg_sz_min)
 {
-	struct cxl_fmapi_tunnel_command_req *t_req;
-	struct cxl_fmapi_tunnel_command_rsp *t_rsp;
+	struct cxlmi_cmd_fmapi_tunnel_command_req *t_req;
+	struct cxlmi_cmd_fmapi_tunnel_command_rsp *t_rsp;
 	struct cxlmi_cci_msg *t_req_msg, *t_rsp_msg;
 	struct sockaddr_mctp addrrx;
 	struct cxlmi_transport_mctp *mctp = ep->transport_data;
@@ -475,6 +474,9 @@ static int send_mctp_tunnel1(struct cxlmi_endpoint *ep,
 	size_t t_req_msg_sz, t_rsp_msg_sz, len_max, len_min;
 	int len, rc, errno_save;
 	socklen_t addrlen;
+
+	cxlmi_msg(ep->ctx, LOG_DEBUG, "1 Level tunnel of opcode %02x%02x\n",
+		  req_msg->command_set, req_msg->command);
 
 	rc = build_tunnel_req(ep, ti->port, req_msg, req_msg_sz, &t_req_msg,
 			 &t_req_msg_sz);
@@ -536,8 +538,8 @@ static int send_mctp_tunnel1(struct cxlmi_endpoint *ep,
 	len_min -= sizeof(*t_rsp_msg) + sizeof(*t_rsp);
 
 	/* Unwind one level of tunnel */
-	t_req = (struct cxl_fmapi_tunnel_command_req *)t_req_msg->payload;
-	t_rsp = (struct cxl_fmapi_tunnel_command_rsp *)t_rsp_msg->payload;
+	t_req = (struct cxlmi_cmd_fmapi_tunnel_command_req *)t_req_msg->payload;
+	t_rsp = (struct cxlmi_cmd_fmapi_tunnel_command_rsp *)t_rsp_msg->payload;
 
 	if (t_rsp->length != len) {
 		cxlmi_msg(ep->ctx, LOG_ERR,
@@ -558,6 +560,152 @@ free_rsp:
 	free(t_rsp_msg);
 free_req:
 	free(t_req_msg);
+	return rc;
+}
+
+static int send_mctp_tunnel2(struct cxlmi_endpoint *ep,
+			     struct cxlmi_tunnel_info *ti,
+			     struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
+			     struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
+			     size_t rsp_msg_sz_min)
+{
+	struct cxlmi_cci_msg *inner_req, *outer_req, *inner_rsp, *outer_rsp;
+	size_t inner_req_sz, outer_req_sz, outer_rsp_sz, len_min, len_max;
+	struct cxlmi_cmd_fmapi_tunnel_command_req *inner_t_req, *outer_t_req;
+	struct cxlmi_cmd_fmapi_tunnel_command_rsp *inner_t_rsp, *outer_t_rsp;
+	struct cxlmi_transport_mctp *mctp = ep->transport_data;
+	struct pollfd pollfds[1];
+	struct sockaddr_mctp addrrx;
+	int timeout = ep->timeout_ms ? ep->timeout_ms : -1;
+	int errno_save, len, rc;
+	socklen_t addrlen;
+
+	cxlmi_msg(ep->ctx, LOG_DEBUG, "2 Level tunnel of opcode %02x%02x\n",
+		  req_msg->command_set, req_msg->command);
+
+	rc = build_tunnel_req(ep, ti->id, req_msg, req_msg_sz,
+			      &inner_req, &inner_req_sz);
+	if (rc)
+		return rc;
+
+	rc = build_tunnel_req(ep, ti->port, inner_req, inner_req_sz,
+			      &outer_req, &outer_req_sz);
+
+	if (rc)
+		goto free_inner_req;
+
+	/*
+	 * Outer tunnel message + outer tunnel header +
+	 * inner tunnel message + inner tunnel header +
+	 * inner message
+	 */
+	outer_rsp_sz = sizeof(*outer_rsp) + sizeof(*outer_t_rsp) +
+		sizeof(*inner_rsp) + sizeof(*inner_t_rsp) + rsp_msg_sz;
+	len_min = sizeof(*outer_rsp) + sizeof(*outer_t_rsp) +
+		sizeof(*inner_rsp) + sizeof(*inner_t_rsp) + rsp_msg_sz_min;
+	len_max = outer_rsp_sz;
+	outer_rsp = calloc(1, outer_rsp_sz);
+	if (!outer_rsp) {
+		rc = -1;
+		goto free_outer_req;
+	}
+
+	len = sendto(mctp->fmapi_sd, outer_req, outer_req_sz, 0,
+		     (struct sockaddr *)&mctp->fmapi_addr,
+		     sizeof(mctp->fmapi_addr));
+	if (len != outer_req_sz) {
+		cxlmi_msg(ep->ctx, LOG_ERR, "Failed to send whole request\n");
+		rc = -1;
+		goto free_outer_rsp;
+	}
+
+	pollfds[0].fd = mctp->fmapi_sd;
+	pollfds[0].events = POLLIN;
+	while (1) {
+		rc = poll(pollfds, 1, timeout);
+		if (rc > 0)
+			break;
+		else if (rc == 0) {
+			cxlmi_msg(ep->ctx, LOG_DEBUG, "Timeout on MCTP socket");
+			errno = ETIMEDOUT;
+			rc = -1;
+			goto free_outer_rsp;
+		} else if (errno != EINTR) {
+			errno_save = errno;
+			cxlmi_msg(ep->ctx, LOG_ERR,
+				  "Failed polling on MCTP socket");
+			errno = errno_save;
+			rc = -1;
+			goto free_outer_rsp;
+		}
+	}
+
+	len = recvfrom(mctp->fmapi_sd, outer_rsp, outer_rsp_sz, 0,
+		       (struct sockaddr *)&addrrx, &addrlen);
+	if (len < len_min) {
+		cxlmi_msg(ep->ctx, LOG_ERR, "Not enough data in reply\n");
+		rc = -1 ;
+		goto free_outer_rsp;
+	}
+
+	rc = sanity_check_mctp_rsp(ep, outer_req, outer_rsp, len,
+				   len_min == len_max, len_min);
+	if (rc)
+		goto free_outer_rsp;
+
+	len -= sizeof(*outer_rsp) + sizeof(*outer_t_rsp);
+	len_min -= sizeof(*outer_rsp) + sizeof(*outer_t_rsp);
+	len_max -= sizeof(*outer_rsp) + sizeof(*outer_t_rsp);
+
+	outer_t_req = (struct cxlmi_cmd_fmapi_tunnel_command_req *)outer_req->payload;
+	outer_t_rsp = (struct cxlmi_cmd_fmapi_tunnel_command_rsp *)outer_rsp->payload;
+
+	if (outer_t_rsp->length != len) {
+		cxlmi_msg(ep->ctx, LOG_ERR,
+		  "Tunnel length not consistent with received length\n");
+		rc = -1;
+		goto free_outer_rsp;
+	}
+
+	rc = sanity_check_mctp_rsp(ep, outer_t_req->message,
+				   outer_t_rsp->message, len,
+				   len_min == len_max, len_min);
+	if (rc)
+		goto free_outer_rsp;
+
+	/*
+	 * TODO: Consider doing the extra copies so that
+	 * extract_rsp_msg_from_tunnel() could be used
+	 */
+	inner_rsp = outer_t_rsp->message;
+	inner_t_req = (struct cxlmi_cmd_fmapi_tunnel_command_req *)inner_req->payload;
+	inner_t_rsp = (struct cxlmi_cmd_fmapi_tunnel_command_rsp *)inner_rsp->payload;
+
+	len -= sizeof(*inner_rsp) + sizeof(*inner_t_rsp);
+	len_min -= sizeof(*inner_rsp) + sizeof(*inner_t_rsp);
+	len_max -= sizeof(*inner_rsp) + sizeof(*inner_t_rsp);
+
+	if (inner_t_rsp->length != len) {
+		cxlmi_msg(ep->ctx, LOG_ERR,
+		  "Tunnel lenght not consistent with received length\n");
+		rc = -1;
+		goto free_outer_rsp;
+	}
+	rc = sanity_check_mctp_rsp(ep, inner_t_req->message,
+				   inner_t_rsp->message, len,
+				   len_min == len_max, len_min);
+	if (rc)
+		goto free_outer_rsp;
+
+	extract_rsp_msg_from_tunnel(inner_rsp, rsp_msg, rsp_msg_sz);
+
+ free_outer_rsp:
+	free(outer_rsp);
+ free_outer_req:
+	free(outer_req);
+ free_inner_req:
+	free(inner_req);
+
 	return rc;
 }
 
@@ -626,10 +774,10 @@ static bool cxlmi_cmd_is_fmapi(int cmdset)
 	}
 }
 
-static int send_cmd_cci(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
-			struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
-			struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
-			size_t rsp_msg_sz_min)
+int send_cmd_cci(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
+		 struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
+		 struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
+		 size_t rsp_msg_sz_min)
 {
 	int rc = -1;
 	bool fmapi_cmd = cxlmi_cmd_is_fmapi(req_msg->command_set);
@@ -649,6 +797,9 @@ static int send_cmd_cci(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
 				      rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
 		else if (ti->level == 1)
 			rc = send_mctp_tunnel1(ep, ti, req_msg, req_msg_sz,
+				       rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
+		else if (ti->level == 2)
+			rc = send_mctp_tunnel2(ep, ti, req_msg, req_msg_sz,
 				       rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
 	} else {
 		rc = send_ioctl_direct(ep, req_msg, req_msg_sz,
@@ -1213,8 +1364,8 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_next_endpoint(struct cxlmi_ctx *m,
 	return ep ? list_next(&m->endpoints, ep, entry) : NULL;
 }
 
-static void arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
-			   size_t req_pl_sz, uint8_t cmdset, uint8_t cmd)
+void arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
+		     size_t req_pl_sz, uint8_t cmdset, uint8_t cmd)
 {
 	if (ep->transport_data) {
 		struct cxlmi_transport_mctp *mctp = ep->transport_data;
@@ -1240,642 +1391,4 @@ static void arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req
 			.vendor_ext_status = 0xabcd,
 		};
 	}
-}
-
-CXLMI_EXPORT int cxlmi_cmd_identify(struct cxlmi_endpoint *ep,
-				    struct cxlmi_tunnel_info *ti,
-				    struct cxlmi_cmd_identify *ret)
-{
-	int rc;
-	ssize_t rsp_sz;
-	struct cxlmi_cmd_identify *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
-
-	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 18);
-
-	arm_cci_request(ep, &req, 0, INFOSTAT, IS_IDENTIFY);
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_identify *)rsp->payload;
-
-	ret->vendor_id = le16_to_cpu(rsp_pl->vendor_id);
-	ret->device_id = le16_to_cpu(rsp_pl->device_id);
-	ret->subsys_vendor_id = le16_to_cpu(rsp_pl->subsys_vendor_id);
-	ret->subsys_id = le16_to_cpu(rsp_pl->subsys_id);
-	ret->serial_num = le64_to_cpu(rsp_pl->serial_num);
-	ret->max_msg_size = rsp_pl->max_msg_size;
-	ret->component_type = rsp_pl->component_type;
-
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
-				struct cxlmi_tunnel_info *ti,
-				struct cxlmi_cmd_bg_op_status *ret)
-{
-	struct cxlmi_cmd_bg_op_status *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
-	ssize_t rsp_sz;
-	int rc;
-
-	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 8);
-
-	arm_cci_request(ep, &req, 0, INFOSTAT, BACKGROUND_OPERATION_STATUS);
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_bg_op_status *)rsp->payload;
-	ret->status = rsp_pl->status;
-	ret->opcode = le16_to_cpu(rsp_pl->opcode);
-	ret->returncode = le16_to_cpu(rsp_pl->returncode);
-	ret->vendor_ext_status = le16_to_cpu(rsp_pl->vendor_ext_status);
-
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_get_response_msg_limit(struct cxlmi_endpoint *ep,
-				  struct cxlmi_tunnel_info *ti,
-				  struct cxlmi_cmd_get_response_msg_limit *ret)
-{
-	struct cxlmi_cmd_get_response_msg_limit *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
-	ssize_t rsp_sz;
-	int rc;
-
-	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 1);
-
-	arm_cci_request(ep, &req, 0, INFOSTAT, GET_RESP_MSG_LIMIT);
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_get_response_msg_limit *)rsp->payload;
-	ret->limit = rsp_pl->limit;
-
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_set_response_msg_limit(struct cxlmi_endpoint *ep,
-					  struct cxlmi_tunnel_info *ti,
-					  struct cxlmi_cmd_set_response_msg_limit *in)
-{
-	struct cxlmi_cmd_get_response_msg_limit *req_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
-	size_t req_sz;
-	int rc = 0;
-
-	CXLMI_BUILD_BUG_ON(sizeof(*in) != 1);
-
-	req_sz = sizeof(*req) + sizeof(*in);
-	req = calloc(1, req_sz);
-	if (!req)
-		return -1;
-
-	arm_cci_request(ep, req, sizeof(*in), INFOSTAT, SET_RESP_MSG_LIMIT);
-
-	req_pl = (struct cxlmi_cmd_get_response_msg_limit *)req->payload;
-	req_pl->limit = in->limit;
-
-	rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep,
-					       struct cxlmi_tunnel_info *ti)
-{
-	struct cxlmi_cci_msg req, rsp;
-
-	arm_cci_request(ep, &req, 0, INFOSTAT, BACKGROUND_OPERATION_ABORT);
-
-	return send_cmd_cci(ep, ti, &req, sizeof(req),
-			    &rsp, sizeof(rsp), sizeof(rsp));
-}
-
-CXLMI_EXPORT int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
-					 struct cxlmi_tunnel_info *ti,
-					 struct cxlmi_cmd_get_timestamp *ret)
-{
-	struct cxlmi_cmd_get_timestamp *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp;
-	ssize_t rsp_sz;
-	int rc;
-
-	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 8);
-
-	arm_cci_request(ep, &req, 0, TIMESTAMP, GET);
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_get_timestamp *)rsp->payload;
-	ret->timestamp = le64_to_cpu(rsp_pl->timestamp);
-
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
-					 struct cxlmi_tunnel_info *ti,
-					 struct cxlmi_cmd_set_timestamp *in)
-{
-	struct cxlmi_cmd_set_timestamp *req_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
-	size_t req_sz;
-
-	CXLMI_BUILD_BUG_ON(sizeof(*in) != 8);
-
-	req_sz = sizeof(*req) + sizeof(*in);
-	req = calloc(1, req_sz);
-	if (!req)
-		return -1;
-
-	arm_cci_request(ep, req, sizeof(*in), TIMESTAMP, SET);
-
-	req_pl = (struct cxlmi_cmd_set_timestamp *)req->payload;
-	req_pl->timestamp = cpu_to_le64(in->timestamp);
-
-	return send_cmd_cci(ep, ti, req, req_sz,
-			    &rsp, sizeof(rsp), sizeof(rsp));
-}
-
-static const int maxlogs = 10; /* Only 7 in CXL r3.1 but let us leave room */
-CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
-				      struct cxlmi_tunnel_info *ti,
-				      struct cxlmi_cmd_get_supported_logs *ret)
-{
-	struct cxlmi_cmd_get_supported_logs *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp;
-	int rc, i;
-	ssize_t rsp_sz;
-
-	arm_cci_request(ep, &req, 0, LOGS, GET_SUPPORTED);
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) + maxlogs * sizeof(*rsp_pl->entries);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz,
-			  sizeof(*rsp) + sizeof(*rsp_pl));
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_get_supported_logs *)rsp->payload;
-	memset(ret, 0, sizeof(*ret));
-
-	ret->num_supported_log_entries =
-		le16_to_cpu(rsp_pl->num_supported_log_entries);
-
-	for (i = 0; i < rsp_pl->num_supported_log_entries; i++) {
-		memcpy(ret->entries[i].uuid, rsp_pl->entries[i].uuid,
-		       sizeof(rsp_pl->entries[i].uuid));
-		ret->entries[i].log_size =
-			le32_to_cpu(rsp_pl->entries[i].log_size);
-	}
-
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
-				       struct cxlmi_tunnel_info *ti,
-				       struct cxlmi_cmd_get_log *in,
-				       struct cxlmi_cmd_get_log_cel_rsp *ret)
-{
-	struct cxlmi_cmd_get_log *req_pl;
-	struct cxlmi_cmd_get_log_cel_rsp *rsp_pl;
-	struct cxlmi_cci_msg _cleanup_free_  *req = NULL;
-	struct cxlmi_cci_msg _cleanup_free_ *rsp = NULL;
-	ssize_t req_sz, rsp_sz;
-	int i, rc = -1;
-
-	req_sz = sizeof(*req) + sizeof(*in);
-	req = calloc(1, req_sz);
-	if (!req)
-		return -1;
-
-	arm_cci_request(ep, req, sizeof(*req_pl), LOGS, GET_LOG);
-	req_pl = (struct cxlmi_cmd_get_log *)req->payload;
-
-	req_pl->offset = cpu_to_le32(in->offset);
-	req_pl->length = cpu_to_le32(in->length);
-	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
-
-	rsp_sz = sizeof(*rsp) + in->length;
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return rc;
-
-	rc = send_cmd_cci(ep, ti, req, req_sz, rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_get_log_cel_rsp *)rsp->payload;
-	memset(ret, 0, sizeof(*ret));
-
-	for (i = 0; i < in->length / sizeof(*rsp_pl); i++) {
-		ret[i].opcode = le16_to_cpu(rsp_pl[i].opcode);
-		ret[i].command_effect =
-			le16_to_cpu(rsp_pl[i].command_effect);
-	}
-
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_clear_log(struct cxlmi_endpoint *ep,
-				     struct cxlmi_tunnel_info *ti,
-				     struct cxlmi_cmd_clear_log *in)
-{
-	struct cxlmi_cmd_clear_log *req_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
-	size_t req_sz;
-
-	req_sz = sizeof(*req) + sizeof(*in);
-	req = calloc(1, req_sz);
-	if (!req)
-		return -1;
-
-	arm_cci_request(ep, req, sizeof(*in), LOGS, CLEAR_LOG);
-
-	req_pl = (struct cxlmi_cmd_clear_log *)req->payload;
-	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
-
-	return send_cmd_cci(ep, ti, req, req_sz,
-			  &rsp, sizeof(rsp), sizeof(rsp));
-}
-
-CXLMI_EXPORT int cxlmi_cmd_populate_log(struct cxlmi_endpoint *ep,
-				struct cxlmi_tunnel_info *ti,
-				struct cxlmi_cmd_populate_log *in)
-{
-	struct cxlmi_cmd_populate_log *req_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
-	size_t req_sz;
-
-	req_sz = sizeof(*req) + sizeof(*in);
-	req = calloc(1, req_sz);
-	if (!req)
-		return -1;
-
-	arm_cci_request(ep, req, sizeof(*in), LOGS, POPULATE_LOG);
-
-	req_pl = (struct cxlmi_cmd_populate_log *)req->payload;
-	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
-
-	return send_cmd_cci(ep, ti, req, req_sz,
-			  &rsp, sizeof(rsp), sizeof(rsp));
-}
-
-CXLMI_EXPORT int
-cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
-		     struct cxlmi_tunnel_info *ti,
-		     struct cxlmi_cmd_get_supported_logs_sublist_req *in,
-		     struct cxlmi_cmd_get_supported_logs_sublist_rsp *ret)
-{
-	struct cxlmi_cmd_get_supported_logs_sublist_req *req_pl;
-	struct cxlmi_cmd_get_supported_logs_sublist_rsp *rsp_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL;
-	struct cxlmi_cci_msg _cleanup_free_ *rsp = NULL;
-	ssize_t req_sz, rsp_sz;
-	int i, rc = -1;
-
-	req_sz = sizeof(*req) + sizeof(*in);
-	req = calloc(1, req_sz);
-	if (!req)
-		return -1;
-
-	arm_cci_request(ep, req, sizeof(*req_pl), LOGS, GET_SUPPORTED_SUBLIST);
-	req_pl = (struct cxlmi_cmd_get_supported_logs_sublist_req *)req->payload;
-
-	req_pl->max_supported_log_entries = in->max_supported_log_entries;
-	req_pl->start_log_entry_index = in->start_log_entry_index;
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) + maxlogs * sizeof(*rsp_pl->entries);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, req, req_sz, rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_get_supported_logs_sublist_rsp *)rsp->payload;
-	memset(ret, 0, sizeof(*ret));
-
-	ret->num_supported_log_entries = rsp_pl->num_supported_log_entries;
-	ret->total_num_supported_log_entries =
-		le16_to_cpu(rsp_pl->total_num_supported_log_entries);
-	ret->start_log_entry_index = rsp_pl->start_log_entry_index;
-
-	for (i = 0; i < rsp_pl->num_supported_log_entries; i++) {
-		memcpy(ret->entries[i].uuid, rsp_pl->entries[i].uuid,
-		       sizeof(rsp_pl->entries[i].uuid));
-		ret->entries[i].log_size =
-			le32_to_cpu(rsp_pl->entries[i].log_size);
-	}
-
-	return rc;
-}
-
-
-CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
-				   struct cxlmi_tunnel_info *ti,
-				   struct cxlmi_cmd_memdev_identify *ret)
-{
-	struct cxlmi_cmd_memdev_identify *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
-	int rc;
-	ssize_t rsp_sz;
-
-	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 0x45);
-
-	arm_cci_request(ep, &req, 0, IDENTIFY, MEMORY_DEVICE);
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
-
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_memdev_identify *)rsp->payload;
-	memset(ret, 0, sizeof(*ret));
-
-	memcpy(ret->fw_revision, rsp_pl->fw_revision,
-	       sizeof(rsp_pl->fw_revision));
-	ret->total_capacity = le64_to_cpu(rsp_pl->total_capacity);
-	ret->volatile_capacity = le64_to_cpu(rsp_pl->volatile_capacity);
-	ret->persistent_capacity = le64_to_cpu(rsp_pl->persistent_capacity);
-	ret->partition_align = le64_to_cpu(rsp_pl->partition_align);
-	ret->info_event_log_size = le16_to_cpu(rsp_pl->info_event_log_size);
-	ret->warning_event_log_size = le16_to_cpu(rsp_pl->warning_event_log_size);
-	ret->failure_event_log_size = le16_to_cpu(rsp_pl->failure_event_log_size);
-	ret->fatal_event_log_size = le16_to_cpu(rsp_pl->fatal_event_log_size);
-	ret->lsa_size = le32_to_cpu(rsp_pl->lsa_size);
-	/* TODO unaligned ie: get_unaligned_le24(rsp_pl->poison_list_max_mer); */
-	memcpy(ret->poison_list_max_mer, rsp_pl->poison_list_max_mer,
-	       sizeof(rsp_pl->poison_list_max_mer));
-	ret->inject_poison_limit = le16_to_cpu(rsp_pl->inject_poison_limit);
-	ret->poison_caps = rsp_pl->poison_caps;
-	ret->qos_telemetry_caps = rsp_pl->qos_telemetry_caps;
-	ret->dc_event_log_size = le16_to_cpu(rsp_pl->dc_event_log_size);
-
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_memdev_get_health_info(struct cxlmi_endpoint *ep,
-				  struct cxlmi_tunnel_info *ti,
-				  struct cxlmi_cmd_memdev_get_health_info *ret)
-{
-	struct cxlmi_cmd_memdev_get_health_info *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
-	int rc;
-	ssize_t rsp_sz;
-
-	arm_cci_request(ep, &req, 0, HEALTH_INFO_ALERTS, GET_HEALTH_INFO);
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
-
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_memdev_get_health_info *)rsp->payload;
-	memset(ret, 0, sizeof(*ret));
-
-	ret->health_status = rsp_pl->health_status;
-	ret->media_status = rsp_pl->media_status;
-	ret->additional_status = rsp_pl->additional_status;
-	ret->life_used = rsp_pl->life_used;
-	ret->device_temperature = le16_to_cpu(rsp_pl->device_temperature);
-	ret->dirty_shutdown_count = le32_to_cpu(rsp_pl->dirty_shutdown_count);
-	ret->corrected_volatile_error_count =
-		le32_to_cpu(rsp_pl->corrected_volatile_error_count);
-	ret->corrected_persistent_error_count =
-		le32_to_cpu(rsp_pl->corrected_persistent_error_count);
-
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_memdev_get_alert_config(struct cxlmi_endpoint *ep,
-				   struct cxlmi_tunnel_info *ti,
-				   struct cxlmi_cmd_memdev_get_alert_config *ret)
-{
-	struct cxlmi_cmd_memdev_get_alert_config *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
-	int rc;
-	ssize_t rsp_sz;
-
-	arm_cci_request(ep, &req, 0, HEALTH_INFO_ALERTS, GET_ALERT_CONFIG);
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
-
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_memdev_get_alert_config *)rsp->payload;
-	memset(ret, 0, sizeof(*ret));
-
-	ret->valid_alerts = rsp_pl->valid_alerts;
-	ret->programmable_alerts = rsp_pl->programmable_alerts;
-	ret->life_used_critical_alert_threshold =
-		rsp_pl->life_used_critical_alert_threshold;
-	ret->life_used_programmable_warning_threshold =
-		rsp_pl->life_used_programmable_warning_threshold;
-	ret->device_over_temperature_critical_alert_threshold =
-		le16_to_cpu(rsp_pl->device_over_temperature_critical_alert_threshold);
-	ret->device_under_temperature_critical_alert_threshold =
-		le16_to_cpu(rsp_pl->device_under_temperature_critical_alert_threshold);
-	ret->device_over_temperature_programmable_warning_threshold =
-		le16_to_cpu(rsp_pl->device_over_temperature_programmable_warning_threshold);
-	ret->device_under_temperature_programmable_warning_threshold =
-		le16_to_cpu(rsp_pl->device_under_temperature_programmable_warning_threshold);
-	ret->corrected_volatile_mem_error_programmable_warning_threshold =
-		le16_to_cpu(rsp_pl->corrected_volatile_mem_error_programmable_warning_threshold);
-	ret->corrected_persistent_mem_error_programmable_warning_threshold =
-		le16_to_cpu(rsp_pl->corrected_persistent_mem_error_programmable_warning_threshold);
-
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_memdev_set_alert_config(struct cxlmi_endpoint *ep,
-				   struct cxlmi_tunnel_info *ti,
-				   struct cxlmi_cmd_memdev_set_alert_config *in)
-{
-	struct cxlmi_cmd_memdev_set_alert_config *req_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
-	size_t req_sz;
-
-	req_sz = sizeof(*req) + sizeof(*in);
-	req = calloc(1, req_sz);
-	if (!req)
-		return -1;
-
-	arm_cci_request(ep, req, sizeof(*in), HEALTH_INFO_ALERTS, SET_ALERT_CONFIG);
-
-	req_pl = (struct cxlmi_cmd_memdev_set_alert_config *)req->payload;
-
-	req_pl->valid_alert_actions = in->valid_alert_actions;
-	req_pl->enable_alert_actions = in->enable_alert_actions;
-	req_pl->life_used_programmable_warning_threshold =
-		in->life_used_programmable_warning_threshold;
-	req_pl->device_over_temperature_programmable_warning_threshold =
-		cpu_to_le16(in->device_over_temperature_programmable_warning_threshold);
-	req_pl->device_under_temperature_programmable_warning_threshold =
-		cpu_to_le16(in->device_under_temperature_programmable_warning_threshold);
-	req_pl->corrected_volatile_mem_error_programmable_warning_threshold =
-		cpu_to_le16(in->corrected_volatile_mem_error_programmable_warning_threshold);
-	req_pl->corrected_persistent_mem_error_programmable_warning_threshold =
-		cpu_to_le16(in->corrected_persistent_mem_error_programmable_warning_threshold);
-
-	return send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
-}
-
-CXLMI_EXPORT int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep,
-					   struct cxlmi_tunnel_info *ti)
-{
-	struct cxlmi_cci_msg req, rsp;
-
-	arm_cci_request(ep, &req, 0, SANITIZE, SANITIZE);
-
-	return send_cmd_cci(ep, ti, &req, sizeof(req),
-			    &rsp, sizeof(rsp), sizeof(rsp));
-}
-
-CXLMI_EXPORT int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
-			    struct cxlmi_tunnel_info *ti,
-			    struct cxlmi_cmd_fmapi_identify_switch_device *ret)
-{
-	int rc;
-	ssize_t rsp_sz;
-	struct cxlmi_cmd_fmapi_identify_switch_device *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
-
-	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 0x49);
-
-	arm_cci_request(ep, &req, 0, PHYSICAL_SWITCH, IDENTIFY_SWITCH_DEVICE);
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return -1;
-
-	rsp_pl = (struct cxlmi_cmd_fmapi_identify_switch_device *)rsp->payload;
-
-	ret->ingres_port_id = rsp_pl->ingres_port_id;
-	ret->num_physical_ports = rsp_pl->num_physical_ports;
-	ret->num_vcs = rsp_pl->num_vcs;
-	memcpy(ret->active_port_bitmask, rsp_pl->active_port_bitmask,
-	       sizeof(rsp_pl->active_port_bitmask));
-	memcpy(ret->active_vcs_bitmask, rsp_pl->active_vcs_bitmask,
-	       sizeof(rsp_pl->active_vcs_bitmask));
-	ret->num_total_vppb = le16_to_cpu(rsp_pl->num_total_vppb);
-	ret->num_active_vppb = le16_to_cpu(rsp_pl->num_active_vppb);
-	ret->num_hdm_decoder_per_usp = rsp_pl->num_hdm_decoder_per_usp;
-
-	return rc;
-}
-
-CXLMI_EXPORT int cxlmi_cmd_fmapi_get_phys_port_state(struct cxlmi_endpoint *ep,
-				     struct cxlmi_tunnel_info *ti,
-				     struct cxlmi_cmd_fmapi_get_phys_port_state_req *in,
-				     struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret)
-{
-	struct cxlmi_cmd_fmapi_get_phys_port_state_req *req_pl;
-	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *rsp_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL;
-	struct cxlmi_cci_msg _cleanup_free_ *rsp = NULL;
-	ssize_t req_sz, rsp_sz;
-	int i, rc = -1;
-
-	req_sz = sizeof(*req_pl) + in->num_ports + sizeof(*req);
-	req = calloc(1, req_sz);
-	if (!req)
-		return -1;
-
-	arm_cci_request(ep, req, sizeof(*req_pl),
-			PHYSICAL_SWITCH, GET_PHYSICAL_PORT_STATE);
-	req_pl = (struct cxlmi_cmd_fmapi_get_phys_port_state_req *)req->payload;
-
-	req_pl->num_ports = in->num_ports;
-	for (i = 0; i < in->num_ports; i++)
-		req_pl->ports[i] = in->ports[i];
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) +
-		in->num_ports * sizeof(*rsp_pl->ports);
-	rsp = calloc(1, rsp_sz);
-	if (!rsp)
-		return -1;
-
-	rc = send_cmd_cci(ep, ti, req, req_sz, rsp, rsp_sz, rsp_sz);
-	if (rc)
-		return rc;
-
-	rsp_pl = (struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *)rsp->payload;
-	memset(ret, 0, sizeof(*ret));
-
-	ret->num_ports = rsp_pl->num_ports;
-	for (i = 0; i < rsp_pl->num_ports; i++) {
-		ret->ports[i].port_id = rsp_pl->ports[i].port_id;
-		ret->ports[i].config_state = rsp_pl->ports[i].config_state;
-		ret->ports[i].conn_dev_cxl_ver = rsp_pl->ports[i].conn_dev_cxl_ver;
-		ret->ports[i].conn_dev_type = rsp_pl->ports[i].conn_dev_type;
-		ret->ports[i].port_cxl_ver_bitmask =
-			rsp_pl->ports[i].port_cxl_ver_bitmask;
-		ret->ports[i].max_link_width = rsp_pl->ports[i].max_link_width;
-		ret->ports[i].negotiated_link_width =
-			rsp_pl->ports[i].negotiated_link_width;
-		ret->ports[i].supported_link_speeds_vector =
-			rsp_pl->ports[i].supported_link_speeds_vector;
-		ret->ports[i].max_link_speed = rsp_pl->ports[i].max_link_speed;
-		ret->ports[i].current_link_speed =
-			rsp_pl->ports[i].current_link_speed;
-		ret->ports[i].ltssm_state = rsp_pl->ports[i].ltssm_state;
-		ret->ports[i].first_lane_num = rsp_pl->ports[i].first_lane_num;
-		ret->ports[i].link_state = le16_to_cpu(rsp_pl->ports[i].link_state);
-		ret->ports[i].supported_ld_count = rsp_pl->ports[i].supported_ld_count;
-	}
-
-	return rc;
 }

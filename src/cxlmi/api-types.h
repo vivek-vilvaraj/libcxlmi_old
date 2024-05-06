@@ -209,7 +209,7 @@ struct cxlmi_cmd_fmapi_get_phys_port_state_rsp {
 } __attribute__((packed));
 
 /* CXL r3.1 Section 7.6.7.3.2: Tunnel Management Command (Opcode 5300h) */
-struct cxl_fmapi_tunnel_command_req {
+struct cxlmi_cmd_fmapi_tunnel_command_req {
 	uint8_t id; /* Port or LD ID as appropriate */
 	uint8_t target_type;
 #define TUNNEL_TARGET_TYPE_PORT_OR_LD  0
@@ -218,7 +218,7 @@ struct cxl_fmapi_tunnel_command_req {
 	struct cxlmi_cci_msg message[];
 } __attribute__((packed));
 
-struct cxl_fmapi_tunnel_command_rsp {
+struct cxlmi_cmd_fmapi_tunnel_command_rsp {
 	uint16_t length;
 	uint16_t resv;
 	struct cxlmi_cci_msg message[]; /* only one but lets closs over that */

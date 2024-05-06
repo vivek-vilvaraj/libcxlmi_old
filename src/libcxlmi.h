@@ -154,7 +154,7 @@ bool cxlmi_endpoint_disable_fmapi(struct cxlmi_endpoint *ep);
  * @m: &cxlmi_ctx object
  *
  * Return: first MI endpoint object under this context, or NULL if no endpoints
- *         are present. This library does not gurantee any order upon endpoint
+ *         are present. This library does not guarantee any order upon endpoint
  *         enumeration.
  *
  * See: &cxlmi_next_endpoint, &cxlmi_for_each_endpoint
