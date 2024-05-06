@@ -80,11 +80,15 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 
 		/* MLD port, query FM-owned LD */
 		rc = cxlmi_cmd_identify(ep, &ti, &id);
-		printf("-----: %d\n", rc);
 		if (rc > 0) {
 			fprintf(stderr,
 				"[FAIL] unexpected return code (0x%x)\n", rc);
 			nerr++;
+		}
+		if (rc == 0) {
+			printf("----- rc: %d, type %d\n", rc, id.component_type);
+			printf("serial number: 0x%lx\n", (uint64_t)id.serial_num);
+
 		}
 	}
 
