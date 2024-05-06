@@ -26,6 +26,7 @@ static inline void freep(void *p)
 #define _cleanup_free_ __attribute__((cleanup(freep)))
 
 /* for commands.c */
+struct cxlmi_cci_msg;
 void arm_cci_request(struct cxlmi_endpoint *ep, struct cxlmi_cci_msg *req,
 		     size_t req_pl_sz, uint8_t cmdset, uint8_t cmd);
 int send_cmd_cci(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
@@ -116,7 +117,8 @@ struct cxlmi_ctx {
 	bool probe_enabled; /* probe upon open, default yes */
 };
 
-/* Set a minimum time between receiving a response from one command and
+/*
+ * Set a minimum time between receiving a response from one command and
  * sending the next request. Some devices may ignore new commands sent too soon
  * after the previous request, so manually insert a delay
  */

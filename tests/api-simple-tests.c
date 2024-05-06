@@ -30,7 +30,7 @@ static int verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 {
 	int nerr = 0;
-	
+
 	if (cxlmi_endpoint_has_fmapi(ep) && cxlmi_endpoint_disable_fmapi(ep)) {
 		int rc;
 		struct cxlmi_cmd_identify id;

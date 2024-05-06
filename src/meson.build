@@ -6,7 +6,7 @@ deps = [ libdbus_dep ]
 
 sources = [
 	'cxlmi/log.c',
-	'cxlmi/commands.c',	
+	'cxlmi/commands.c',
 	'cxlmi/cxlmi.c'
 ]
 
