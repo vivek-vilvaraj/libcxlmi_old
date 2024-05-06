@@ -63,7 +63,7 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 	ds_dev_types = malloc(sizeof(*ds_dev_types) * num_ports);
 	if (!ds_dev_types)
 		goto free_ret;
-	
+
 	for (i = 0; i < num_ports; i++) {
 		struct cxlmi_cmd_identify id;
 		struct cxlmi_tunnel_info ti = {
@@ -71,10 +71,10 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 			.port = i,
 			.id = 0,
 		};
-		
+
 		if (ds_dev_types[i] != 5)
 			continue;
-		
+
 		/* MLD port, query FM-owned LD */
 		rc = cxlmi_cmd_identify(ep, &ti, &id);
 		printf("tunnel2 ret code %d\n", rc);
@@ -82,8 +82,6 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 			printf("------> type %d", id.component_type);
 	}
 
-
-	
 	free(ds_dev_types);
 free_ret:
 	free(ret);
