@@ -173,7 +173,8 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 					 struct cxlmi_cmd_set_timestamp *in)
 {
 	struct cxlmi_cmd_set_timestamp *req_pl;
-	struct cxlmi_cci_msg *req = NULL, rsp;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
 	size_t req_sz;
 	int rc;
 
