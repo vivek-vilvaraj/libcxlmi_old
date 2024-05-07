@@ -34,216 +34,24 @@ static int show_memdev_info(struct cxlmi_endpoint *ep)
 
 static int show_switch_info(struct cxlmi_endpoint *ep)
 {
-	int rc, i, num_ports;
-	int *ds_dev_types;
-	uint8_t *b;
-	struct cxlmi_cmd_fmapi_identify_sw_device sw_id;
-	struct cxlmi_cmd_fmapi_get_phys_port_state_req *in;
-	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret;
+	int rc, i;
+	struct cxlmi_cmd_fmapi_identify_sw_device swid;
 
-	rc = cxlmi_cmd_fmapi_identify_sw_device(ep, NULL, &sw_id);
+	rc = cxlmi_cmd_fmapi_identify_sw_device(ep, NULL, &swid);
 	if (rc)
 		return rc;
 
 	printf("Num tot vppb %d, Num Bound vPPB %d, Num HDM dec per USP %d\n",
-	       sw_id.num_total_vppb, sw_id.num_active_vppb,
-	       sw_id.num_hdm_decoder_per_usp);
-	printf("\tPorts %d\n", sw_id.num_physical_ports);
+	       swid.num_total_vppb, swid.num_active_vppb,
+	       swid.num_hdm_decoder_per_usp);
+	printf("\tPorts %d\n", swid.num_physical_ports);
 
-	b = sw_id.active_port_bitmask;
 	printf("\tActivePortMask ");
-	for (int i = 0; i < 32; i++)
-		printf("%02x", b[i]);
+	for (i = 0; i < 32; i++)
+		printf("%02x", swid.active_port_bitmask[i]);
 	printf("\n");
 
-	num_ports = sw_id.num_physical_ports;
-
-	ds_dev_types = malloc(sizeof(*ds_dev_types) * num_ports);
-	if (!ds_dev_types)
-		return -1;
-
-	/* port_list = malloc(sizeof(*port_list) * num_ports); */
-	/* if (!port_list) */
-	/* 	return -1; */
-	/* for (i = 0; i < num_ports; i++) { */
-	/* 	/\* Done like this to allow easy testing of nonsequential lists *\/ */
-	/* 	port_list[i] = i; */
-	/* } */
-	
-	in = calloc(1, sizeof(*in) + num_ports);
-	if (!in)
-		return -1;
-
-	in->num_ports = num_ports;
-	for (i = 0; i < num_ports; i++) {
-		/* allow easy testing of nonsequential lists */
-		in->ports[i] = i;
-	}
-
-	ret = calloc(1, sizeof(*ret) + num_ports);
-	if (!ret)
-	
-	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, NULL, in, ret);
-	if (rc)
-		return rc;
-
-	for (i = 0; i < num_ports; i++) {
-		struct cxlmi_cmd_fmapi_port_state_info_block *port = &ret->ports[i];
-		const char *port_states[] = {
-			[0x0] = "Disabled",
-			[0x1] = "Bind in progress",
-			[0x2] = "Unbind in progress",
-			[0x3] = "DSP",
-			[0x4] = "USP",
-			[0x5] = "Reserved",
-			//other values not present.
-			[0xf] = "Invalid Port ID"
-		};
-		const char *conn_dev_modes[] = {
-			[0] = "Not CXL / connected",
-			[1] = "CXL 1.1",
-			[2] = "CXL 2.0",
-		};
-		const char *conn_dev_type[] = {
-			[0] = "No device detected",
-			[1] = "PCIe device",
-			[2] = "CXL type 1 device",
-			[3] = "CXL type 2 device",
-			[4] = "CXL type 3 device",
-			[5] = "CXL type 3 pooled device",
-			[6] = "Reserved",
-		};
-		const char *ltssm_states[] = {
-			[0] = "Detect",
-			[1] = "Polling",
-			[2] = "Configuration",
-			[3] = "Recovery",
-			[4] = "L0",
-			[5] = "L0s",
-			[6] = "L1",
-			[7] = "L2",
-			[8] = "Disabled",
-			[9] = "Loop Back",
-			[10] = "Hot Reset",
-		};
-
-		if (port->port_id != in->ports[i]) {
-			printf("port id wrong %d %d\n",
-			       port->port_id, in->ports[i]);
-			return -1;
-		}
-		printf("Port%02d:\n ", port->port_id);
-		printf("\tPort state: ");
-		if (port_states[port->config_state & 0xf])
-			printf("%s\n", port_states[port->config_state]);
-		else
-			printf("Unknown state\n");
-
-		/* DSP so device could be there */
-		if (port->config_state == 3) {
-			printf("\tConnected Device CXL Version: ");
-			if (port->conn_dev_cxl_ver > 2)
-				printf("Unknown CXL Version\n");
-			else
-				printf("%s\n",
-				       conn_dev_modes[port->conn_dev_cxl_ver]);
-			
-			printf("\tConnected Device Type: ");
-			ds_dev_types[i] = port->conn_dev_type;
-			if (port->conn_dev_type > 7)
-				printf("Unknown\n");
-			else
-				printf("%s\n",
-				       conn_dev_type[port->conn_dev_type]);
-		}
-
-		printf("\tSupported CXL Modes:");
-		if (port->port_cxl_ver_bitmask & 0x1)
-			printf(" 1.1");
-		if (port->port_cxl_ver_bitmask & 0x2)
-			printf(" 2.0");
-		printf("\n");
-
-		printf("\tMaximum Link Width: %d Negotiated Width %d\n",
-			   port->max_link_width,
-			   port->negotiated_link_width);
-		printf("\tSupported Speeds: ");
-		if (port->supported_link_speeds_vector & 0x1)
-			printf(" 2.5 GT/s");
-		if (port->supported_link_speeds_vector & 0x2)
-			printf(" 5.0 GT/s");
-		if (port->supported_link_speeds_vector & 0x4)
-			printf(" 8.0 GT/s");
-		if (port->supported_link_speeds_vector & 0x8)
-			printf(" 16.0 GT/s");
-		if (port->supported_link_speeds_vector & 0x10)
-			printf(" 32.0 GT/s");
-		if (port->supported_link_speeds_vector & 0x20)
-			printf(" 64.0 GT/s");
-		printf("\n");
-
-		printf("\tLTSSM: ");
-		if (port->ltssm_state >= sizeof(ltssm_states))
-			printf("Unkown\n");
-		else
-			printf("%s\n", ltssm_states[port->ltssm_state]);
-	}
-
-	for (i = 0; i < num_ports; i++) {
-		switch (ds_dev_types[i]) {
-		case 5: /* MLD */ {
-			/* size_t cel_size = 0; */
-			struct cxlmi_cmd_identify id;
-			struct cxlmi_tunnel_info ti = {
-				.level = 1,
-				.port = i,
-				.id = 0,
-			};
-			
-			printf("Query the FM-Owned LD.....\n");
-			rc = cxlmi_cmd_identify(ep, &ti, &id);
-			/* if (rc) */
-			/* 	goto err_free_ds_dev_types; */
-
-			/* rc = get_supported_logs(fmapi_sd, &fmapi_addr, &tag, */
-			/* 			&cel_size, tunnel1, i, 0); */
-			/* if (rc) */
-			/* 	goto err_free_ds_dev_types; */
-
-			/* rc = get_cel(fmapi_sd, &fmapi_addr, &tag, */
-			/* 	     cel_size, tunnel1, i, 0); */
-			/* if (rc) */
-			/* 	goto err_free_ds_dev_types; */
-			/* printf("Query LD%d.......\n", 0); */
-
-			/* rc = query_cci_identify(fmapi_sd, &fmapi_addr, &tag, */
-			/* 			&target_type, */
-			/* 			tunnel2, i, 0); */
-			/* if (rc) */
-			/* 	goto err_free_ds_dev_types; */
-			/* rc = get_supported_logs(fmapi_sd, &fmapi_addr, &tag, */
-			/* 			&cel_size, tunnel2, i, 0); */
-			/* if (rc) */
-			/* 	goto err_free_ds_dev_types; */
-
-			/* rc = get_cel(fmapi_sd, &fmapi_addr, &tag, */
-			/* 	     cel_size, tunnel2, i, 0); */
-			/* if (rc) */
-			/* 	goto err_free_ds_dev_types; */
-
-			break;
-		}
-		default:
-			/* Ignoring other types for now */
-			break;
-		}
-	}
-
-
-	free(ret);
-	free(in);
-	
-	return rc;
+	return 0;
 }
 
 static int show_device_info(struct cxlmi_endpoint *ep)
@@ -528,11 +336,11 @@ int main(int argc, char **argv)
 	cxlmi_for_each_endpoint(ctx, ep) {
 		rc = show_device_info(ep);
 
-		/* rc = play_with_device_timestamp(ep); */
+		rc = play_with_device_timestamp(ep);
 
-		/* rc = get_device_logs(ep); */
+		rc = get_device_logs(ep);
 
-		/* rc = toggle_abort(ep); */
+		rc = toggle_abort(ep);
 
 		cxlmi_close(ep);
 	}

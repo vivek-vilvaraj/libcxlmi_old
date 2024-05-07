@@ -2,9 +2,9 @@
 
 CXL Management Interface library (libcxlmi).
 
-CXL Management Interface utility library, which provides type definitions
+CXL Management Interface utility library provides type definitions
 for CXL specification structures, enumerations and helper functions to
-construct, send and decode commands (CCI) and payloads over both
+construct, send and decode CCI commands  and payloads over both
 traditional in-band (Linux) an out-of-band (OoB) link, typically
 MCTP-based CCIs over I2C or VDM. As such, users will mostly be BMC,
 firmware and/or fabric managers, targeting: Type3 SLD, Type3 MLD
@@ -85,10 +85,13 @@ API for sending commands is very ad-hoc to the CXL specification, including
 payload input and output. As such, the user is expected to know what to look
 for in each case, accessing particular structure members, for example.
 
-Functions for each command have a `cxlmi_cmd_[memdev|fmapi_]<cmdname>` format.
-Where `memdev`and `fmapi` (not implemented) depends if the command is from the
+APIs for each command have a `cxlmi_cmd_[memdev|fmapi_]<cmdname>` format, and
+the name of the payload data structure is the same as the function to send
+the command. Where `memdev`and `fmapi` if the command is from the
 respective command set, otherwise the command belongs to the Generic Component
 set.
+
+![Single level tunneling](http://stgolabs.net/tunne1.png)
 
 Simple payloads can use stack-allocated input variables, while more complex
 responses require the user to already provide the output payload buffer.

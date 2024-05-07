@@ -318,9 +318,14 @@ const char *cxlmi_cmd_retcode_tostr(enum cxlmi_cmd_retcode code);
 
 /**
  * cxlmi_tunnel_info - Tunneling information associated with a specific command
- * @port:
- * @id:
- * @level: tunnel level 1, 2.
+ * @port: switch downstream port number
+ * @ld: Logical Device (LD) id within an MLD
+ * @level: tunneling level 1 or 2.
+ *
+ * When sent to an MLD, the provided command is tunneled by the FM-owned LD
+ * to the specified LD. This can include an additional layer of tunneling for
+ * commands issued on LDs in an MLD that is accessible through an MLD port
+ * of a CXL Switch.
  *
  * Tunneling targets are:
  *   - valid LDs within an MLD - single level tunneling
