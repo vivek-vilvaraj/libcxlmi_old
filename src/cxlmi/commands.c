@@ -334,7 +334,7 @@ cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
 	struct cxlmi_cmd_get_supported_logs_sublist_req *req_pl;
 	struct cxlmi_cmd_get_supported_logs_sublist_rsp *rsp_pl;
 	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
-	_cleanup_free_ struct cxlmi_cci_msg_ *rsp = NULL;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
 	ssize_t req_sz, rsp_sz;
 	int i, rc = -1;
 
