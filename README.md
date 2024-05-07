@@ -4,17 +4,11 @@ CXL Management Interface library (libcxlmi).
 
 CXL Management Interface utility library provides type definitions
 for CXL specification structures, enumerations and helper functions to
-construct, send and decode CCI commands  and payloads over both
-traditional in-band (Linux) an out-of-band (OoB) link, typically
-MCTP-based CCIs over I2C or VDM. As such, users will mostly be BMC,
-firmware and/or fabric managers, targeting: Type3 SLD, Type3 MLD
+construct, send and decode CCI commands and payloads over both
+in-band (Linux) an out-of-band (OoB) link, typically MCTP-based
+CCIs over I2C or VDM. As such, users will mostly be BMC, firmware
+and/or fabric managers, targeting: Type3 SLD, Type3 MLD
 (FM owned) or a CXL Switch.
-
-CXL Manageability Model defines a CXL device to be the managed entity,
-through various command sets, which can have sensor/effector semantics,
-depending on whether the it affects device state (read-only). These can
-be accessed either in-band or out-of-band. As such, CXL supports various
-management interfaces and interconnects.
 
 Actual management of CXL components is done through the Component Command
 Interface (CCI), which represents a command, and can be either Mailbox
