@@ -175,6 +175,7 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	struct cxlmi_cmd_set_timestamp *req_pl;
 	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
 	size_t req_sz;
+	int rc;
 
 	CXLMI_BUILD_BUG_ON(sizeof(*in) != 8);
 
@@ -188,8 +189,9 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 	req_pl = (struct cxlmi_cmd_set_timestamp *)req->payload;
 	req_pl->timestamp = cpu_to_le64(in->timestamp);
 
-	return send_cmd_cci(ep, ti, req, req_sz,
+	rc = send_cmd_cci(ep, ti, req, req_sz,
 			    &rsp, sizeof(rsp), sizeof(rsp));
+	return rc;
 }
 
 static const int maxlogs = 10; /* Only 7 in CXL r3.1 but let us leave room */
