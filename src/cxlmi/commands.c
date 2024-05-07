@@ -201,7 +201,8 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				      struct cxlmi_cmd_get_supported_logs *ret)
 {
 	struct cxlmi_cmd_get_supported_logs *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp;
 	int rc, i;
 	ssize_t rsp_sz;
 
@@ -240,8 +241,8 @@ CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 {
 	struct cxlmi_cmd_get_log *req_pl;
 	struct cxlmi_cmd_get_log_cel_rsp *rsp_pl;
-	struct cxlmi_cci_msg _cleanup_free_  *req = NULL;
-	struct cxlmi_cci_msg _cleanup_free_ *rsp = NULL;
+	_cleanup_free_ struct cxlmi_cci_msg  *req = NULL;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
 	ssize_t req_sz, rsp_sz;
 	int i, rc = -1;
 
@@ -283,7 +284,8 @@ CXLMI_EXPORT int cxlmi_cmd_clear_log(struct cxlmi_endpoint *ep,
 				     struct cxlmi_cmd_clear_log *in)
 {
 	struct cxlmi_cmd_clear_log *req_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
 	size_t req_sz;
 
 	req_sz = sizeof(*req) + sizeof(*in);
@@ -305,7 +307,8 @@ CXLMI_EXPORT int cxlmi_cmd_populate_log(struct cxlmi_endpoint *ep,
 				struct cxlmi_cmd_populate_log *in)
 {
 	struct cxlmi_cmd_populate_log *req_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
 	size_t req_sz;
 
 	req_sz = sizeof(*req) + sizeof(*in);
@@ -330,8 +333,8 @@ cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
 {
 	struct cxlmi_cmd_get_supported_logs_sublist_req *req_pl;
 	struct cxlmi_cmd_get_supported_logs_sublist_rsp *rsp_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL;
-	struct cxlmi_cci_msg _cleanup_free_ *rsp = NULL;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	_cleanup_free_ struct cxlmi_cci_msg_ *rsp = NULL;
 	ssize_t req_sz, rsp_sz;
 	int i, rc = -1;
 
@@ -379,7 +382,8 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 				   struct cxlmi_cmd_memdev_identify *ret)
 {
 	struct cxlmi_cmd_memdev_identify *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
 	int rc;
 	ssize_t rsp_sz;
 
@@ -427,7 +431,8 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_get_lsa(struct cxlmi_endpoint *ep,
 					  struct cxlmi_cmd_memdev_get_lsa *ret)
 {
 	struct cxlmi_cmd_memdev_get_lsa *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp;
 	ssize_t rsp_sz;
 	int rc;
 
@@ -456,7 +461,8 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_set_lsa(struct cxlmi_endpoint *ep,
 					  struct cxlmi_cmd_memdev_set_lsa *in)
 {
 	struct cxlmi_cmd_memdev_set_lsa  *req_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
 	size_t req_sz;
 
 	req_sz = sizeof(*req) + sizeof(*in);
@@ -478,7 +484,8 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_get_health_info(struct cxlmi_endpoint *ep,
 				  struct cxlmi_cmd_memdev_get_health_info *ret)
 {
 	struct cxlmi_cmd_memdev_get_health_info *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
 	int rc;
 	ssize_t rsp_sz;
 
@@ -516,7 +523,8 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_get_alert_config(struct cxlmi_endpoint *ep,
 				   struct cxlmi_cmd_memdev_get_alert_config *ret)
 {
 	struct cxlmi_cmd_memdev_get_alert_config *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
 	int rc;
 	ssize_t rsp_sz;
 
@@ -562,7 +570,8 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_set_alert_config(struct cxlmi_endpoint *ep,
 				   struct cxlmi_cmd_memdev_set_alert_config *in)
 {
 	struct cxlmi_cmd_memdev_set_alert_config *req_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
 	size_t req_sz;
 
 	req_sz = sizeof(*req) + sizeof(*in);
@@ -608,7 +617,8 @@ CXLMI_EXPORT int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
 	int rc;
 	ssize_t rsp_sz;
 	struct cxlmi_cmd_fmapi_identify_sw_device *rsp_pl;
-	struct cxlmi_cci_msg req, _cleanup_free_ *rsp = NULL;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
 
 	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 0x49);
 
