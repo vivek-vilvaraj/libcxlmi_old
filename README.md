@@ -105,7 +105,7 @@ the specified LD.
 <img src="http://stgolabs.net/tunnel1.png" width="650" height="260">
 
    ```C
-   struct cxlmi_cmd_memdev_set_lsa lsa = arm_lsa(offset, data);
+   struct cxlmi_cmd_memdev_set_lsa *lsa = arm_lsa(offset, data);
    struct cxlmi_tunnel_info ti = {
 	  .level = 1,
 	  .ld = 1,
@@ -123,7 +123,7 @@ that is accessible through an MLD port of a CXL Switch.
 <img src="http://stgolabs.net/tunnel2.png" width="850 " height="290">
 
    ```C
-   struct cxlmi_cmd_memdev_set_lsa lsa = arm_lsa(offset, data);
+   struct cxlmi_cmd_memdev_set_lsa *lsa = arm_lsa(offset, data);
    struct cxlmi_tunnel_info ti = {
 	  .level = 2,
 	  .port = 3, /* outer tunnel */
