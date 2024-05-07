@@ -100,7 +100,7 @@ through tunneling as seen in the images below.
 When sent to an MLD, the provided command is tunneled by the FM-owned LD to
 the specified LD.
 
-<img src="http://stgolabs.net/tunnel1.png" width="650" height="280">
+<img src="http://stgolabs.net/tunnel1.png" width="650" height="250">
 
 An additional layer of tunneling is needed for commands issued on LDs in an MLD
 that is accessible through an MLD port of a CXL Switch.
