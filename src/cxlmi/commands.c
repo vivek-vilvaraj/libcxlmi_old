@@ -173,7 +173,7 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 					 struct cxlmi_cmd_set_timestamp *in)
 {
 	struct cxlmi_cmd_set_timestamp *req_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
+	struct cxlmi_cci_msg *req = NULL, rsp;
 	size_t req_sz;
 	int rc;
 
@@ -191,8 +191,6 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 
 	rc = send_cmd_cci(ep, ti, req, req_sz,
 			    &rsp, sizeof(rsp), sizeof(rsp));
-	printf("set device timestamp rc: %d\n", rc);
-
 	return rc;
 }
 
