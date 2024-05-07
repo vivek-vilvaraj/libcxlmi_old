@@ -130,8 +130,8 @@ that is accessible through an MLD port of a CXL Switch.
    }
    ```
 
-A third level tunneling commands to the LD Pool CCI in a Multi-Headed Device
-(MHD) is unsupported.
+Note that a third level tunneling commands to the LD Pool CCI in a Multi-Headed
+Device (MHD) is unsupported (CXL.io).
 
 Simple payloads can use stack-allocated input variables, while more complex
 responses require the user to already provide the output payload buffer.
