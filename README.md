@@ -94,16 +94,21 @@ belongs to the Generic Component set.
 
 When sending any CXL command, the passed parameters, in addition to the
 corresponding endpoint and respective payload information, must indicate the
-way the command will be issued, either directly (such as the case of a SLD) or
-through tunneling. When sent to an MLD, the provided command is tunneled by
-the FM-owned LD to the specified LD. This can include an additional layer of
-tunneling for commands issued on LDs in an MLD that is accessible through an
-MLD port  of a CXL Switch. For such purposes, a `struct cxlmi_tunnel_info`
-must be armed with the tunnel information - otherwise direct calls can simply
-pass NULL.
+way the command will be issued: either directly (such as the case of a SLD) or
+through tunneling as seen in the images below.
 
-<img src="http://stgolabs.net/tunnel1.png" width="450" height="150">
-<img src="http://stgolabs.net/tunnel2.png" width="600 " height="150">
+When sent to an MLD, the provided command is tunneled by the FM-owned LD to
+the specified LD.
+
+<img src="http://stgolabs.net/tunnel1.png" width="650" height="250">
+
+An additional layer of tunneling is needed for commands issued on LDs in an MLD
+that is accessible through an MLD port of a CXL Switch.
+
+<img src="http://stgolabs.net/tunnel2.png" width="800 " height="250">
+
+For such purposes, a `struct cxlmi_tunnel_info` must be armed with the tunnel
+information - otherwise direct calls can simply pass NULL.
 
 
 Simple payloads can use stack-allocated input variables, while more complex
