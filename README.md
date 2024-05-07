@@ -76,27 +76,34 @@ Component discovery
 
 Issuing CCI commands
 --------------------
-Once an endpoint is open, commands may be sent to the CXL device, for which
+Once an endpoint is open, commands may be sent to the CXL component, for which
 response timeouts are configurable through `cxlmi_endpoint_set_timeout()`,
 taking into account any maximum values defined by the transport. For example,
 for MCTP-based that is 2 seconds.
 
-API for sending commands is very ad-hoc to the CXL specification, including
+API for sending commands is very ad-hoc to the CXL specification, such as for
 payload input and output. As such, the user is expected to know what to look
 for in each case, accessing particular structure members, for example.
 
-APIs for each command have a `cxlmi_cmd_[memdev|fmapi_]<cmdname>` format, and
-the name of the payload data structure is the same as the function to send
-the command. Where `memdev`and `fmapi` if the command is from the
-respective command set, otherwise the command belongs to the Generic Component
-set.
+The names of both the functions to send commands and the CXL-defined payload
+data structures are the same, using a `cxlmi_cmd_[memdev|fmapi_]<cmdname>()`
+format. When there are input *and* output payloads, the `_req` and `_rsp`
+suffixes are needed, respectively, for the payload names. Naturally, `memdev`
+and `fmapi` corresponds to the respective command set, otherwise the command
+belongs to the Generic Component set.
 
-Tunneling
-*********
+When sending any CXL command, the passed parameters, in addition to the
+corresponding endpoint and respective payload information, must indicate the
+way the command will be issued, either directly (such as the case of a SLD) or
+through tunneling. When sent to an MLD, the provided command is tunneled by
+the FM-owned LD to the specified LD. This can include an additional layer of
+tunneling for commands issued on LDs in an MLD that is accessible through an
+MLD port  of a CXL Switch. For such purposes, a `struct cxlmi_tunnel_info`
+must be armed with the tunnel information - otherwise direct calls can simply
+pass NULL.
 
-![Single level tunneling](http://stgolabs.net/tunnel1.png)
-
-![Double level tunneling](http://stgolabs.net/tunnel2.png)
+<img src="http://stgolabs.net/tunnel1.png" width="450" height="150">
+<img src="http://stgolabs.net/tunnel2.png" width="600 " height="150">
 
 
 Simple payloads can use stack-allocated input variables, while more complex
