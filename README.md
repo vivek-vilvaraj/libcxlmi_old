@@ -102,7 +102,7 @@ information - otherwise, direct calls can simply pass NULL.
 When sent to an MLD, the provided command is tunneled by the FM-owned LD to
 the specified LD.
 
-<img src="http://stgolabs.net/tunnel1.png" width="650" height="285">
+<img src="http://stgolabs.net/tunnel1.png" width="650" height="250">
 
    ```C
    struct cxlmi_cmd_memdev_set_lsa lsa = arm_lsa(offset, data);
