@@ -108,7 +108,7 @@ the specified LD.
    struct cxlmi_cmd_memdev_set_lsa lsa = {
 	  .offset = 0,
    };
-   struct cxl_tunnel_info ti = {
+   struct cxlmi_tunnel_info ti = {
 	  .level = 1,
 	  .ld = 1,
    };
@@ -128,7 +128,7 @@ that is accessible through an MLD port of a CXL Switch.
    struct cxlmi_cmd_memdev_set_lsa lsa = {
 	  .offset = 0,
    };
-   struct cxl_tunnel_info ti = {
+   struct cxlmi_tunnel_info ti = {
 	  .level = 2,
 	  .port = 3, // X == 3
 	  .ld = 1,	  
