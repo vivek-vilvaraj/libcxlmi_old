@@ -90,7 +90,7 @@ When sending any CXL command, the passed parameters, in addition to the
 corresponding endpoint and respective payload information, must indicate the
 way the command will be issued: either directly (such as the case of a SLD) or
 through tunneling (such as the CXL-spec images below). For the library, this
-is done by passing a `struct cxlmi_tunnel_info` armed with the necesary
+is done by passing a `struct cxlmi_tunnel_info` armed with the necessary
 information - otherwise, direct calls can simply pass NULL.
 
 When sent to an MLD, the provided command is tunneled by the FM-owned LD to
@@ -133,8 +133,9 @@ that is accessible through an MLD port of a CXL Switch.
 Note that a third level tunneling commands to the LD Pool CCI in a Multi-Headed
 Device (MHD) is unsupported (CXL.io).
 
-Simple payloads can use stack-allocated input variables, while more complex
-responses require the user to already provide the output payload buffer.
+Commands with simple payload input/output can use  stack-allocated variables,
+while more complex ones require the user to already provide the respective payload
+buffer. Next are a few examples for sending commands directly.
 
 1. Input-only payload
 
