@@ -29,7 +29,6 @@ static int verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 {
 	int i, rc, nerr = 0;
-	int *ds_dev_types;
 	/* uint8_t *port_list; */
 	struct cxlmi_cmd_fmapi_get_phys_port_state_req *in;
 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret;
@@ -50,10 +49,6 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 
 	rc = cxlmi_cmd_fmapi_get_phys_port_state(ep, NULL, in, ret);
 	if (rc)
-		goto free_ret;
-
-	ds_dev_types = calloc(1, sizeof(*ds_dev_types) * num_ports);
-	if (!ds_dev_types)
 		goto free_ret;
 
 	/* query ports */
@@ -78,7 +73,6 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 		}
 	}
 
-	free(ds_dev_types);
 free_ret:
 	free(ret);
 free_input:
