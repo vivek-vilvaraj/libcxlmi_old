@@ -29,7 +29,6 @@ static int verify_num_endpoints(struct cxlmi_ctx *ctx, int expected)
 static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 {
 	int i, rc, nerr = 0;
-	/* uint8_t *port_list; */
 	struct cxlmi_cmd_fmapi_get_phys_port_state_req *in;
 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret;
 	size_t ret_sz = sizeof(*ret) + num_ports * sizeof(*ret->ports);
