@@ -102,7 +102,7 @@ information - otherwise, direct calls can simply pass NULL.
 When sent to an MLD, the provided command is tunneled by the FM-owned LD to
 the specified LD.
 
-<img src="http://stgolabs.net/tunnel1.png" width="650" height="290">
+<img src="http://stgolabs.net/tunnel1.png" width="650" height="285">
 
    ```C
    struct cxlmi_cmd_memdev_set_lsa lsa = {
@@ -130,7 +130,8 @@ that is accessible through an MLD port of a CXL Switch.
    };
    struct cxl_tunnel_info ti = {
 	  .level = 2,
-	  .ld = 1,
+	  .port = 3, // X == 3
+	  .ld = 1,	  
    };
 
    rc = cxlmi_cmd_memdev_set_lsa(ep, &ti, &lsa);
