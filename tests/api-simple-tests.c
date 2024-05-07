@@ -35,14 +35,6 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret;
 	size_t ret_sz = sizeof(*ret) + num_ports * sizeof(*ret->ports);
 
-	/* Done like this to allow easy testing of nonsequential lists */
-	/* port_list = calloc(1, sizeof(*port_list) * num_ports); */
-	/* if (!port_list) */
-	/* 	goto done; */
-	/* for (i = 0; i < num_ports; i++) { */
-	/* 	port_list[i] = i; */
-	/* } */
-
 	/* arm input for phys_port_state */
 	in = calloc(1, num_ports + sizeof(*in));
 	if (!in)
@@ -71,24 +63,18 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 		struct cxlmi_tunnel_info ti = {
 			.level = 2,
 			.port = i,
-			.id = 0,
+			.id = 0, /* MLD port, query LD-0 */
 		};
 
 		port = &ret->ports[i];
 		if (port->conn_dev_type != 5)
 			continue;
 
-		/* MLD port, query FM-owned LD */
 		rc = cxlmi_cmd_identify(ep, &ti, &id);
 		if (rc > 0) {
 			fprintf(stderr,
 				"[FAIL] unexpected return code (0x%x)\n", rc);
 			nerr++;
-		}
-		if (rc == 0) {
-			printf("----- rc: %d, type %d\n", rc, id.component_type);
-			printf("serial number: 0x%lx\n", (uint64_t)id.serial_num);
-
 		}
 	}
 
@@ -97,8 +83,6 @@ free_ret:
 	free(ret);
 free_input:
 	free(in);
-
-	/* free(port_list); */
 done:
 	return nerr;
 }
@@ -144,7 +128,7 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 
 			/*
 			 * Attempt a 2-level tunneled ID cmd if this is a
-			 * switch + mld port scenario.
+			 * switch + mld port (LD 0) scenario.
 			 */
 			if (id.component_type == 0x0) {
 				struct cxlmi_cmd_fmapi_identify_sw_device idsw;
