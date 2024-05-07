@@ -57,7 +57,7 @@ static int query_mld_from_switch(struct cxlmi_endpoint *ep, int num_ports)
 		struct cxlmi_tunnel_info ti = {
 			.level = 2,
 			.port = i,
-			.id = 0, /* MLD port, query LD-0 */
+			.ld = 0, /* MLD port, query LD-0 */
 		};
 
 		port = &ret->ports[i];
@@ -91,7 +91,7 @@ static int verify_ep_fmapi(struct cxlmi_endpoint *ep)
 		struct cxlmi_tunnel_info  ti = {
 			.level = 1,
 			.port = 0,
-			.id = 0,
+			.ld = 0,
 		};
 
 		rc = cxlmi_cmd_identify(ep, &ti, &id);

@@ -478,7 +478,7 @@ static int send_mctp_tunnel1(struct cxlmi_endpoint *ep,
 	cxlmi_msg(ep->ctx, LOG_DEBUG, "1 Level tunnel of opcode %02x%02x\n",
 		  req_msg->command_set, req_msg->command);
 
-	rc = build_tunnel_req(ep, ti->port, req_msg, req_msg_sz, &t_req_msg,
+	rc = build_tunnel_req(ep, ti->ld, req_msg, req_msg_sz, &t_req_msg,
 			 &t_req_msg_sz);
 	if (rc)
 		return rc;
@@ -583,7 +583,7 @@ static int send_mctp_tunnel2(struct cxlmi_endpoint *ep,
 	cxlmi_msg(ep->ctx, LOG_DEBUG, "2 Level tunnel of opcode %02x%02x\n",
 		  req_msg->command_set, req_msg->command);
 
-	rc = build_tunnel_req(ep, ti->id, req_msg, req_msg_sz,
+	rc = build_tunnel_req(ep, ti->ld, req_msg, req_msg_sz,
 			      &inner_req, &inner_req_sz);
 	if (rc)
 		return rc;

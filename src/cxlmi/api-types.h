@@ -127,6 +127,19 @@ struct cxlmi_cmd_memdev_identify {
 	uint16_t dc_event_log_size;
 } __attribute__((packed));
 
+/* CXL r3.1 Section 8.2.9.9.2.3: Get LSA (Opcode 4102h) */
+struct cxlmi_cmd_memdev_get_lsa {
+        uint32_t offset;
+        uint32_t length;
+} __attribute__((packed)); 
+
+/* CXL r3.1 Section 8.2.9.9.2.4: Set LSA (Opcode 4103h) */
+struct cxlmi_cmd_memdev_set_lsa {
+        uint32_t offset;
+        uint32_t rsvd;
+        uint8_t data[];
+} __attribute__((packed));
+
 /* CXL r3.1 Section 8.2.9.9.3.1: Get Health Info (Opcode 4200h) */
 struct cxlmi_cmd_memdev_get_health_info {
 	uint8_t health_status;

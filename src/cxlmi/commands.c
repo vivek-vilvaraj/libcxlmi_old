@@ -419,6 +419,57 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 	return rc;
 }
 
+CXLMI_EXPORT int cxlmi_cmd_memdev_get_lsa(struct cxlmi_endpoint *ep,
+					  struct cxlmi_tunnel_info *ti,
+					  struct cxlmi_cmd_memdev_get_lsa *ret)
+{
+	struct cxlmi_cmd_memdev_get_lsa *rsp_pl;
+	struct cxlmi_cci_msg req, _cleanup_free_ *rsp;
+	ssize_t rsp_sz;
+	int rc;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 8);
+
+	arm_cci_request(ep, &req, 0, CCLS, GET_LSA);
+
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	if (rc)
+		return rc;
+
+	rsp_pl = (struct cxlmi_cmd_memdev_get_lsa *)rsp->payload;
+	ret->offset = le32_to_cpu(rsp_pl->offset);
+	ret->length = le32_to_cpu(rsp_pl->length);
+
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_memdev_set_lsa(struct cxlmi_endpoint *ep,
+					  struct cxlmi_tunnel_info *ti,
+					  struct cxlmi_cmd_memdev_set_lsa *in)
+{
+	struct cxlmi_cmd_memdev_set_lsa  *req_pl;
+	struct cxlmi_cci_msg _cleanup_free_ *req = NULL, rsp;
+	size_t req_sz;
+
+	req_sz = sizeof(*req) + sizeof(*in);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*in), CCLS, SET_LSA);
+
+	req_pl = (struct cxlmi_cmd_memdev_set_lsa *)req->payload;
+	req_pl->offset = cpu_to_le32(in->offset);
+
+	return send_cmd_cci(ep, ti, req, req_sz,
+			    &rsp, sizeof(rsp), sizeof(rsp));
+}
+
 CXLMI_EXPORT int cxlmi_cmd_memdev_get_health_info(struct cxlmi_endpoint *ep,
 				  struct cxlmi_tunnel_info *ti,
 				  struct cxlmi_cmd_memdev_get_health_info *ret)

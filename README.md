@@ -95,21 +95,49 @@ belongs to the Generic Component set.
 When sending any CXL command, the passed parameters, in addition to the
 corresponding endpoint and respective payload information, must indicate the
 way the command will be issued: either directly (such as the case of a SLD) or
-through tunneling as seen in the images below.
+through tunneling (such as the CXL-spec images below). For the library, this
+is done by passing a `struct cxlmi_tunnel_info` armed with the necesary
+information - otherwise, direct calls can simply pass NULL.
 
 When sent to an MLD, the provided command is tunneled by the FM-owned LD to
 the specified LD.
 
 <img src="http://stgolabs.net/tunnel1.png" width="650" height="290">
 
+   ```C
+   struct cxlmi_cmd_memdev_set_lsa lsa = {
+	  .offset = 0,
+   };
+   struct cxl_tunnel_info ti = {
+	  .level = 1,
+	  .ld = 1,
+   };
+
+   rc = cxlmi_cmd_memdev_set_lsa(ep, &ti, &lsa);
+   if (rc) {
+	   /* handle error */
+   }
+   ```
+
 An additional layer of tunneling is needed for commands issued on LDs in an MLD
 that is accessible through an MLD port of a CXL Switch.
 
 <img src="http://stgolabs.net/tunnel2.png" width="850 " height="290">
 
-For such purposes, a `struct cxlmi_tunnel_info` must be armed with the tunnel
-information - otherwise direct calls can simply pass NULL.
+   ```C
+   struct cxlmi_cmd_memdev_set_lsa lsa = {
+	  .offset = 0,
+   };
+   struct cxl_tunnel_info ti = {
+	  .level = 2,
+	  .ld = 1,
+   };
 
+   rc = cxlmi_cmd_memdev_set_lsa(ep, &ti, &lsa);
+   if (rc) {
+	   /* handle error */
+   }
+   ```
 
 Simple payloads can use stack-allocated input variables, while more complex
 responses require the user to already provide the output payload buffer.
