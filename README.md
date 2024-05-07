@@ -91,7 +91,13 @@ the command. Where `memdev`and `fmapi` if the command is from the
 respective command set, otherwise the command belongs to the Generic Component
 set.
 
+Tunneling
+*********
+
 ![Single level tunneling](http://stgolabs.net/tunnel1.png)
+
+![Double level tunneling](http://stgolabs.net/tunnel2.png)
+
 
 Simple payloads can use stack-allocated input variables, while more complex
 responses require the user to already provide the output payload buffer.
