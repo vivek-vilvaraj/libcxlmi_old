@@ -49,6 +49,18 @@ struct cxlmi_cmd_set_response_msg_limit {
 	uint8_t limit;
 } __attribute__((packed));
 
+/* CXL r3.1 Section 8.2.9.3.1: Get FW Info (Opcode 0200h) */
+struct cxlmi_cmd_get_fw_info {
+        uint8_t slots_supported;
+        uint8_t slot_info;
+        uint8_t caps;
+        uint8_t rsvd[0xd];
+        char fw_rev1[0x10];
+        char fw_rev2[0x10];
+        char fw_rev3[0x10];
+        char fw_rev4[0x10];
+} __attribute__((packed));
+
 /* CXL r3.1 Section 8.2.9.4.1: Get Timestamp (Opcode 0300h) */
 struct cxlmi_cmd_get_timestamp {
 	uint64_t timestamp;
