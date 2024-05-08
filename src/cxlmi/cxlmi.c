@@ -266,7 +266,7 @@ CXLMI_EXPORT bool cxlmi_endpoint_disable_fmapi(struct cxlmi_endpoint *ep)
 		memset(&mctp->fmapi_addr, 0, sizeof(mctp->fmapi_addr));
 	}
 
-	ep->has_fmapi = true;
+	ep->has_fmapi = false;
 	return true;
 }
 
