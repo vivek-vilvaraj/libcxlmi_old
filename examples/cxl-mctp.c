@@ -289,7 +289,7 @@ static int get_device_logs(struct cxlmi_endpoint *ep)
 int main(int argc, char **argv)
 {
 	struct cxlmi_ctx *ctx;
-	struct cxlmi_endpoint *ep;
+	struct cxlmi_endpoint *ep, *tmp;
 	int rc = EXIT_FAILURE;
 
 	ctx = cxlmi_new_ctx(stdout, DEFAULT_LOGLEVEL);
@@ -323,17 +323,12 @@ int main(int argc, char **argv)
 			fprintf(stderr, "cannot open MCTP endpoint %d:%d\n", nid, eid);
 			goto exit_free_ctx;
 		}
-
-		if (cxlmi_endpoint_has_fmapi(ep)) {
-			printf("FM-API supported\n");
-		} else
-			printf("FM-API unsupported\n");
 	} else {
 		fprintf(stderr, "must provide MCTP endpoint nid:eid touple\n");
 		goto exit_free_ctx;
 	}
 
-	cxlmi_for_each_endpoint(ctx, ep) {
+	cxlmi_for_each_endpoint_safe(ctx, ep, tmp) {
 		rc = show_device_info(ep);
 
 		rc = play_with_device_timestamp(ep);
