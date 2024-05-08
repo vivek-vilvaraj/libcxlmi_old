@@ -222,13 +222,7 @@ static bool cxlmi_ep_has_quirk(struct cxlmi_endpoint *ep, unsigned long quirk)
 
 CXLMI_EXPORT bool cxlmi_endpoint_has_fmapi(struct cxlmi_endpoint *ep)
 {
-	if (ep->transport_data) {
-		struct cxlmi_transport_mctp *mctp = ep->transport_data;
-
-		return fcntl(mctp->fmapi_sd, F_GETFD) != -1 || errno != EBADF;
-	} else {
-		return true;
-	}
+	return ep->has_fmapi;
 }
 
 CXLMI_EXPORT bool cxlmi_endpoint_enable_fmapi(struct cxlmi_endpoint *ep)
@@ -254,10 +248,10 @@ CXLMI_EXPORT bool cxlmi_endpoint_enable_fmapi(struct cxlmi_endpoint *ep)
 		}
 
 		mctp->fmapi_addr = fmapi_addr;
-		return true;
-	} else {
-		return true;
 	}
+
+	ep->has_fmapi = true;
+	return true;
 }
 
 CXLMI_EXPORT bool cxlmi_endpoint_disable_fmapi(struct cxlmi_endpoint *ep)
@@ -270,10 +264,10 @@ CXLMI_EXPORT bool cxlmi_endpoint_disable_fmapi(struct cxlmi_endpoint *ep)
 
 		close(mctp->fmapi_sd);
 		memset(&mctp->fmapi_addr, 0, sizeof(mctp->fmapi_addr));
-		return true;
-	} else {
-		return false;
 	}
+
+	ep->has_fmapi = true;
+	return true;
 }
 
 static void mctp_close(struct cxlmi_endpoint *ep)
@@ -1125,6 +1119,7 @@ static void endpoint_probe_mctp(struct cxlmi_endpoint *ep)
 	}
 
 	mctp->fmapi_addr = fmapi_addr;
+	ep->has_fmapi = true;
 }
 
 static void endpoint_probe(struct cxlmi_endpoint *ep)
@@ -1149,6 +1144,8 @@ static void endpoint_probe(struct cxlmi_endpoint *ep)
 
 	if (ep->transport_data)
 		endpoint_probe_mctp(ep);
+	else
+		ep->has_fmapi = true;
 }
 
 CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open_mctp(struct cxlmi_ctx *ctx,

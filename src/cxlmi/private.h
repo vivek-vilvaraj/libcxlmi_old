@@ -120,6 +120,8 @@ struct cxlmi_endpoint {
 	int fd;
 	char *devname;
 
+	bool has_fmapi;
+	
 	struct list_node entry;
 	unsigned int timeout_ms;
 	unsigned long quirks;
