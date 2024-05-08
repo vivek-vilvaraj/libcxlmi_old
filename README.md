@@ -242,12 +242,11 @@ A few considerations to consider when evaluating using this library:
 - The library leaves any and all serialization up to the user - libs should not
 hold locks.
 
-- Library is endianness-aware.
+- The library is endianness-aware.
 
-- This library bypasses many of the protections traditionally provided by the OS
-driver, as such, users must provide the correct command(s) to the correct CXL
-component. Similarly device state may be altered by command semantics, and
-therefore users get to keep the pieces.
+- Users must provide the correct command(s) to the correct CXL component. Similarly
+device state may be altered by command semantics, and therefore users get to keep
+the pieces.
 
 - Commands initiated on MCTP-based CCIs are not tracked across any component state
 change, such as Conventional Resets.
