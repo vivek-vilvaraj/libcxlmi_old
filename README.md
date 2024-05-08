@@ -244,7 +244,7 @@ hold locks.
 
 - The library is endianness-aware.
 
-- Users must provide the correct command(s) to the correct CXL component. Similarly
+- Users must provide the correct command to the correct CXL component. Similarly
 device state may be altered by command semantics, and therefore users get to keep
 the pieces.
 
