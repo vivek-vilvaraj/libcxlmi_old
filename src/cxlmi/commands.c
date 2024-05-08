@@ -231,7 +231,7 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 			    &rsp, sizeof(rsp), sizeof(rsp));
 }
 
-static const int maxlogs = 10; /* Only 7 in CXL r3.1 but let us leave room */
+static const int maxlogs = 10; /* Only 7 in CXL r3.1 but let leave room */
 CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				      struct cxlmi_tunnel_info *ti,
 				      struct cxlmi_cmd_get_supported_logs *ret)

@@ -934,7 +934,7 @@ send_ioctl_tunnel2(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
 		goto free_tunnel_rsp;
 
 	if (cmd.retval) {
-		printf("Bad return value\n");
+		cxlmi_msg(ep->ctx, LOG_ERR, "Bad return value\n");
 		rc = -cmd.retval;
 		goto free_tunnel_rsp;
 	}
@@ -942,7 +942,8 @@ send_ioctl_tunnel2(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
 
 	/* Check overal message size */
 	if (len < len_min) {
-		printf("IOCTL output too small %d < %ld\n", len, len_min);
+		cxlmi_msg(ep->ctx, LOG_ERR,
+		       "IOCTL output too small %d < %ld\n", len, len_min);
 		rc = -1;
 		goto free_tunnel_rsp;
 	}
@@ -953,7 +954,8 @@ send_ioctl_tunnel2(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
 	len_max -= sizeof(*outer_t_rsp);
 
 	if (outer_t_rsp->length != len) {
-		printf("Tunnel length not consistent with ioctl data returned\n");
+	        cxlmi_msg(ep->ctx, LOG_ERR,
+		  "Tunnel length not consistent with ioctl data returned\n");
 		rc = -1;
 		goto free_tunnel_rsp;
 	}
@@ -969,7 +971,7 @@ send_ioctl_tunnel2(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
 	rc = sanity_check_mctp_rsp(ep, outer_t_req->message, outer_t_rsp->message, len,
 			      len_max == len_min, len_min);
 	if (rc) {
-		printf("Outer tunnel response failed\n");
+		cxlmi_msg(ep->ctx, LOG_ERR, "Outer tunnel response failed\n");
 		goto free_tunnel_rsp;
 	}
 
