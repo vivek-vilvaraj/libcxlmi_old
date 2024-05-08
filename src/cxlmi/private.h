@@ -94,11 +94,6 @@ enum {
 	#define INITIATE_DC_RELEASE         0x5
 };
 
-enum cxlmi_component_type {
-	CXLMI_SWITCH,
-	CXLMI_TYPE3,
-};
-
 struct cxlmi_ctx {
 	FILE *fp;
 	int log_level;
@@ -125,7 +120,6 @@ struct cxlmi_endpoint {
 	int fd;
 	char *devname;
 
-	int type;
 	struct list_node entry;
 	unsigned int timeout_ms;
 	unsigned long quirks;

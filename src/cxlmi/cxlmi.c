@@ -185,7 +185,6 @@ static struct cxlmi_endpoint *init_endpoint(struct cxlmi_ctx *ctx)
 	list_node_init(&ep->entry);
 	ep->ctx = ctx;
 	ep->timeout_ms = 5000;
-	ep->type = -1;
 	list_add(&ctx->endpoints, &ep->entry);
 
 	return ep;
@@ -752,6 +751,265 @@ err:
 	return -1;
 }
 
+static int
+send_ioctl_tunnel1(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
+		   struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
+		   struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
+		   size_t rsp_msg_sz_min)
+{
+	struct cxlmi_cmd_fmapi_tunnel_command_req *t_req;
+	struct cxlmi_cmd_fmapi_tunnel_command_rsp *t_rsp;
+	size_t t_req_sz, t_rsp_sz, len_min, len_max;
+	struct cxl_send_command cmd;
+	int rc, len;
+
+	cxlmi_msg(ep->ctx, LOG_DEBUG,
+		  "Tunneling over switch CCI mailbox by IOCTL\n");
+
+	/*
+	 * Step 1. Wrap the CCI message in a tunnel command
+	 * that we will send via ioctl.
+	 */
+	t_req_sz = sizeof(*t_req) + req_msg_sz;
+	t_req = calloc(1, t_req_sz);
+	if (!t_req)
+		return -1;
+
+	*t_req = (struct cxlmi_cmd_fmapi_tunnel_command_req) {
+		.target_type = TUNNEL_TARGET_TYPE_PORT_OR_LD,
+		.id = ti->ld,
+		.command_size = req_msg_sz,
+	};
+	memcpy(t_req->message, req_msg, req_msg_sz);
+	/* These will be updated to reflect current parsing state */
+	len_min = sizeof(*t_req) + rsp_msg_sz_min;
+	len_max = sizeof(*t_req) + rsp_msg_sz;
+
+	t_rsp_sz = sizeof(*t_rsp) + rsp_msg_sz;
+	t_rsp = calloc(t_rsp_sz, 1);
+	if (!t_rsp) {
+		rc = -1;
+		goto free_tunnel_req;
+	}
+
+	cmd = (struct cxl_send_command) {
+		.id = CXL_MEM_COMMAND_ID_RAW,
+		.raw.opcode = 0 | (0x53 << 8),
+		.in.payload = (__u64)t_req,
+		.in.size = t_req_sz,
+		.out.payload = (__u64)t_rsp,
+		.out.size = t_rsp_sz,
+	};
+	rc = ioctl(ep->fd, CXL_MEM_SEND_COMMAND, &cmd);
+	if (rc < 0)
+		goto free_tunnel_rsp;
+
+	if (cmd.retval) {
+		cxlmi_msg(ep->ctx, LOG_ERR, "bad return value\n");
+		rc = -cmd.retval;
+		goto free_tunnel_rsp;
+	}
+	len = cmd.out.size;
+
+	if (len < len_min) {
+		cxlmi_msg(ep->ctx, LOG_ERR, "IOCTL output too small %d < %ld\n",
+			  len, len_min);
+		rc = -1;
+		goto free_tunnel_rsp;
+	}
+
+	len -= sizeof(*t_rsp);
+	len_min -= sizeof(*t_rsp);
+	len_max -= sizeof(*t_rsp);
+	if (t_rsp->length != len) {
+		cxlmi_msg(ep->ctx, LOG_ERR,
+		  "Tunnel length not consistent with ioctl data returned\n");
+		rc = -1;
+		goto free_tunnel_rsp;
+	}
+	if (t_rsp->length < len_min) {
+		cxlmi_msg(ep->ctx, LOG_ERR,
+			  "Got back too little data ain the tunnel\n");
+		rc = -1;
+		goto free_tunnel_rsp;
+	};
+	rc = sanity_check_mctp_rsp(ep, t_req->message, t_rsp->message, len,
+			      len_max == len_min, len_min);
+	if (rc) {
+		cxlmi_msg(ep->ctx, LOG_ERR, "Inner tunnel repsonse failed\n");
+		goto free_tunnel_rsp;
+	}
+
+	memcpy(rsp_msg, t_rsp->message, rsp_msg_sz);
+
+	if (rsp_msg->return_code) {
+		rc = -rsp_msg->return_code;
+		goto free_tunnel_rsp;
+	}
+
+ free_tunnel_rsp:
+	free(t_rsp);
+ free_tunnel_req:
+	free(t_req);
+	return rc;
+}
+
+
+/*
+ * 2 level tunnel - so there are two tunnel_command_req, tunnel_comamnd_rsp
+ * burried in an ioctl message
+ */
+static int
+send_ioctl_tunnel2(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
+		   struct cxlmi_cci_msg *req_msg, size_t req_msg_sz,
+		   struct cxlmi_cci_msg *rsp_msg, size_t rsp_msg_sz,
+		   size_t rsp_msg_sz_min)
+{
+	struct cxlmi_cci_msg *inner_req, *inner_rsp;
+	size_t inner_req_sz;
+	struct cxlmi_cmd_fmapi_tunnel_command_req *outer_t_req, *inner_t_req;
+	struct cxlmi_cmd_fmapi_tunnel_command_rsp *outer_t_rsp, *inner_t_rsp;
+	size_t outer_t_req_sz, outer_t_rsp_sz, len_min, len_max;
+	struct cxl_send_command cmd;
+	int rc, len;
+
+	cxlmi_msg(ep->ctx, LOG_DEBUG,
+		  "Tunneling 2 levels over switch CCI mailbox by IOCTL\n");
+
+	/*
+	 * Step 1. Wrap to be the tunneled CCI message including payload in a
+	 * CCI message that is a Tunneled request.
+	 *      12             4            req_msg_sz
+	 * | CCIMessage | TunnelHdr | req_msg (CCIMessage +PL) |
+	 */
+	rc = build_tunnel_req(ep, ti->ld, req_msg, req_msg_sz, &inner_req,
+			      &inner_req_sz);
+	if (rc)
+		return rc;
+
+	/*
+	 * Step 2. Wrap the now already inner wrapped CCI message in
+	 * tunnel command that we will send via ioctl.
+	 * |      4        12 + 4 + req_msg_sz
+	 * | Tunnel Hdr | Inner Req as above   |
+	 */
+	outer_t_req_sz = sizeof(*outer_t_req) + inner_req_sz;
+	outer_t_req = calloc(1, outer_t_req_sz);
+	if (!outer_t_req) {
+		rc = -1;
+		goto free_inner_req;
+	}
+	*outer_t_req = (struct cxlmi_cmd_fmapi_tunnel_command_req) {
+		.target_type = TUNNEL_TARGET_TYPE_PORT_OR_LD,
+		.id = ti->port,
+		.command_size = inner_req_sz,
+	};
+	memcpy(outer_t_req->message, inner_req, inner_req_sz);
+
+	/*
+	 * Allocate the whole response in one go
+	 *       4           12           4             resp_msg_sz
+	 * | TunnelHdr | CCIMessage | TunnelHdr | rsp_msg (CCIMessage + PL) |
+	 */
+	outer_t_rsp_sz = sizeof(*outer_t_rsp) + sizeof(*outer_t_rsp->message) +
+		sizeof(*inner_t_rsp) + rsp_msg_sz;
+	/*
+	 * Also compute the max/min good response size - this will be updated as
+	 * the tunnelling is unwound.
+	 */
+	len_min = sizeof(*outer_t_rsp) + sizeof(*outer_t_rsp->message) +
+		sizeof(*inner_t_rsp) + rsp_msg_sz_min;
+	len_max = outer_t_rsp_sz;
+
+	outer_t_rsp = calloc(outer_t_rsp_sz, 1);
+	if (!outer_t_rsp) {
+		rc = -1;
+		goto free_tunnel_req;
+	}
+
+	cmd = (struct cxl_send_command) {
+		.id = CXL_MEM_COMMAND_ID_RAW,
+		.raw.opcode = 0 | (0x53 << 8),
+		.in.payload = (__u64)outer_t_req,
+		.in.size = outer_t_req_sz,
+		.out.payload = (__u64)outer_t_rsp,
+		.out.size = outer_t_rsp_sz,
+	};
+	rc = ioctl(ep->fd, CXL_MEM_SEND_COMMAND, &cmd);
+	if (rc < 0)
+		goto free_tunnel_rsp;
+
+	if (cmd.retval) {
+		printf("Bad return value\n");
+		rc = -cmd.retval;
+		goto free_tunnel_rsp;
+	}
+	len = cmd.out.size;
+
+	/* Check overal message size */
+	if (len < len_min) {
+		printf("IOCTL output too small %d < %ld\n", len, len_min);
+		rc = -1;
+		goto free_tunnel_rsp;
+	}
+
+	/* Check the length in the tunnel header */
+	len -= sizeof(*outer_t_rsp);
+	len_min -= sizeof(*outer_t_rsp);
+	len_max -= sizeof(*outer_t_rsp);
+
+	if (outer_t_rsp->length != len) {
+		printf("Tunnel length not consistent with ioctl data returned\n");
+		rc = -1;
+		goto free_tunnel_rsp;
+	}
+	if (outer_t_rsp->length < len_min) {
+		cxlmi_msg(ep->ctx, LOG_ERR,
+		  "Got back to little data in the tunnel overall %d %ld %d\n",
+		       outer_t_rsp->length, len_min, cmd.out.size);
+		rc = -1;
+		goto free_tunnel_rsp;
+	}
+
+	/* Check the outer tunnel */
+	rc = sanity_check_mctp_rsp(ep, outer_t_req->message, outer_t_rsp->message, len,
+			      len_max == len_min, len_min);
+	if (rc) {
+		printf("Outer tunnel response failed\n");
+		goto free_tunnel_rsp;
+	}
+
+	len -= sizeof(*inner_t_rsp) + sizeof(*inner_t_rsp->message);
+	len_min -= sizeof(*inner_t_rsp) + sizeof(*inner_t_rsp->message);
+	len_max -= sizeof(*inner_t_rsp) + sizeof(*inner_t_rsp->message);
+
+	inner_t_req = (struct cxlmi_cmd_fmapi_tunnel_command_req *)inner_req->payload;
+	inner_rsp = outer_t_rsp->message;
+	inner_t_rsp = (struct cxlmi_cmd_fmapi_tunnel_command_rsp *)inner_rsp->payload;
+	if (inner_t_rsp->length != len) {
+		cxlmi_msg(ep->ctx, LOG_ERR,
+		  "Tunnel length not consistent with ioctl data returned\n");
+		rc = -1;
+		goto free_tunnel_rsp;
+	}
+	rc = sanity_check_mctp_rsp(ep, inner_t_req->message, inner_t_rsp->message, len,
+			      len_max == len_min, len_min);
+	if (rc) {
+		cxlmi_msg(ep->ctx, LOG_ERR, "Inner tunnel repsonse failed\n");
+		goto free_tunnel_rsp;
+	}
+	extract_rsp_msg_from_tunnel(inner_rsp, rsp_msg, rsp_msg_sz);
+ free_tunnel_rsp:
+	free(outer_t_rsp);
+
+ free_tunnel_req:
+	free(outer_t_req);
+
+ free_inner_req:
+	free(inner_req);
+	return rc;
+}
+
 static void cxlmi_record_resp_time(struct cxlmi_endpoint *ep)
 {
 	int rc;
@@ -801,8 +1059,15 @@ int send_cmd_cci(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
 			rc = send_mctp_tunnel2(ep, ti, req_msg, req_msg_sz,
 				       rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
 	} else {
-		rc = send_ioctl_direct(ep, req_msg, req_msg_sz,
+		if (!ti || ti->level == 0)
+			rc = send_ioctl_direct(ep, req_msg, req_msg_sz,
 				       rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
+		else if (ti->level == 1)
+			rc = send_ioctl_tunnel1(ep, ti, req_msg, req_msg_sz,
+				       rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
+		else if (ti->level == 2)
+			rc = send_ioctl_tunnel2(ep, ti, req_msg, req_msg_sz,
+					rsp_msg, rsp_msg_sz, rsp_msg_sz_min);
 	}
 
 	if (cxlmi_ep_has_quirk(ep, CXLMI_QUIRK_MIN_INTER_COMMAND_TIME))
@@ -832,28 +1097,24 @@ static void endpoint_probe_mctp(struct cxlmi_endpoint *ep)
 	if (cxlmi_cmd_identify(ep, NULL, &id))
 		return;
 
+	/*
+	 * Probing topology is not cached as it may change dynamically.
+	 * It is up to the user to have an updated view of what underlying
+	 * CXL component this endpoint corresponds to.
+	 */
 	switch (id.component_type) {
 	case 0x00:
-		/* TODO: ioctl tunneling from a switch mailbox CCI */
-		ep->type = CXLMI_SWITCH;
+		cxlmi_msg(ep->ctx, LOG_INFO, "detected a CXL Switch device\n");
 		break;
 	case 0x03:
-		/*
-		 * potential scenarios:
-		 *   - type3 SLD
-		 *   - type3 MLD - FM owned LD (TODO)
-		 */
-		ep->type = CXLMI_TYPE3;
+		cxlmi_msg(ep->ctx, LOG_INFO,
+			  "detected a CXL Type3 device (SLD or MLD FM-owned LD\n");
 		break;
 	default:
-		ep->type = -1;
 		cxlmi_msg(ep->ctx, LOG_WARNING,
-			  "mctp probe found unsupported cxl component\n");
+			  "mctp probe found unsupported CXL component\n");
 		return;
 	}
-
-	cxlmi_msg(ep->ctx, LOG_INFO, "detected %s device\n",
-		  ep->type == CXLMI_SWITCH ? "switch":"type3");
 
 	/* FM-API errors are ignored and the CCI will only be available */
 	mctp->fmapi_sd = socket(AF_MCTP, SOCK_DGRAM, 0);
@@ -1275,14 +1536,6 @@ CXLMI_EXPORT struct cxlmi_endpoint *cxlmi_open(struct cxlmi_ctx *ctx,
 	ep = init_endpoint(ctx);
 	if (!ep)
 		return NULL;
-
-	if (!strncmp(devname, "switch", strlen("switch"))) {
-		ep->type = CXLMI_SWITCH;
-	} else if (!strncmp(devname, "mem", strlen("mem"))) {
-		ep->type = CXLMI_TYPE3;
-	} else {
-		ep->type = -1;
-	}
 
 	snprintf(filename, sizeof(filename), "/dev/cxl/%s", devname);
 

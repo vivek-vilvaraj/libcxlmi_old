@@ -610,6 +610,17 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep,
 			    &rsp, sizeof(rsp), sizeof(rsp));
 }
 
+CXLMI_EXPORT int cxlmi_cmd_memdev_secure_erase(struct cxlmi_endpoint *ep,
+					       struct cxlmi_tunnel_info *ti)
+{
+	struct cxlmi_cci_msg req, rsp;
+
+	arm_cci_request(ep, &req, 0, SANITIZE, SECURE_ERASE);
+
+	return send_cmd_cci(ep, ti, &req, sizeof(req),
+			    &rsp, sizeof(rsp), sizeof(rsp));
+}
+
 CXLMI_EXPORT int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
 			    struct cxlmi_tunnel_info *ti,
 			    struct cxlmi_cmd_fmapi_identify_sw_device *ret)

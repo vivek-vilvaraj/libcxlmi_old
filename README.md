@@ -237,9 +237,7 @@ by default. Logging levels are standard `syslog`.
 
 Considerations
 --------------
-A few considerations users should keep in mind when evaluating using this library:
-
-- APIs are influenced by libnvme.
+A few considerations to consider when evaluating using this library:
 
 - The library leaves any and all serialization up to the user - libs should not
 hold locks.
@@ -253,6 +251,9 @@ therefore users get to keep the pieces.
 
 - Commands initiated on MCTP-based CCIs are not tracked across any component state
 change, such as Conventional Resets.
+
+- G-FAM devices (GFD) and multiple hosts are beyond the scope of this library,
+and therefore, unsupported.
 
 - CXL r3.1 + DMTF binding specs are not clear on what Message type is used for the
 generic command set - these can be issued to either a switch or a type 3 device.
