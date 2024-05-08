@@ -1033,6 +1033,9 @@ int send_cmd_cci(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
 	int rc = -1;
 	bool fmapi_cmd = cxlmi_cmd_is_fmapi(req_msg->command_set);
 
+	if (fmapi_cmd && !cxlmi_has_fmapi(ep))
+		return -1;
+
 	/* ensure valid tunnel info before anything else */
 	if (ti) {
 		if (ti->level > 2)
