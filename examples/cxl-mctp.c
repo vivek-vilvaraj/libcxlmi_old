@@ -329,13 +329,13 @@ int main(int argc, char **argv)
 	}
 
 	cxlmi_for_each_endpoint_safe(ctx, ep, tmp) {
-		/* rc = show_device_info(ep); */
+		rc = show_device_info(ep);
 
 		rc = play_with_device_timestamp(ep);
 
-		/* rc = get_device_logs(ep); */
+		rc = get_device_logs(ep);
 
-		/* rc = toggle_abort(ep); */
+		rc = toggle_abort(ep);
 
 		cxlmi_close(ep);
 	}
