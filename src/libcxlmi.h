@@ -355,13 +355,6 @@ int cxlmi_cmd_set_response_msg_limit(struct cxlmi_endpoint *ep,
 int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep,
 				  struct cxlmi_tunnel_info *ti);
 
-int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
-			    struct cxlmi_tunnel_info *ti,
-			    struct cxlmi_cmd_get_timestamp *ret);
-int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
-			    struct cxlmi_tunnel_info *ti,
-			    struct cxlmi_cmd_set_timestamp *in);
-
 int cxlmi_cmd_get_fw_info(struct cxlmi_endpoint *ep,
 			  struct cxlmi_tunnel_info *ti,
 			  struct cxlmi_cmd_get_fw_info *out);
@@ -372,6 +365,12 @@ int cxlmi_cmd_activate_fw(struct cxlmi_endpoint *ep,
 			  struct cxlmi_tunnel_info *ti,
 			  struct cxlmi_cmd_activate_fw *in);
 
+int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
+			    struct cxlmi_tunnel_info *ti,
+			    struct cxlmi_cmd_get_timestamp *ret);
+int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
+			    struct cxlmi_tunnel_info *ti,
+			    struct cxlmi_cmd_set_timestamp *in);
 
 int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				 struct cxlmi_tunnel_info *ti,
