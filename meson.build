@@ -122,6 +122,17 @@ conf.set(
     description: 'Is ioctl the glibc interface (rather than POSIX)'
 )
 
+conf.set(
+    'HAVE_GCC_DYN_OBJSZ',
+    cc.compiles(
+	'''#include <stdio.h>
+	int main(void) { __builtin_dynamic_object_size(NULL, 0); }
+	''',
+	name: 'gcc has dynamic object size'
+    ),
+    description: 'GCC dynamic object size feature'
+)
+
 add_project_arguments(
     [
 	'-fomit-frame-pointer',

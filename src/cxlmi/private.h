@@ -19,6 +19,125 @@
 
 #define CXLMI_EXPORT __attribute__ ((visibility("default")))
 
+#define CXLMI_BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
+#define CXLMI_BUILD_BUG_MSG(c, msg) _Static_assert(!(c), msg)
+#define CXLMI_BUILD_BUG_ON(c) CXLMI_BUILD_BUG_MSG(c, "not expecting: " #c)
+
+/*
+ * When the size of an allocated object is needed, and sizeof()
+ * is not an option, use the best available mechanism to find it.
+ */
+#ifdef HAVE_GCC_DYN_OBJSZ
+#define __struct_size(p)	__builtin_dynamic_object_size(p, 0)
+#define __member_size(p)	__builtin_dynamic_object_size(p, 1)
+#else
+#define __struct_size(p)	__builtin_object_size(p, 0)
+#define __member_size(p)	__builtin_object_size(p, 1)
+#endif
+
+/* Are two types/vars the same type (ignoring qualifiers)? */
+#define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
+
+/* &a[0] degrades to a pointer: a different type from an array */
+#define __must_be_array(a)  CXLMI_BUILD_BUG_ON_ZERO(__same_type((a), &(a)[0]))
+
+/*
+ * This returns a constant expression while determining if an argument is
+ * a constant expression, most importantly without evaluating the argument.
+ * Glory to Martin Uecker <Martin.Uecker@med.uni-goettingen.de>
+ */
+#define __is_constexpr(x) \
+	(sizeof(int) == sizeof(*(8 ? ((void *)((long)(x) * 0l)) : (int *)8)))
+
+/*
+ * flex_array_size() - Calculate size of a flexible array member
+ *                     within an enclosing structure.
+ * @p: Pointer to the structure.
+ * @member: Name of the flexible array member.
+ * @count: Number of elements in the array.
+ *
+ * Calculates size of a flexible array of @count number of @member
+ * elements, at the end of structure @p.
+ *
+ * Return: number of bytes needed or SIZE_MAX on overflow.
+ */
+#define flex_array_size(p, member, count)				\
+	__builtin_choose_expr(__is_constexpr(count),			\
+		(count) * sizeof(*(p)->member) + __must_be_array((p)->member),	\
+		size_mul(count, sizeof(*(p)->member) + __must_be_array((p)->member)))
+
+
+#define __must_check __attribute__((__warn_unused_result__))
+
+/*
+ * Allows for effectively applying __must_check to a macro so we can have
+ * both the type-agnostic benefits of the macros while also being able to
+ * enforce that the return value is, in fact, checked.
+ */
+static inline bool __must_check __must_check_overflow(bool overflow)
+{
+	return  __builtin_expect(!!(overflow), 0);
+}
+
+#define check_mul_overflow(a, b, d)				\
+	__must_check_overflow(__builtin_mul_overflow(a, b, d))
+/*
+ * size_mul() - Calculate size_t multiplication with saturation at SIZE_MAX
+ * @factor1: first factor
+ * @factor2: second factor
+ *
+ * Returns: calculate @factor1 * @factor2, both promoted to size_t,
+ * with any overflow causing the return value to be SIZE_MAX. The
+ * lvalue must be size_t to avoid implicit type conversion.
+ */
+static inline size_t __must_check size_mul(size_t factor1, size_t factor2)
+{
+	size_t bytes;
+
+	if (check_mul_overflow(factor1, factor2, &bytes))
+		return SIZE_MAX;
+
+	return bytes;
+}
+
+#define check_add_overflow(a, b, d)	\
+	__must_check_overflow(__builtin_add_overflow(a, b, d))
+/*
+ * size_add() - Calculate size_t addition with saturation at SIZE_MAX
+ * @addend1: first addend
+ * @addend2: second addend
+ *
+ * Returns: calculate @addend1 + @addend2, both promoted to size_t,
+ * with any overflow causing the return value to be SIZE_MAX. The
+ * lvalue must be size_t to avoid implicit type conversion.
+ */
+static inline size_t __must_check size_add(size_t addend1, size_t addend2)
+{
+	size_t bytes;
+
+	if (check_add_overflow(addend1, addend2, &bytes))
+		return SIZE_MAX;
+
+	return bytes;
+}
+
+/*
+ * struct_size() - Calculate size of structure with trailing flexible array.
+ * @p: Pointer to the structure.
+ * @member: Name of the array member.
+ * @count: Number of elements in the array.
+ *
+ * Calculates size of memory needed for structure of @p followed by an
+ * array of @count number of @member elements.
+ *
+ * Return: number of bytes needed or SIZE_MAX on overflow.
+ */
+#define struct_size(p, member, count)					\
+	__builtin_choose_expr(__is_constexpr(count),			\
+		sizeof(*(p)) + flex_array_size(p, member, count),	\
+		size_add(sizeof(*(p)), flex_array_size(p, member, count)))
+
+
 static inline void freep(void *p)
 {
 	free(*(void **)p);
@@ -39,6 +158,8 @@ enum {
 	#define SET_INTERRUPT_POLICY   0x3
     FIRMWARE_UPDATE = 0x02,
 	#define GET_INFO      0x0
+	#define TRANSFER      0x1
+	#define ACTIVATE      0x2
     TIMESTAMP   = 0x03,
 	#define GET           0x0
 	#define SET           0x1
@@ -119,9 +240,9 @@ struct cxlmi_endpoint {
 	/* ioctl (primary mbox) */
 	int fd;
 	char *devname;
-
-	bool has_fmapi;
 	
+	bool has_fmapi;
+
 	struct list_node entry;
 	unsigned int timeout_ms;
 	unsigned long quirks;
@@ -148,9 +269,6 @@ __cxlmi_msg(struct cxlmi_ctx *c, int lvl, const char *func, const char *format, 
 				   format, ##__VA_ARGS__);		\
 	} while (0)
 
-
-#define CXLMI_BUILD_BUG_MSG(x, msg) _Static_assert(!(x), msg)
-#define CXLMI_BUILD_BUG_ON(x) CXLMI_BUILD_BUG_MSG(x, "not expecting: " #x)
 
 /* for commands.c */
 struct cxlmi_cci_msg;

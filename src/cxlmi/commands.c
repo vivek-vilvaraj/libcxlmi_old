@@ -154,6 +154,8 @@ CXLMI_EXPORT int cxlmi_cmd_get_fw_info(struct cxlmi_endpoint *ep,
 	ssize_t rsp_sz;
 	int rc;
 
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 0x50);
+
 	arm_cci_request(ep, &req, 0, FIRMWARE_UPDATE, GET_INFO);
 
 	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
@@ -174,6 +176,60 @@ CXLMI_EXPORT int cxlmi_cmd_get_fw_info(struct cxlmi_endpoint *ep,
 	memcpy(ret->fw_rev3, rsp_pl->fw_rev3, sizeof(rsp_pl->fw_rev3));
 	memcpy(ret->fw_rev4, rsp_pl->fw_rev4, sizeof(rsp_pl->fw_rev4));
 
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_transfer_fw(struct cxlmi_endpoint *ep,
+				       struct cxlmi_tunnel_info *ti,
+				       struct cxlmi_cmd_transfer_fw *in)
+{
+	struct cxlmi_cmd_transfer_fw *req_pl;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
+	ssize_t req_sz, data_sz = struct_size(in, data, 0);
+	int rc = -1;
+
+	req_sz = sizeof(*req_pl) + data_sz + sizeof(*req);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*req_pl), FIRMWARE_UPDATE, TRANSFER);
+	req_pl = (struct cxlmi_cmd_transfer_fw *)req->payload;
+
+	req_pl->action = in->action;
+	req_pl->slot = in->slot;
+	req_pl->offset = cpu_to_le32(in->offset);
+	memcpy(req_pl->data, in->data, data_sz);
+
+        rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_activate_fw(struct cxlmi_endpoint *ep,
+				       struct cxlmi_tunnel_info *ti,
+				       struct cxlmi_cmd_activate_fw *in)
+{
+	struct cxlmi_cmd_activate_fw *req_pl;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
+	size_t req_sz;
+	int rc = 0;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*in) != 2);
+
+	req_sz = sizeof(*req) + sizeof(*in);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*in), FIRMWARE_UPDATE, ACTIVATE);
+
+	req_pl = (struct cxlmi_cmd_activate_fw *)req->payload;
+	req_pl->action = in->slot;
+	req_pl->slot = in->slot;
+
+	rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
 	return rc;
 }
 
@@ -499,9 +555,9 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_set_lsa(struct cxlmi_endpoint *ep,
 	struct cxlmi_cmd_memdev_set_lsa  *req_pl;
 	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
 	struct cxlmi_cci_msg rsp;
-	size_t req_sz;
+	size_t req_sz, data_sz = struct_size(in, data, 0);
 
-	req_sz = sizeof(*req) + sizeof(*in);
+	req_sz = sizeof(*req) + data_sz + sizeof(*in);
 	req = calloc(1, req_sz);
 	if (!req)
 		return -1;
@@ -657,6 +713,36 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_secure_erase(struct cxlmi_endpoint *ep,
 			    &rsp, sizeof(rsp), sizeof(rsp));
 }
 
+CXLMI_EXPORT int cxlmi_cmd_memdev_get_security_state(struct cxlmi_endpoint *ep,
+				   struct cxlmi_tunnel_info *ti,
+				   struct cxlmi_cmd_memdev_get_security_state *ret)
+{
+	struct cxlmi_cmd_memdev_get_security_state *rsp_pl;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
+	int rc;
+	ssize_t rsp_sz;
+
+	arm_cci_request(ep, &req, 0, PERSISTENT_MEM, GET_SECURITY_STATE);
+
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
+
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	if (rc)
+		return rc;
+
+	rsp_pl = (struct cxlmi_cmd_memdev_get_security_state *)rsp->payload;
+	memset(ret, 0, sizeof(*ret));
+
+	ret->security_state = le32_to_cpu(rsp_pl->security_state);
+
+	return rc;
+}
+
 CXLMI_EXPORT int cxlmi_cmd_fmapi_identify_sw_device(struct cxlmi_endpoint *ep,
 			    struct cxlmi_tunnel_info *ti,
 			    struct cxlmi_cmd_fmapi_identify_sw_device *ret)
@@ -703,8 +789,8 @@ CXLMI_EXPORT int cxlmi_cmd_fmapi_get_phys_port_state(struct cxlmi_endpoint *ep,
 {
 	struct cxlmi_cmd_fmapi_get_phys_port_state_req *req_pl;
 	struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *rsp_pl;
-	struct cxlmi_cci_msg _cleanup_free_ *req = NULL;
-	struct cxlmi_cci_msg _cleanup_free_ *rsp = NULL;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
 	ssize_t req_sz, rsp_sz;
 	int i, rc = -1;
 

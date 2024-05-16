@@ -51,14 +51,30 @@ struct cxlmi_cmd_set_response_msg_limit {
 
 /* CXL r3.1 Section 8.2.9.3.1: Get FW Info (Opcode 0200h) */
 struct cxlmi_cmd_get_fw_info {
-        uint8_t slots_supported;
-        uint8_t slot_info;
-        uint8_t caps;
-        uint8_t rsvd[0xd];
-        char fw_rev1[0x10];
-        char fw_rev2[0x10];
-        char fw_rev3[0x10];
-        char fw_rev4[0x10];
+	uint8_t slots_supported;
+	uint8_t slot_info;
+	uint8_t caps;
+	uint8_t rsvd[0xd];
+	char fw_rev1[0x10];
+	char fw_rev2[0x10];
+	char fw_rev3[0x10];
+	char fw_rev4[0x10];
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.3.2: Transfer FW (Opcode 02001) */
+struct cxlmi_cmd_transfer_fw {
+        uint8_t action;
+        uint8_t slot;
+        uint8_t rsvd1[2];
+        uint32_t offset;
+        uint8_t rsvd2[0x78];
+        uint8_t data[];
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.3.3: Activate FW (Opcode 0202h) */
+struct cxlmi_cmd_activate_fw {
+	uint8_t action;
+	uint8_t slot;
 } __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.4.1: Get Timestamp (Opcode 0300h) */
@@ -141,15 +157,15 @@ struct cxlmi_cmd_memdev_identify {
 
 /* CXL r3.1 Section 8.2.9.9.2.3: Get LSA (Opcode 4102h) */
 struct cxlmi_cmd_memdev_get_lsa {
-        uint32_t offset;
-        uint32_t length;
-} __attribute__((packed)); 
+	uint32_t offset;
+	uint32_t length;
+} __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.9.2.4: Set LSA (Opcode 4103h) */
 struct cxlmi_cmd_memdev_set_lsa {
-        uint32_t offset;
-        uint32_t rsvd;
-        uint8_t data[];
+	uint32_t offset;
+	uint32_t rsvd;
+	uint8_t data[];
 } __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.9.3.1: Get Health Info (Opcode 4200h) */
@@ -188,6 +204,10 @@ struct cxlmi_cmd_memdev_set_alert_config {
 	uint16_t device_under_temperature_programmable_warning_threshold;
 	uint16_t corrected_volatile_mem_error_programmable_warning_threshold;
 	uint16_t corrected_persistent_mem_error_programmable_warning_threshold;
+} __attribute__((packed));
+
+struct cxlmi_cmd_memdev_get_security_state {
+	uint32_t security_state;
 } __attribute__((packed));
 
 /* CXL r3.1 Section 7.6.7.1.1: Identify Switch Device (Opcode 5100h) */

@@ -362,6 +362,17 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 			    struct cxlmi_tunnel_info *ti,
 			    struct cxlmi_cmd_set_timestamp *in);
 
+int cxlmi_cmd_get_fw_info(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_get_fw_info *out);
+int cxlmi_cmd_transfer_fw(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_transfer_fw *in);
+int cxlmi_cmd_activate_fw(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_activate_fw *in);
+
+
 int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				 struct cxlmi_tunnel_info *ti,
 				 struct cxlmi_cmd_get_supported_logs *ret);
@@ -387,14 +398,14 @@ int cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
 int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 			      struct cxlmi_tunnel_info *ti,
 			      struct cxlmi_cmd_memdev_identify *ret);
-	
+
 int cxlmi_cmd_memdev_get_lsa(struct cxlmi_endpoint *ep,
 			     struct cxlmi_tunnel_info *ti,
 			     struct cxlmi_cmd_memdev_get_lsa *ret);
 int cxlmi_cmd_memdev_set_lsa(struct cxlmi_endpoint *ep,
 			     struct cxlmi_tunnel_info *ti,
 			     struct cxlmi_cmd_memdev_set_lsa *in);
-	
+
 int cxlmi_cmd_memdev_get_health_info(struct cxlmi_endpoint *ep,
 			     struct cxlmi_tunnel_info *ti,
 			     struct cxlmi_cmd_memdev_get_health_info *ret);
@@ -404,11 +415,15 @@ int cxlmi_cmd_memdev_get_alert_config(struct cxlmi_endpoint *ep,
 int cxlmi_cmd_memdev_set_alert_config(struct cxlmi_endpoint *ep,
 			      struct cxlmi_tunnel_info *ti,
 			      struct cxlmi_cmd_memdev_set_alert_config *in);
-	
+
 int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep,
 			      struct cxlmi_tunnel_info *ti);
 int cxlmi_cmd_memdev_secure_erase(struct cxlmi_endpoint *ep,
 				  struct cxlmi_tunnel_info *ti);
+
+int cxlmi_cmd_memdev_get_security_state(struct cxlmi_endpoint *ep,
+				struct cxlmi_tunnel_info *ti,
+				struct cxlmi_cmd_memdev_get_security_state *ret);
 
 
 /*
