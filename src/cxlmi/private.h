@@ -144,9 +144,44 @@ static inline void freep(void *p)
 }
 #define _cleanup_free_ __attribute__((cleanup(freep)))
 
+/*
+ * pstrcpy:
+ * @buf: buffer to copy string into
+ * @buf_size: size of @buf in bytes
+ * @str: string to copy
+ *
+ * Copy @str into @buf, including the trailing NUL, but do not
+ * write more than @buf_size bytes. The resulting buffer is
+ * always NUL terminated (even if the source string was too long).
+ * If @buf_size is zero or negative then no bytes are copied.
+ *
+ * This function is similar to strncpy(), but avoids two of that
+ * function's problems:
+ *  * if @str fits in the buffer, pstrcpy() does not zero-fill the
+ *    remaining space at the end of @buf
+ *  * if @str is too long, pstrcpy() will copy the first @buf_size-1
+ *    bytes and then add a NUL
+ */
+static inline void pstrcpy(char *buf, int buf_size, const char *str)
+{
+	int c;
+	char *q = buf;
+
+	if (buf_size <= 0)
+		return;
+
+	for(;;) {
+		c = *str++;
+		if (c == 0 || q >= buf + buf_size - 1)
+			break;
+		*q++ = c;
+	}
+	*q = '\0';
+}
+
 enum {
-    INFOSTAT    = 0x00,
-	#define IS_IDENTIFY                    0x1
+	INFOSTAT    = 0x00,
+#define IS_IDENTIFY                    0x1
 	#define BACKGROUND_OPERATION_STATUS    0x2
 	#define GET_RESP_MSG_LIMIT             003
 	#define SET_RESP_MSG_LIMIT             0x4
@@ -154,8 +189,11 @@ enum {
     EVENTS      = 0x01,
 	#define GET_RECORDS            0x0
 	#define CLEAR_RECORDS          0x1
-	#define GET_INTERRUPT_POLICY   0x2
-	#define SET_INTERRUPT_POLICY   0x3
+	#define GET_EVENT_IRQ_POL      0x2
+	#define SET_EVENT_IRQ_POL      0x3
+	#define GET_MCTP_EVENT_IRQ_POL 0x4
+	#define SET_MCTP_EVENT_IRQ_POL 0x5
+	#define NOTIFICATION           0x6
     FIRMWARE_UPDATE = 0x02,
 	#define GET_INFO      0x0
 	#define TRANSFER      0x1
@@ -240,7 +278,7 @@ struct cxlmi_endpoint {
 	/* ioctl (primary mbox) */
 	int fd;
 	char *devname;
-	
+
 	bool has_fmapi;
 
 	struct list_node entry;

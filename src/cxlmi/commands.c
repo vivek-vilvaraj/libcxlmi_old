@@ -144,6 +144,235 @@ CXLMI_EXPORT int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep,
 			    &rsp, sizeof(rsp), sizeof(rsp));
 }
 
+CXLMI_EXPORT int cxlmi_cmd_get_event_records(struct cxlmi_endpoint *ep,
+				     struct cxlmi_tunnel_info *ti,
+				     struct cxlmi_cmd_get_event_records *ret)
+{
+	struct cxlmi_cmd_get_event_records *rsp_pl;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
+	ssize_t rsp_sz;
+	int i, rc;
+
+	arm_cci_request(ep, &req, 0, EVENTS, GET_RECORDS);
+
+	/*
+	 * This command shall retrieve as many event records from the
+	 * event log that fit into the mailbox output payload.
+	 */
+	/* rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) + */
+	/*	in->num_ports * sizeof(*rsp_pl->ports); */
+
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	if (rc)
+		return rc;
+
+	rsp_pl = (struct cxlmi_cmd_get_event_records *)rsp->payload;
+	ret->event_log = rsp_pl->event_log;
+	ret->flags = rsp_pl->flags;
+	ret->overflow_err_count = le16_to_cpu(rsp_pl->overflow_err_count);
+	ret->first_overflow_timestamp =
+		le64_to_cpu(rsp_pl->first_overflow_timestamp);
+	ret->last_overflow_timestamp =
+		le64_to_cpu(rsp_pl->last_overflow_timestamp);
+	ret->record_count = le16_to_cpu(rsp_pl->record_count);
+
+	for (i = 0; i < ret->record_count; i++) {
+		memcpy(ret->records[i].uuid, rsp_pl->records[i].uuid, 0x10);
+		ret->records[i].length = rsp_pl->records[i].length;
+		ret->records[i].handle = le16_to_cpu(rsp_pl->records[i].handle);
+		ret->records[i].timestamp =
+			le64_to_cpu(rsp_pl->records[i].timestamp);
+		ret->records[i].maint_op_class =
+			rsp_pl->records[i].maint_op_class;
+		ret->records[i].maint_op_subclass =
+			rsp_pl->records[i].maint_op_subclass;
+	}
+
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_clear_event_records(struct cxlmi_endpoint *ep,
+				     struct cxlmi_tunnel_info *ti,
+				     struct cxlmi_cmd_clear_event_records *in)
+{
+	struct cxlmi_cmd_clear_event_records *req_pl;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
+	ssize_t req_sz, handles_sz = struct_size(in, handles, 0);
+	int rc = -1;
+
+	req_sz = sizeof(*req_pl) + handles_sz + sizeof(*req);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*req_pl), EVENTS, CLEAR_RECORDS);
+	req_pl = (struct cxlmi_cmd_clear_event_records *)req->payload;
+
+	req_pl->event_log = in->event_log;
+	req_pl->clear_flags = in->clear_flags;
+	req_pl->nr_recs = in->nr_recs;
+	memcpy(req_pl->handles, in->handles, handles_sz);
+
+	rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
+	return rc;
+}
+
+CXLMI_EXPORT int
+cxlmi_cmd_get_event_interrupt_policy(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_get_event_interrupt_policy *ret)
+{
+	struct cxlmi_cmd_get_event_interrupt_policy *rsp_pl;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
+	ssize_t rsp_sz;
+	int rc;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 5);
+
+	arm_cci_request(ep, &req, 0, EVENTS, GET_EVENT_IRQ_POL);
+
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	if (rc)
+		return rc;
+
+	rsp_pl = (struct cxlmi_cmd_get_event_interrupt_policy *)rsp->payload;
+	ret->informational_settings = rsp_pl->informational_settings;
+	ret->warning_settings = rsp_pl->warning_settings;
+	ret->failure_settings = rsp_pl->failure_settings;
+	ret->fatal_settings = rsp_pl->fatal_settings;
+	ret->dcd_settings = rsp_pl->dcd_settings;
+
+	return rc;
+}
+
+CXLMI_EXPORT int
+cxlmi_cmd_set_event_interrupt_policy(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_set_event_interrupt_policy *in)
+{
+	struct cxlmi_cmd_set_event_interrupt_policy *req_pl;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
+	size_t req_sz;
+	int rc = 0;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*in) != 5);
+
+	req_sz = sizeof(*req) + sizeof(*in);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*in), EVENTS, SET_EVENT_IRQ_POL);
+
+	req_pl = (struct cxlmi_cmd_set_event_interrupt_policy *)req->payload;
+	req_pl->informational_settings = in->informational_settings;
+	req_pl->warning_settings = in->warning_settings;
+	req_pl->failure_settings = in->failure_settings;
+	req_pl->fatal_settings = in->fatal_settings;
+	req_pl->dcd_settings = in->dcd_settings;
+
+	rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
+	return rc;
+}
+
+CXLMI_EXPORT int
+cxlmi_cmd_get_mctp_event_interrupt_policy(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_get_mctp_event_interrupt_policy *ret)
+{
+	struct cxlmi_cmd_get_mctp_event_interrupt_policy *rsp_pl;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
+	ssize_t rsp_sz;
+	int rc;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 2);
+
+	arm_cci_request(ep, &req, 0, EVENTS, GET_MCTP_EVENT_IRQ_POL);
+
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	if (rc)
+		return rc;
+
+	rsp_pl = (struct cxlmi_cmd_get_mctp_event_interrupt_policy *)rsp->payload;
+	ret->event_interrupt_settings = le16_to_cpu(rsp_pl->event_interrupt_settings);
+
+	return rc;
+}
+
+CXLMI_EXPORT int
+cxlmi_cmd_set_mctp_event_interrupt_policy(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_set_mctp_event_interrupt_policy *in)
+{
+	struct cxlmi_cmd_set_mctp_event_interrupt_policy *req_pl;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
+	size_t req_sz;
+	int rc = 0;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*in) != 2);
+
+	req_sz = sizeof(*req) + sizeof(*in);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*in), EVENTS, SET_MCTP_EVENT_IRQ_POL);
+
+	req_pl = (struct cxlmi_cmd_set_mctp_event_interrupt_policy *)req->payload;
+	req_pl->event_interrupt_settings =
+		cpu_to_le16(in->event_interrupt_settings);
+
+	rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_event_notification(struct cxlmi_endpoint *ep,
+				      struct cxlmi_tunnel_info *ti,
+				      struct cxlmi_cmd_event_notification *in)
+{
+	struct cxlmi_cmd_event_notification *req_pl;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
+	size_t req_sz;
+	int rc = 0;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*in) != 2);
+
+	req_sz = sizeof(*req) + sizeof(*in);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*in), EVENTS, NOTIFICATION);
+
+	req_pl = (struct cxlmi_cmd_event_notification *)req->payload;
+	req_pl->event = cpu_to_le16(in->event);
+
+	rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
+	return rc;
+}
+
 CXLMI_EXPORT int cxlmi_cmd_get_fw_info(struct cxlmi_endpoint *ep,
 				       struct cxlmi_tunnel_info *ti,
 				       struct cxlmi_cmd_get_fw_info *ret)
@@ -171,10 +400,10 @@ CXLMI_EXPORT int cxlmi_cmd_get_fw_info(struct cxlmi_endpoint *ep,
 	ret->slots_supported = rsp_pl->slots_supported;
 	ret->slot_info = rsp_pl->slot_info;
 	ret->caps = rsp_pl->caps;
-	memcpy(ret->fw_rev1, rsp_pl->fw_rev1, sizeof(rsp_pl->fw_rev1));
-	memcpy(ret->fw_rev2, rsp_pl->fw_rev2, sizeof(rsp_pl->fw_rev2));
-	memcpy(ret->fw_rev3, rsp_pl->fw_rev3, sizeof(rsp_pl->fw_rev3));
-	memcpy(ret->fw_rev4, rsp_pl->fw_rev4, sizeof(rsp_pl->fw_rev4));
+	pstrcpy(ret->fw_rev1, sizeof(rsp_pl->fw_rev1), rsp_pl->fw_rev1);
+	pstrcpy(ret->fw_rev2, sizeof(rsp_pl->fw_rev2), rsp_pl->fw_rev2);
+	pstrcpy(ret->fw_rev3, sizeof(rsp_pl->fw_rev3), rsp_pl->fw_rev3);
+	pstrcpy(ret->fw_rev4, sizeof(rsp_pl->fw_rev4), rsp_pl->fw_rev4);
 
 	return rc;
 }
@@ -202,7 +431,7 @@ CXLMI_EXPORT int cxlmi_cmd_transfer_fw(struct cxlmi_endpoint *ep,
 	req_pl->offset = cpu_to_le32(in->offset);
 	memcpy(req_pl->data, in->data, data_sz);
 
-        rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
+	rc = send_cmd_cci(ep, ti, req, req_sz, &rsp, sizeof(rsp), sizeof(rsp));
 	return rc;
 }
 

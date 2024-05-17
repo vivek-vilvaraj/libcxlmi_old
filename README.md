@@ -59,7 +59,8 @@ Component discovery
   also probe the endpoint to get the CXL component this belongs to: either
   a Switch or a Type3 device. This auto-probing can by disabled with
   `cxlmi_set_probe_enabled()` or with the `$LIBCXLMI_PROBE_ENABLED` environment
-  variable.
+  variable. Potential reasons to disable probing are wanting to avoid
+  the necessary Identify command and/or disabling the FM-API.
 
 - Enumerate all MCTP endpoints with `cxlmi_scan_mctp()`. Each found endpoint
   will be subject to the above treatment.
@@ -237,7 +238,7 @@ by default. Logging levels are standard `syslog`.
 
 Considerations
 --------------
-A few considerations to consider when evaluating using this library:
+A few things to consider when evaluating using this library:
 
 - The library leaves any and all serialization up to the user - libs should not
 hold locks.
@@ -257,6 +258,17 @@ and therefore, unsupported.
 - CXL r3.1 + DMTF binding specs are not clear on what Message type is used for the
 generic command set - these can be issued to either a switch or a type 3 device.
 The assumption here is that for those command either smctp_type is fine.
+
+FAQ
+===
+
+- How is this library different from ndctl's libcxl?
+
+`libcxlmi` aims to be a CXL swiss army knife to interact with CXL component(s)
+through CCI command(s), both in and out of band transports. The user is given
+full freedom to send any command to any device. `libcxl`, on the other hand,
+is very much tied to Linux, acting as wrappers for sysfs and ioctl interfaces,
+and hence provides more safety by the CXL driver itself.
 
 
 Requirements

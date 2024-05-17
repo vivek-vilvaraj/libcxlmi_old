@@ -355,6 +355,28 @@ int cxlmi_cmd_set_response_msg_limit(struct cxlmi_endpoint *ep,
 int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep,
 				  struct cxlmi_tunnel_info *ti);
 
+int cxlmi_cmd_get_event_records(struct cxlmi_endpoint *ep,
+				struct cxlmi_tunnel_info *ti,
+				struct cxlmi_cmd_get_event_records *ret);
+int cxlmi_cmd_clear_event_records(struct cxlmi_endpoint *ep,
+				  struct cxlmi_tunnel_info *ti,
+				  struct cxlmi_cmd_clear_event_records *in);
+int cxlmi_cmd_get_event_interrupt_policy(struct cxlmi_endpoint *ep,
+				 struct cxlmi_tunnel_info *ti,
+				 struct cxlmi_cmd_get_event_interrupt_policy *ret);
+int cxlmi_cmd_set_event_interrupt_policy(struct cxlmi_endpoint *ep,
+				 struct cxlmi_tunnel_info *ti,
+				 struct cxlmi_cmd_set_event_interrupt_policy *in);
+int cxlmi_cmd_get_mctp_event_interrupt_policy(struct cxlmi_endpoint *ep,
+			      struct cxlmi_tunnel_info *ti,
+			      struct cxlmi_cmd_get_mctp_event_interrupt_policy *ret);
+int cxlmi_cmd_set_mctp_event_interrupt_policy(struct cxlmi_endpoint *ep,
+			      struct cxlmi_tunnel_info *ti,
+			      struct cxlmi_cmd_set_mctp_event_interrupt_policy *in);
+int cxlmi_cmd_event_notification(struct cxlmi_endpoint *ep,
+				 struct cxlmi_tunnel_info *ti,
+				 struct cxlmi_cmd_event_notification *in);
+
 int cxlmi_cmd_get_fw_info(struct cxlmi_endpoint *ep,
 			  struct cxlmi_tunnel_info *ti,
 			  struct cxlmi_cmd_get_fw_info *out);

@@ -49,6 +49,78 @@ struct cxlmi_cmd_set_response_msg_limit {
 	uint8_t limit;
 } __attribute__((packed));
 
+/*
+ * Common Event Record Format
+ * CXL r3.1 section 8.2.9.2.1: Event Records; Table 8-43
+ */
+struct cxlmi_event_record {
+	uint8_t uuid[0x10];
+	uint8_t length;
+	uint8_t flags[3];
+	uint16_t handle;
+	uint16_t related_handle;
+	uint64_t timestamp;
+	uint8_t maint_op_class;
+	uint8_t maint_op_subclass;
+	uint8_t reserved[0xe];
+	uint8_t data[0x50];
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.2.2: Get Event Records (Opcode 0100h) */
+struct cxlmi_cmd_get_event_records {
+	uint8_t event_log;
+	uint8_t flags;
+	uint8_t reserved1;
+	uint16_t overflow_err_count;
+	uint64_t first_overflow_timestamp;
+	uint64_t last_overflow_timestamp;
+	uint16_t record_count;
+	uint8_t reserved2[0xa];
+	struct cxlmi_event_record records[];
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.2.3: Clear Event Records (Opcode 0101h) */
+struct cxlmi_cmd_clear_event_records {
+	uint8_t event_log;
+	uint8_t clear_flags;
+	uint8_t nr_recs;
+	uint8_t reserved[3];
+	uint16_t handles[];
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.2.4: Get Event Interrupt Policy (Opcode 0102h) */
+struct cxlmi_cmd_get_event_interrupt_policy {
+	uint8_t informational_settings;
+	uint8_t warning_settings;
+	uint8_t failure_settings;
+	uint8_t fatal_settings;
+	uint8_t dcd_settings;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.2.5: Set Event Interrupt Policy (Opcode 0103h) */
+struct cxlmi_cmd_set_event_interrupt_policy {
+	uint8_t informational_settings;
+	uint8_t warning_settings;
+	uint8_t failure_settings;
+	uint8_t fatal_settings;
+	uint8_t dcd_settings;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.2.6: Get MCTP Event Interrupt Policy (Opcode 0104h) */
+struct cxlmi_cmd_get_mctp_event_interrupt_policy {
+	uint16_t event_interrupt_settings;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.2.7: Set MCTP Event Interrupt Policy (Opcode 0105h) */
+struct cxlmi_cmd_set_mctp_event_interrupt_policy {
+	uint16_t event_interrupt_settings;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.2.8: Event Notification (Opcode 0106h) */
+struct cxlmi_cmd_event_notification {
+	uint16_t event;
+} __attribute__((packed));
+
 /* CXL r3.1 Section 8.2.9.3.1: Get FW Info (Opcode 0200h) */
 struct cxlmi_cmd_get_fw_info {
 	uint8_t slots_supported;
@@ -63,12 +135,12 @@ struct cxlmi_cmd_get_fw_info {
 
 /* CXL r3.1 Section 8.2.9.3.2: Transfer FW (Opcode 02001) */
 struct cxlmi_cmd_transfer_fw {
-        uint8_t action;
-        uint8_t slot;
-        uint8_t rsvd1[2];
-        uint32_t offset;
-        uint8_t rsvd2[0x78];
-        uint8_t data[];
+	uint8_t action;
+	uint8_t slot;
+	uint8_t rsvd1[2];
+	uint32_t offset;
+	uint8_t rsvd2[0x78];
+	uint8_t data[];
 } __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.3.3: Activate FW (Opcode 0202h) */
