@@ -19,8 +19,7 @@ struct cxlmi_cmd_identify {
 Command name:
 
    ```C
-int cxlmi_cmd_identify(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
-		       struct cxlmi_cmd_identify *ret)
+int cxlmi_cmd_identify(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti, struct cxlmi_cmd_identify *ret)
    ```
 
 ### Background Operation Status (0002h)
@@ -37,6 +36,5 @@ struct cxlmi_cmd_bg_op_status {
 Command name:
 
    ```C
-int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep,
-				struct cxlmi_tunnel_info *ti,
-				struct cxlmi_cmd_bg_op_status *ret)
+int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti, struct cxlmi_cmd_bg_op_status *ret);
+   ```
