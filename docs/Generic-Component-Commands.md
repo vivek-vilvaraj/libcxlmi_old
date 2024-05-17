@@ -80,6 +80,7 @@ int cxlmi_cmd_set_response_msg_limit(struct cxlmi_endpoint *ep,
 				     struct cxlmi_tunnel_info *ti,
 				     struct cxlmi_cmd_set_response_msg_limit *in);
    ```
+
 ### Request Abort Background Operation (0005h)
 
 No payload.
@@ -89,3 +90,47 @@ Command Name
    ```C
 int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti);
    ```
+
+## Events (01h)
+
+## Firmware Update (02h)
+
+## Timestamp (03h)
+
+### Get Timestamp (Opcode 0300h)
+
+Output payload:
+   ```C
+struct cxlmi_cmd_set_timestamp {
+	uint64_t timestamp;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
+			    struct cxlmi_tunnel_info *ti,
+			    struct cxlmi_cmd_get_timestamp *ret);
+   ```
+
+### Set Timestamp (Opcode 0301h)
+
+Input payload:
+
+   ```C
+struct cxlmi_cmd_set_timestamp {
+	uint64_t timestamp;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
+			    struct cxlmi_tunnel_info *ti,
+			    struct cxlmi_cmd_set_timestamp *in);
+   ```
+
+
+## Logs (04h)

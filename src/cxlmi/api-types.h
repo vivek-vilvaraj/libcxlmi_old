@@ -37,7 +37,7 @@ struct cxlmi_cmd_bg_op_status {
 	uint16_t opcode;
 	uint16_t returncode;
 	uint16_t vendor_ext_status;
-}__attribute__((packed));
+} __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.1.3: Get Response Message Limit (Opcode 0003h) */
 struct cxlmi_cmd_get_response_msg_limit {
