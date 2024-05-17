@@ -1,5 +1,8 @@
 # Generic Component Commands
 
+The following are the supported CXL commands belonging to the Generic Component
+command set, as per the latest specification.
+
 ## Information and Status (00h)
 
 ### Identify (0001h)
@@ -61,6 +64,8 @@ int cxlmi_cmd_get_response_msg_limit(struct cxlmi_endpoint *ep,
    ```
 
 ### Set Response Message Limit (0004h)
+
+Input payload:
 
    ```C
 struct cxlmi_cmd_set_response_msg_limit {
