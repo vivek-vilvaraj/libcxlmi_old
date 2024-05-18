@@ -1,6 +1,3 @@
-Generic Component Commands
---------------------------
-
 The following are the supported CXL commands belonging to the Generic Component
 command set, as per the latest specification.
 
@@ -92,11 +89,11 @@ Command Name
 int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti);
    ```
 
-## Events (01h)
+# Events (01h)
 
-## Firmware Update (02h)
+# Firmware Update (02h)
 
-## Timestamp (03h)
+# Timestamp (03h)
 
 ## Get Timestamp (Opcode 0300h)
 
