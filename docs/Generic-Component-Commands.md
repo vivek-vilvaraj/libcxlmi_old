@@ -1,11 +1,12 @@
-# Generic Component Commands
+Generic Component Commands
+--------------------------
 
 The following are the supported CXL commands belonging to the Generic Component
 command set, as per the latest specification.
 
-## Information and Status (00h)
+# Information and Status (00h)
 
-### Identify (0001h)
+## Identify (0001h)
 
 Output payload:
 
@@ -27,7 +28,7 @@ Command name:
 int cxlmi_cmd_identify(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti, struct cxlmi_cmd_identify *ret)
    ```
 
-### Background Operation Status (0002h)
+## Background Operation Status (0002h)
 
 Output payload:
 
@@ -46,7 +47,7 @@ Command name:
 int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti, struct cxlmi_cmd_bg_op_status *ret);
    ```
 
-### Get Response Message Limit (0003h)
+## Get Response Message Limit (0003h)
 
 Output payload:
 
@@ -63,7 +64,7 @@ int cxlmi_cmd_get_response_msg_limit(struct cxlmi_endpoint *ep,
 			     struct cxlmi_cmd_get_response_msg_limit *ret);
    ```
 
-### Set Response Message Limit (0004h)
+## Set Response Message Limit (0004h)
 
 Input payload:
 
@@ -81,7 +82,7 @@ int cxlmi_cmd_set_response_msg_limit(struct cxlmi_endpoint *ep,
 				     struct cxlmi_cmd_set_response_msg_limit *in);
    ```
 
-### Request Abort Background Operation (0005h)
+## Request Abort Background Operation (0005h)
 
 No payload.
 
@@ -97,7 +98,7 @@ int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep, struct cxlmi_tunnel
 
 ## Timestamp (03h)
 
-### Get Timestamp (Opcode 0300h)
+## Get Timestamp (Opcode 0300h)
 
 Output payload:
    ```C
@@ -114,7 +115,7 @@ int cxlmi_cmd_get_timestamp(struct cxlmi_endpoint *ep,
 			    struct cxlmi_cmd_get_timestamp *ret);
    ```
 
-### Set Timestamp (Opcode 0301h)
+## Set Timestamp (Opcode 0301h)
 
 Input payload:
 
@@ -132,5 +133,4 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 			    struct cxlmi_cmd_set_timestamp *in);
    ```
 
-
-## Logs (04h)
+# Logs (04h)
