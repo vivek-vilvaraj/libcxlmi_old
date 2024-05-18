@@ -1,6 +1,25 @@
 The following are the supported CXL commands belonging to the Generic Component
 command set, as per the latest specification.
 
+<!--ts-->
+* [Information and Status (00h)](#information-and-status-00h)
+   * [Identify (0001h)](#identify-0001h)
+   * [Background Operation Status (0002h)](#background-operation-status-0002h)
+   * [Get Response Message Limit (0003h)](#get-response-message-limit-0003h)
+   * [Set Response Message Limit (0004h)](#set-response-message-limit-0004h)
+   * [Request Abort Background Operation (0005h)](#request-abort-background-operation-0005h)
+* [Events (01h)](#events-01h)
+* [Firmware Update (02h)](#firmware-update-02h)
+* [Timestamp (03h)](#timestamp-03h)
+   * [Get Timestamp (Opcode 0300h)](#get-timestamp-opcode-0300h)
+   * [Set Timestamp (Opcode 0301h)](#set-timestamp-opcode-0301h)
+* [Logs (04h)](#logs-04h)
+
+<!-- Created by https://github.com/ekalinin/github-markdown-toc -->
+<!-- Added by: dave, at: Sat May 18 11:57:48 AM PDT 2024 -->
+
+<!--te-->
+
 # Information and Status (00h)
 
 ## Identify (0001h)
