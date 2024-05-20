@@ -1,0 +1,199 @@
+# Identify Memory Device (40h)
+
+## Identify Memory Device (400h)
+
+Output payload:
+
+   ```C
+struct cxlmi_cmd_memdev_identify {
+	char fw_revision[0x10];
+	uint64_t total_capacity;
+	uint64_t volatile_capacity;
+	uint64_t persistent_capacity;
+	uint64_t partition_align;
+	uint16_t info_event_log_size;
+	uint16_t warning_event_log_size;
+	uint16_t failure_event_log_size;
+	uint16_t fatal_event_log_size;
+	uint32_t lsa_size;
+	uint8_t poison_list_max_mer[3];
+	uint16_t inject_poison_limit;
+	uint8_t poison_caps;
+	uint8_t qos_telemetry_caps;
+	uint16_t dc_event_log_size;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
+			      struct cxlmi_tunnel_info *ti,
+			      struct cxlmi_cmd_memdev_identify *ret);
+   ```
+
+# Capacity Configuration and Label Storage (41h)
+
+## Get LSA (4102h)
+
+Output payload:
+
+   ```C
+struct cxlmi_cmd_memdev_get_lsa {
+	uint32_t offset;
+	uint32_t length;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_get_lsa(struct cxlmi_endpoint *ep,
+			     struct cxlmi_tunnel_info *ti,
+			     struct cxlmi_cmd_memdev_get_lsa *ret);
+   ```
+
+## Set LSA (4103h)
+
+Input payload:
+
+   ```C
+struct cxlmi_cmd_memdev_set_lsa {
+	uint32_t offset;
+	uint32_t rsvd;
+	uint8_t data[];
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_set_lsa(struct cxlmi_endpoint *ep,
+			     struct cxlmi_tunnel_info *ti,
+			     struct cxlmi_cmd_memdev_set_lsa *in);
+   ```
+
+# Health Info and Alerts (42h)
+
+## Get Health Info (4200h)
+
+Output payload:
+
+   ```C
+struct cxlmi_cmd_memdev_get_health_info {
+	uint8_t health_status;
+	uint8_t media_status;
+	uint8_t additional_status;
+	uint8_t life_used;
+	uint16_t device_temperature;
+	uint32_t dirty_shutdown_count;
+	uint32_t corrected_volatile_error_count;
+	uint32_t corrected_persistent_error_count;
+};   
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_get_health_info(struct cxlmi_endpoint *ep,
+			     struct cxlmi_tunnel_info *ti,
+			     struct cxlmi_cmd_memdev_get_health_info *ret);   
+   ```
+
+## Get Alert Configuration (4201h)
+
+Output payload:
+
+   ```C 
+struct cxlmi_cmd_memdev_get_alert_config {
+	uint8_t valid_alerts;
+	uint8_t programmable_alerts;
+	uint8_t life_used_critical_alert_threshold;
+	uint8_t life_used_programmable_warning_threshold;
+	uint16_t device_over_temperature_critical_alert_threshold;
+	uint16_t device_under_temperature_critical_alert_threshold;
+	uint16_t device_over_temperature_programmable_warning_threshold;
+	uint16_t device_under_temperature_programmable_warning_threshold;
+	uint16_t corrected_volatile_mem_error_programmable_warning_threshold;
+	uint16_t corrected_persistent_mem_error_programmable_warning_threshold;
+};  
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_get_alert_config(struct cxlmi_endpoint *ep,
+			      struct cxlmi_tunnel_info *ti,
+			      struct cxlmi_cmd_memdev_get_alert_config *ret);
+   ```
+
+## Set Alert Configuration (4202h)
+
+Output payload:
+
+   ```C 
+struct cxlmi_cmd_memdev_get_alert_config {
+	uint8_t valid_alert_actions;
+	uint8_t enable_alert_actions;
+	uint8_t life_used_programmable_warning_threshold;
+	uint8_t rsvd1;
+	uint16_t device_over_temperature_programmable_warning_threshold;
+	uint16_t device_under_temperature_programmable_warning_threshold;
+	uint16_t corrected_volatile_mem_error_programmable_warning_threshold;
+	uint16_t corrected_persistent_mem_error_programmable_warning_threshold;
+};  
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_set_alert_config(struct cxlmi_endpoint *ep,
+			      struct cxlmi_tunnel_info *ti,
+			      struct cxlmi_cmd_memdev_set_alert_config *in);
+   ```
+
+# Sanitize and Media Operations (44h)
+
+## Sanitize (4400h)
+
+No input payload.
+No output payload.
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti);
+
+   ```
+
+## Secure Erase (4401h)
+
+No input payload.
+No output payload.
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_secure_erase(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti);
+   ```
+
+
+# Persistent Memory Data-at-rest Security
+
+## Get Security State
+
+Output payload:
+
+   ```C
+struct cxlmi_cmd_memdev_get_security_state {
+	uint32_t security_state;
+};   
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_get_security_state(struct cxlmi_endpoint *ep,
+				struct cxlmi_tunnel_info *ti,
+				struct cxlmi_cmd_memdev_get_security_state *ret);
+   ```

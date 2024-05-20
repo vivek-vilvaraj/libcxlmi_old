@@ -12,7 +12,7 @@ command set, as per the latest specification.
    * [Clear Event Records (0101h)](#clear-event-records-0101h)
    * [Get Event Interrupt Policy (0102h)](#get-event-interrupt-policy-0102h)
    * [Set Event Interrupt Policy (0103h)](#set-event-interrupt-policy-0103h)
-   * [Get MCTP Event Interrupt Policy (0105h)](#get-mctp-event-interrupt-policy-0105h)
+   * [Get MCTP Event Interrupt Policy (0104h)](#get-mctp-event-interrupt-policy-0104h)
    * [Set MCTP Event Interrupt Policy (0105h)](#set-mctp-event-interrupt-policy-0105h)
    * [Event Notification (0106h)](#event-notification-0106h)
 * [Firmware Update (02h)](#firmware-update-02h)
@@ -29,7 +29,7 @@ command set, as per the latest specification.
    * [Get Supported Logs Sub-List (0405h)](#get-supported-logs-sub-list-0405h)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: dave, at: Sun May 19 07:45:06 PM PDT 2024 -->
+<!-- Added by: dave, at: Mon May 20 12:36:07 PM PDT 2024 -->
 
 <!--te-->
 
