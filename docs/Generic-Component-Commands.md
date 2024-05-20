@@ -37,7 +37,7 @@ command set, as per the latest specification.
 
 ## Identify (0001h)
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_identify {
@@ -59,7 +59,7 @@ int cxlmi_cmd_identify(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti, 
 
 ## Background Operation Status (0002h)
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_bg_op_status {
@@ -78,7 +78,7 @@ int cxlmi_cmd_bg_op_status(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *
 
 ## Get Response Message Limit (0003h)
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_get_response_msg_limit {
@@ -148,7 +148,7 @@ int cxlmi_cmd_clear_event_records(struct cxlmi_endpoint *ep,
 
 ## Get Event Interrupt Policy (0102h)
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_get_event_interrupt_policy {
@@ -192,7 +192,7 @@ int cxlmi_cmd_set_event_interrupt_policy(struct cxlmi_endpoint *ep,
 
 ## Get MCTP Event Interrupt Policy (0104h)
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_get_mctp_event_interrupt_policy {
@@ -248,7 +248,7 @@ int cxlmi_cmd_event_notification(struct cxlmi_endpoint *ep,
 
 ## Get FW Info (0200h)
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_get_fw_info {
@@ -315,7 +315,7 @@ int cxlmi_cmd_activate_fw(struct cxlmi_endpoint *ep,
 
 ## Get Timestamp (Opcode 0300h)
 
-Output payload:
+Return payload:
    ```C
 struct cxlmi_cmd_set_timestamp {
 	uint64_t timestamp;
@@ -352,7 +352,7 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 
 ## Get Supported Logs (0400h)
 
-Output payload:
+Return payload:
 
   ```C
 struct cxlmi_supported_log_entry {
@@ -422,7 +422,7 @@ struct cxlmi_cmd_get_supported_logs_sublist_req {
 };
    ```
 
-Oyutput payload
+Return payload:
 
    ```C
 struct cxlmi_cmd_get_supported_logs_sublist_req {
