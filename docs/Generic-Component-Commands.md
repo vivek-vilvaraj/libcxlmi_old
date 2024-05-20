@@ -350,16 +350,20 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 
 # Logs (04h)
 
+Both 0400h and 0405h use the common supported log entry:
+
+   ```C
+struct cxlmi_supported_log_entry {
+	uint8_t uuid[0x10];
+	uint32_t log_size;
+};
+   ```
+
 ## Get Supported Logs (0400h)
 
 Return payload:
 
   ```C
-struct cxlmi_supported_log_entry {
-	uint8_t uuid[0x10];
-	uint32_t log_size;
-};
-
 struct cxlmi_cmd_get_supported_logs {
 	uint16_t num_supported_log_entries;
 	uint8_t reserved[6];
@@ -425,9 +429,13 @@ struct cxlmi_cmd_get_supported_logs_sublist_req {
 Return payload:
 
    ```C
-struct cxlmi_cmd_get_supported_logs_sublist_req {
-	uint8_t max_supported_log_entries;
+struct cxlmi_cmd_get_supported_logs_sublist_rsp {
+	uint8_t num_supported_log_entries;
+	uint8_t rsvd1;
+	uint16_t total_num_supported_log_entries;
 	uint8_t start_log_entry_index;
+	uint8_t rsvd2[0x3];
+	struct cxlmi_supported_log_entry entries[];
 };
    ```
 
