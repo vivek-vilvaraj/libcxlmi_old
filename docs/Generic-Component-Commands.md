@@ -190,7 +190,7 @@ int cxlmi_cmd_set_event_interrupt_policy(struct cxlmi_endpoint *ep,
 				 struct cxlmi_cmd_set_event_interrupt_policy *in);
    ```
 
-## Get MCTP Event Interrupt Policy (0105h)
+## Get MCTP Event Interrupt Policy (0104h)
 
 ## Set MCTP Event Interrupt Policy (0105h)
 
