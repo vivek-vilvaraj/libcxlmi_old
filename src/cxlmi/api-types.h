@@ -236,6 +236,20 @@ struct cxlmi_cmd_memdev_identify {
 	uint16_t dc_event_log_size;
 } __attribute__((packed));
 
+/* CXL r3.1 Section 8.2.9.9.2.1: Get Partition Info (Opcode 4100h) */
+struct cxlmi_cmd_memdev_get_partition_info {
+	uint64_t active_vmem;
+	uint64_t active_pmem;
+	uint64_t next_vmem;
+	uint64_t next_pmem;
+} __attribute__((packed));
+
+/* CXL r3.1 Section 8.2.9.9.2.2: Set Partition Info (Opcode 4101h) */
+struct cxlmi_cmd_memdev_set_partition_info {
+        uint64_t volatile_capacity;
+	uint8_t flags;
+} __attribute__((packed));
+
 /* CXL r3.1 Section 8.2.9.9.2.3: Get LSA (Opcode 4102h) */
 struct cxlmi_cmd_memdev_get_lsa {
 	uint32_t offset;

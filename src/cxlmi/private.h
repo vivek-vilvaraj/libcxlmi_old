@@ -212,6 +212,7 @@ enum {
 	#define MEMORY_DEVICE 0x0
     CCLS        = 0x41,
 	#define GET_PARTITION_INFO     0x0
+	#define SET_PARTITION_INFO     0x1
 	#define GET_LSA                0x2
 	#define SET_LSA                0x3
     HEALTH_INFO_ALERTS = 0x42,

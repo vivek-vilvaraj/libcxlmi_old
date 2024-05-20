@@ -402,9 +402,9 @@ int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 			  struct cxlmi_cmd_get_log *in,
 			  struct cxlmi_cmd_get_log_cel_rsp *ret);
 int cxlmi_cmd_get_log_capabilities(struct cxlmi_endpoint *ep,
- 			   struct cxlmi_tunnel_info *ti,
+			   struct cxlmi_tunnel_info *ti,
 			   struct cxlmi_cmd_get_log_capabilities_req *in,
-			   struct cxlmi_cmd_get_log_capabilities_rsp *ret);	
+			   struct cxlmi_cmd_get_log_capabilities_rsp *ret);
 int cxlmi_cmd_clear_log(struct cxlmi_endpoint *ep,
 			struct cxlmi_tunnel_info *ti,
 			struct cxlmi_cmd_clear_log *in);
@@ -424,6 +424,12 @@ int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 			      struct cxlmi_tunnel_info *ti,
 			      struct cxlmi_cmd_memdev_identify *ret);
 
+int cxlmi_cmd_memdev_get_partition_info(struct cxlmi_endpoint *ep,
+				struct cxlmi_tunnel_info *ti,
+				struct cxlmi_cmd_memdev_get_partition_info *ret);
+int cxlmi_cmd_memdev_set_partition_info(struct cxlmi_endpoint *ep,
+				struct cxlmi_tunnel_info *ti,
+				struct cxlmi_cmd_memdev_set_partition_info *in);
 int cxlmi_cmd_memdev_get_lsa(struct cxlmi_endpoint *ep,
 			     struct cxlmi_tunnel_info *ti,
 			     struct cxlmi_cmd_memdev_get_lsa *ret);

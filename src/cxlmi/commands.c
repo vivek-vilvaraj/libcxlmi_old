@@ -611,7 +611,7 @@ int cxlmi_cmd_get_log_capabilities(struct cxlmi_endpoint *ep,
 	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
 	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
 	ssize_t req_sz, rsp_sz;
-	int i, rc = -1;
+	int rc = -1;
 
 	req_sz = sizeof(*req_pl) + sizeof(*req);
 	req = calloc(1, req_sz);
@@ -785,6 +785,62 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 	ret->dc_event_log_size = le16_to_cpu(rsp_pl->dc_event_log_size);
 
 	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_memdev_get_partition_info(struct cxlmi_endpoint *ep,
+				  struct cxlmi_tunnel_info *ti,
+				  struct cxlmi_cmd_memdev_get_partition_info *ret)
+{
+	struct cxlmi_cmd_memdev_get_partition_info *rsp_pl;
+	struct cxlmi_cci_msg req;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp;
+	ssize_t rsp_sz;
+	int rc;
+
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 32);
+
+	arm_cci_request(ep, &req, 0, CCLS, GET_PARTITION_INFO);
+
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, ti, &req, sizeof(req), rsp, rsp_sz, rsp_sz);
+	if (rc)
+		return rc;
+
+	rsp_pl = (struct cxlmi_cmd_memdev_get_partition_info *)rsp->payload;
+	ret->active_vmem = le64_to_cpu(rsp_pl->active_vmem);
+	ret->active_pmem = le64_to_cpu(rsp_pl->active_pmem);
+	ret->next_vmem = le64_to_cpu(rsp_pl->next_vmem);
+	ret->next_pmem = le64_to_cpu(rsp_pl->next_pmem);
+
+	return rc;
+}
+
+CXLMI_EXPORT int cxlmi_cmd_memdev_set_partition_info(struct cxlmi_endpoint *ep,
+			     struct cxlmi_tunnel_info *ti,
+			     struct cxlmi_cmd_memdev_set_partition_info *in)
+{
+	struct cxlmi_cmd_memdev_set_partition_info  *req_pl;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	struct cxlmi_cci_msg rsp;
+	size_t req_sz;
+
+	req_sz = sizeof(*req) + sizeof(*in);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*in), CCLS, SET_PARTITION_INFO);
+
+	req_pl = (struct cxlmi_cmd_memdev_set_partition_info *)req->payload;
+	req_pl->volatile_capacity = cpu_to_le64(in->volatile_capacity);
+	req_pl->flags = in->flags;
+
+	return send_cmd_cci(ep, ti, req, req_sz,
+			    &rsp, sizeof(rsp), sizeof(rsp));
 }
 
 CXLMI_EXPORT int cxlmi_cmd_memdev_get_lsa(struct cxlmi_endpoint *ep,

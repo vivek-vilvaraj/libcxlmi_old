@@ -5,6 +5,8 @@ command set, as per the latest specification.
 * [Identify Memory Device (40h)](#identify-memory-device-40h)
    * [Identify Memory Device (400h)](#identify-memory-device-400h)
 * [Capacity Configuration and Label Storage (41h)](#capacity-configuration-and-label-storage-41h)
+   * [Get Partition Info (4100h)](#get-partition-info-4100h)
+   * [Set Partition Info (4101h)](#set-partition-info-4101h)
    * [Get LSA (4102h)](#get-lsa-4102h)
    * [Set LSA (4103h)](#set-lsa-4103h)
 * [Health Info and Alerts (42h)](#health-info-and-alerts-42h)
@@ -18,7 +20,7 @@ command set, as per the latest specification.
    * [Get Security State](#get-security-state)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: dave, at: Mon May 20 12:38:20 PM PDT 2024 -->
+<!-- Added by: dave, at: Mon May 20 03:21:37 PM PDT 2024 -->
 
 <!--te-->
 
@@ -57,6 +59,47 @@ int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
    ```
 
 # Capacity Configuration and Label Storage (41h)
+
+## Get Partition Info (4100h)
+
+Return payload:
+
+   ```C
+struct cxlmi_cmd_memdev_get_partition_info {
+	uint64_t active_vmem;
+	uint64_t active_pmem;
+	uint64_t next_vmem;
+	uint64_t next_pmem;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_get_partition_info(struct cxlmi_endpoint *ep,
+				struct cxlmi_tunnel_info *ti,
+				struct cxlmi_cmd_memdev_get_partition_info *ret);
+   ```
+
+## Set Partition Info (4101h)
+
+Input payload:
+
+   ```C
+struct cxlmi_cmd_memdev_set_partition_info {
+	uint64_t volatile_capacity;
+	uint8_t flags;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_memdev_set_partition_info(struct cxlmi_endpoint *ep,
+				struct cxlmi_tunnel_info *ti,
+				struct cxlmi_cmd_memdev_set_partition_info *in);
+   ```
+
 
 ## Get LSA (4102h)
 
