@@ -192,9 +192,57 @@ int cxlmi_cmd_set_event_interrupt_policy(struct cxlmi_endpoint *ep,
 
 ## Get MCTP Event Interrupt Policy (0104h)
 
+Output payload:
+
+   ```C
+struct cxlmi_cmd_get_mctp_event_interrupt_policy {
+	uint16_t event_interrupt_settings;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_get_mctp_event_interrupt_policy(struct cxlmi_endpoint *ep,
+			      struct cxlmi_tunnel_info *ti,
+			      struct cxlmi_cmd_get_mctp_event_interrupt_policy *ret);
+   ```
+
 ## Set MCTP Event Interrupt Policy (0105h)
 
+Input payload:
+
+   ```C
+struct cxlmi_cmd_set_mctp_event_interrupt_policy {
+	uint16_t event_interrupt_settings;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_set_mctp_event_interrupt_policy(struct cxlmi_endpoint *ep,
+			      struct cxlmi_tunnel_info *ti,
+			      struct cxlmi_cmd_set_mctp_event_interrupt_policy *in);
+   ```
+
 ## Event Notification (0106h)
+
+Input payload:
+
+   ```C
+struct cxlmi_cmd_event_notification {
+	uint16_t event;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_event_notification(struct cxlmi_endpoint *ep,
+				 struct cxlmi_tunnel_info *ti,
+				 struct cxlmi_cmd_event_notification *in);
+   ```
 
 # Firmware Update (02h)
 
@@ -203,7 +251,6 @@ int cxlmi_cmd_set_event_interrupt_policy(struct cxlmi_endpoint *ep,
 Output payload:
 
    ```C
-
 struct cxlmi_cmd_get_fw_info {
 	uint8_t slots_supported;
 	uint8_t slot_info;
