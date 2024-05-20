@@ -18,9 +18,12 @@ command set, as per the latest specification.
    * [Set Timestamp (Opcode 0301h)](#set-timestamp-opcode-0301h)
 * [Logs (04h)](#logs-04h)
    * [Get Supported Logs (0400h)](#get-supported-logs-0400h)
+   * [Clear Log (0403h)](#clear-log-0403h)
+   * [Populate Log (0404h)](#populate-log-0404h)
+   * [Get Supported Logs Sub-List (0405h)](#get-supported-logs-sub-list-0405h)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: dave, at: Sun May 19 07:23:19 PM PDT 2024 -->
+<!-- Added by: dave, at: Sun May 19 07:28:54 PM PDT 2024 -->
 
 <!--te-->
 
@@ -244,4 +247,37 @@ Command name:
 int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				 struct cxlmi_tunnel_info *ti,
 				 struct cxlmi_cmd_get_supported_logs *ret);
+   ```
+
+## Clear Log (0403h)
+
+## Populate Log (0404h)
+
+## Get Supported Logs Sub-List (0405h)
+
+Input payload:
+
+   ```C
+struct cxlmi_cmd_get_supported_logs_sublist_req {
+	uint8_t max_supported_log_entries;
+	uint8_t start_log_entry_index;
+};
+   ```
+
+Oyutput payload
+
+   ```C
+struct cxlmi_cmd_get_supported_logs_sublist_req {
+	uint8_t max_supported_log_entries;
+	uint8_t start_log_entry_index;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_get_supported_logs_sublist_req *in,
+			  struct cxlmi_cmd_get_supported_logs_sublist_rsp *ret);
    ```
