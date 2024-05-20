@@ -5,9 +5,11 @@ command set, as per the latest specification.
 * [Physical Switch (51h)](#physical-switch-51h)
    * [Identify Switch Device (5100h)](#identify-switch-device-5100h)
    * [Get Physical Port State (5101h)](#get-physical-port-state-5101h)
+* [MLD Port (53h)](#mld-port-53h)
+   * [Tunnel Management Command](#tunnel-management-command)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: dave, at: Mon May 20 12:47:25 PM PDT 2024 -->
+<!-- Added by: dave, at: Mon May 20 01:11:58 PM PDT 2024 -->
 
 <!--te-->
 
@@ -84,5 +86,31 @@ Command name:
 int cxlmi_cmd_fmapi_get_phys_port_state(struct cxlmi_endpoint *ep,
 			struct cxlmi_tunnel_info *ti,
 			struct cxlmi_cmd_fmapi_get_phys_port_state_req *in,
-			struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret);   
-   ```   
+			struct cxlmi_cmd_fmapi_get_phys_port_state_rsp *ret);
+   ```
+
+# MLD Port (53h)
+
+## Tunnel Management Command
+
+Tunneling is supported through `struct cxlmi_tunnel_info`, passed as needed by the
+user when sending a command.  When sent to an MLD, the provided command is tunneled
+by the FM-owned LD to the specified LD. This can include an additional layer of
+tunneling for commands issued on LDs in an MLD that is accessible through an
+MLD port  of a CXL Switch.  Tunneling targets are: valid LDs within an MLD
+(single level tunneling), switch MLD ports (double level tunneling).
+
+
+   ```C
+/*
+ * cxlmi_tunnel_info - Tunneling information associated with a specific command
+ * @port: switch downstream port number
+ * @ld: Logical Device (LD) id within an MLD
+ * @level: tunneling level 1 or 2.
+ */
+struct cxlmi_tunnel_info {
+	int port;
+	int ld;
+	int level;
+};
+   ```

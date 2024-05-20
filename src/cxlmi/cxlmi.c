@@ -400,6 +400,20 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep, bool fmapi,
 				rsp_msg_sz == rsp_msg_sz_min, rsp_msg_sz_min);
 }
 
+/* CXL r3.1 Section 7.6.7.3.2: Tunnel Management Command (Opcode 5300h) */
+static struct cxlmi_cmd_fmapi_tunnel_command_req {
+	uint8_t id; /* Port or LD ID as appropriate */
+	uint8_t target_type;
+	uint16_t command_size;
+	struct cxlmi_cci_msg message[];
+} __attribute__((packed));
+
+static struct cxlmi_cmd_fmapi_tunnel_command_rsp {
+	uint16_t length;
+	uint16_t resv;
+	struct cxlmi_cci_msg message[]; /* only one but lets closs over that */
+} __attribute__((packed));
+
 static void extract_rsp_msg_from_tunnel(struct cxlmi_cci_msg *tunnel_msg,
 					struct cxlmi_cci_msg *extracted_msg,
 					size_t extracted_msg_size)
