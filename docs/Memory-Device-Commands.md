@@ -153,7 +153,7 @@ int cxlmi_cmd_memdev_get_alert_config(struct cxlmi_endpoint *ep,
 
 ## Set Alert Configuration (4202h)
 
-Output payload:
+Input payload:
 
    ```C
 struct cxlmi_cmd_memdev_get_alert_config {
