@@ -606,7 +606,38 @@ int cxlmi_cmd_get_log_capabilities(struct cxlmi_endpoint *ep,
 			   struct cxlmi_cmd_get_log_capabilities_req *in,
 			   struct cxlmi_cmd_get_log_capabilities_rsp *ret)
 {
-	return 0;
+	struct cxlmi_cmd_get_log_capabilities_req *req_pl;
+	struct cxlmi_cmd_get_log_capabilities_rsp *rsp_pl;
+	_cleanup_free_ struct cxlmi_cci_msg *req = NULL;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
+	ssize_t req_sz, rsp_sz;
+	int i, rc = -1;
+
+	req_sz = sizeof(*req_pl) + sizeof(*req);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*req_pl), LOGS, GET_LOG_CAPS);
+	req_pl = (struct cxlmi_cmd_get_log_capabilities_req *)req->payload;
+
+	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
+
+	rsp_sz = sizeof(*rsp_pl) + sizeof(*rsp);
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return -1;
+
+	rc = send_cmd_cci(ep, ti, req, req_sz, rsp, rsp_sz, rsp_sz);
+	if (rc)
+		return rc;
+
+	rsp_pl = (struct cxlmi_cmd_get_log_capabilities_rsp *)rsp->payload;
+	memset(ret, 0, sizeof(*ret));
+
+	ret->parameter_flags = le32_to_cpu(rsp_pl->parameter_flags);
+
+	return rc;
 }
 
 CXLMI_EXPORT int cxlmi_cmd_clear_log(struct cxlmi_endpoint *ep,
