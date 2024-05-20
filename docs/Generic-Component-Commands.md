@@ -23,7 +23,7 @@ command set, as per the latest specification.
    * [Get Supported Logs Sub-List (0405h)](#get-supported-logs-sub-list-0405h)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: dave, at: Sun May 19 07:28:54 PM PDT 2024 -->
+<!-- Added by: dave, at: Sun May 19 07:36:34 PM PDT 2024 -->
 
 <!--te-->
 
@@ -251,7 +251,39 @@ int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 
 ## Clear Log (0403h)
 
+Input payload:
+
+   ```C
+struct cxlmi_cmd_clear_log {
+	uint8_t uuid[0x10];
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_clear_log(struct cxlmi_endpoint *ep,
+			struct cxlmi_tunnel_info *ti,
+			struct cxlmi_cmd_clear_log *in);
+   ```
+
 ## Populate Log (0404h)
+
+Input payload:
+
+   ```C
+struct cxlmi_cmd_populate_log {
+	uint8_t uuid[0x10];
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_populate_log(struct cxlmi_endpoint *ep,
+			   struct cxlmi_tunnel_info *ti,
+			   struct cxlmi_cmd_populate_log *in);
+   ```
 
 ## Get Supported Logs Sub-List (0405h)
 
