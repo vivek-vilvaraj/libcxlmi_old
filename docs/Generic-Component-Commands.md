@@ -9,9 +9,15 @@ command set, as per the latest specification.
    * [Set Response Message Limit (0004h)](#set-response-message-limit-0004h)
    * [Request Abort Background Operation (0005h)](#request-abort-background-operation-0005h)
 * [Events (01h)](#events-01h)
+   * [Clear Event Records (0101h)](#clear-event-records-0101h)
+   * [Get Event Interrupt Policy (0102h)](#get-event-interrupt-policy-0102h)
+   * [Set Event Interrupt Policy (0103h)](#set-event-interrupt-policy-0103h)
+   * [Get MCTP Event Interrupt Policy (0105h)](#get-mctp-event-interrupt-policy-0105h)
+   * [Set MCTP Event Interrupt Policy (0105h)](#set-mctp-event-interrupt-policy-0105h)
+   * [Event Notification (0106h)](#event-notification-0106h)
 * [Firmware Update (02h)](#firmware-update-02h)
    * [Get FW Info (0200h)](#get-fw-info-0200h)
-   * [Transfer FW (0201)](#transfer-fw-0201)
+   * [Transfer FW (0201h)](#transfer-fw-0201h)
    * [Activate FW (0202h)](#activate-fw-0202h)
 * [Timestamp (03h)](#timestamp-03h)
    * [Get Timestamp (Opcode 0300h)](#get-timestamp-opcode-0300h)
@@ -23,7 +29,7 @@ command set, as per the latest specification.
    * [Get Supported Logs Sub-List (0405h)](#get-supported-logs-sub-list-0405h)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: dave, at: Sun May 19 07:36:34 PM PDT 2024 -->
+<!-- Added by: dave, at: Sun May 19 07:45:06 PM PDT 2024 -->
 
 <!--te-->
 
@@ -117,6 +123,79 @@ int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep, struct cxlmi_tunnel
 
 # Events (01h)
 
+## Clear Event Records (0101h)
+
+Input payload:
+
+
+   ```C
+struct cxlmi_cmd_clear_event_records {
+	uint8_t event_log;
+	uint8_t clear_flags;
+	uint8_t nr_recs;
+	uint8_t reserved[3];
+	uint16_t handles[];
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_clear_event_records(struct cxlmi_endpoint *ep,
+				  struct cxlmi_tunnel_info *ti,
+				  struct cxlmi_cmd_clear_event_records *in);
+   ```
+
+## Get Event Interrupt Policy (0102h)
+
+Output payload:
+
+   ```C
+struct cxlmi_cmd_get_event_interrupt_policy {
+	uint8_t informational_settings;
+	uint8_t warning_settings;
+	uint8_t failure_settings;
+	uint8_t fatal_settings;
+	uint8_t dcd_settings;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_get_event_interrupt_policy(struct cxlmi_endpoint *ep,
+				 struct cxlmi_tunnel_info *ti,
+				 struct cxlmi_cmd_get_event_interrupt_policy *ret);
+   ```
+
+## Set Event Interrupt Policy (0103h)
+
+Input payload:
+
+   ```C
+struct cxlmi_cmd_set_event_interrupt_policy {
+	uint8_t informational_settings;
+	uint8_t warning_settings;
+	uint8_t failure_settings;
+	uint8_t fatal_settings;
+	uint8_t dcd_settings;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_set_event_interrupt_policy(struct cxlmi_endpoint *ep,
+				 struct cxlmi_tunnel_info *ti,
+				 struct cxlmi_cmd_set_event_interrupt_policy *in);
+   ```
+
+## Get MCTP Event Interrupt Policy (0105h)
+
+## Set MCTP Event Interrupt Policy (0105h)
+
+## Event Notification (0106h)
+
 # Firmware Update (02h)
 
 ## Get FW Info (0200h)
@@ -143,7 +222,7 @@ Command Name:
 int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti);
    ```
 
-## Transfer FW (0201)
+## Transfer FW (0201h)
 
 Input payload:
 
