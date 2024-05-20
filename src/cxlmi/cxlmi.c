@@ -410,6 +410,10 @@ static void extract_rsp_msg_from_tunnel(struct cxlmi_cci_msg *tunnel_msg,
 	memcpy(extracted_msg, &rsp->message, extracted_msg_size);
 }
 
+
+#define TUNNEL_TARGET_TYPE_PORT_OR_LD  0
+#define TUNNEL_TARGET_TYPE_LD_POOL_CCI 1
+
 static int build_tunnel_req(struct cxlmi_endpoint *ep, int port_or_ld,
 		    struct cxlmi_cci_msg *payload_in, size_t payload_in_sz,
 		    struct cxlmi_cci_msg **payload_out, size_t *payload_out_sz)
@@ -954,7 +958,7 @@ send_ioctl_tunnel2(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti,
 	len_max -= sizeof(*outer_t_rsp);
 
 	if (outer_t_rsp->length != len) {
-	        cxlmi_msg(ep->ctx, LOG_ERR,
+		cxlmi_msg(ep->ctx, LOG_ERR,
 		  "Tunnel length not consistent with ioctl data returned\n");
 		rc = -1;
 		goto free_tunnel_rsp;
