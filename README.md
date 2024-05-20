@@ -259,16 +259,18 @@ and therefore, unsupported.
 generic command set - these can be issued to either a switch or a type 3 device.
 The assumption here is that for those command either smctp_type is fine.
 
+
 FAQ
 ===
 
 - How is this library different from ndctl's libcxl?
-
 `libcxlmi` aims to be a CXL swiss army knife to interact with CXL component(s)
 through CCI command(s), both in and out of band transports. The user is given
 full freedom to send any command to any device. `libcxl`, on the other hand,
 is very much tied to Linux, acting as wrappers for sysfs and ioctl interfaces,
 and hence provides more safety by the CXL driver itself.
+
+- What CXL version does this library support? Latest 3.1 version.
 
 
 Requirements
