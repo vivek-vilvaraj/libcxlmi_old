@@ -52,7 +52,7 @@ struct cxlmi_cmd_fmapi_get_phys_port_state_req {
 };
    ```
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_fmapi_port_state_info_block {

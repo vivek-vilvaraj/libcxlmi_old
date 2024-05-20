@@ -26,7 +26,7 @@ command set, as per the latest specification.
 
 ## Identify Memory Device (400h)
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_memdev_identify {
@@ -60,7 +60,7 @@ int cxlmi_cmd_memdev_identify(struct cxlmi_endpoint *ep,
 
 ## Get LSA (4102h)
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_memdev_get_lsa {
@@ -101,7 +101,7 @@ int cxlmi_cmd_memdev_set_lsa(struct cxlmi_endpoint *ep,
 
 ## Get Health Info (4200h)
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_memdev_get_health_info {
@@ -126,7 +126,7 @@ int cxlmi_cmd_memdev_get_health_info(struct cxlmi_endpoint *ep,
 
 ## Get Alert Configuration (4201h)
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_memdev_get_alert_config {
@@ -206,7 +206,7 @@ int cxlmi_cmd_memdev_secure_erase(struct cxlmi_endpoint *ep, struct cxlmi_tunnel
 
 ## Get Security State
 
-Output payload:
+Return payload:
 
    ```C
 struct cxlmi_cmd_memdev_get_security_state {
