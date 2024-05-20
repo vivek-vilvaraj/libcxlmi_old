@@ -223,8 +223,7 @@ int cxlmi_cmd_memdev_set_alert_config(struct cxlmi_endpoint *ep,
 
 ## Sanitize (4400h)
 
-No input payload.
-No output payload.
+No payload.
 
 Command name:
 
@@ -235,8 +234,7 @@ int cxlmi_cmd_memdev_sanitize(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_inf
 
 ## Secure Erase (4401h)
 
-No input payload.
-No output payload.
+No payload.
 
 Command name:
 
@@ -245,9 +243,9 @@ int cxlmi_cmd_memdev_secure_erase(struct cxlmi_endpoint *ep, struct cxlmi_tunnel
    ```
 
 
-# Persistent Memory Data-at-rest Security
+# Persistent Memory Data-at-rest Security (45h)
 
-## Get Security State
+## Get Security State (4500h)
 
 Return payload:
 
