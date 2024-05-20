@@ -183,6 +183,15 @@ struct cxlmi_cmd_get_log_cel_rsp {
 	uint16_t command_effect;
 } __attribute__((packed));
 
+/* CXL r3.1 Section 8.2.9.5.3: Get Log Capabilities (Opcode 0402h) */
+struct cxlmi_cmd_get_log_capabilities_req {
+	uint8_t uuid[0x10];
+} __attribute__((packed));
+
+struct cxlmi_cmd_get_log_capabilities_rsp {
+	uint32_t parameter_flags;
+} __attribute__((packed));
+
 /* CXL r3.1 Section 8.2.9.5.4: Clear Log (Opcode 0403h) */
 struct cxlmi_cmd_clear_log {
 	uint8_t uuid[0x10];
