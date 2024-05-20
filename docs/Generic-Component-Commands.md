@@ -382,9 +382,13 @@ int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 
 ## Get Log Capabilities (0402h)
 
+Input payload:
+
+   ```C
 struct cxlmi_cmd_get_log_capabiltiies_req {
 	uint8_t uuid[0x10];
 };
+   ```
 
 Return payload:
 
