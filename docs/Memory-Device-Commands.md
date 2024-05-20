@@ -1,3 +1,27 @@
+The following are the supported CXL commands belonging to the Memory Device
+command set, as per the latest specification.
+
+<!--ts-->
+* [Identify Memory Device (40h)](#identify-memory-device-40h)
+   * [Identify Memory Device (400h)](#identify-memory-device-400h)
+* [Capacity Configuration and Label Storage (41h)](#capacity-configuration-and-label-storage-41h)
+   * [Get LSA (4102h)](#get-lsa-4102h)
+   * [Set LSA (4103h)](#set-lsa-4103h)
+* [Health Info and Alerts (42h)](#health-info-and-alerts-42h)
+   * [Get Health Info (4200h)](#get-health-info-4200h)
+   * [Get Alert Configuration (4201h)](#get-alert-configuration-4201h)
+   * [Set Alert Configuration (4202h)](#set-alert-configuration-4202h)
+* [Sanitize and Media Operations (44h)](#sanitize-and-media-operations-44h)
+   * [Sanitize (4400h)](#sanitize-4400h)
+   * [Secure Erase (4401h)](#secure-erase-4401h)
+* [Persistent Memory Data-at-rest Security](#persistent-memory-data-at-rest-security)
+   * [Get Security State](#get-security-state)
+
+<!-- Created by https://github.com/ekalinin/github-markdown-toc -->
+<!-- Added by: dave, at: Mon May 20 12:38:20 PM PDT 2024 -->
+
+<!--te-->
+
 # Identify Memory Device (40h)
 
 ## Identify Memory Device (400h)
@@ -89,7 +113,7 @@ struct cxlmi_cmd_memdev_get_health_info {
 	uint32_t dirty_shutdown_count;
 	uint32_t corrected_volatile_error_count;
 	uint32_t corrected_persistent_error_count;
-};   
+};
    ```
 
 Command name:
@@ -97,14 +121,14 @@ Command name:
    ```C
 int cxlmi_cmd_memdev_get_health_info(struct cxlmi_endpoint *ep,
 			     struct cxlmi_tunnel_info *ti,
-			     struct cxlmi_cmd_memdev_get_health_info *ret);   
+			     struct cxlmi_cmd_memdev_get_health_info *ret);
    ```
 
 ## Get Alert Configuration (4201h)
 
 Output payload:
 
-   ```C 
+   ```C
 struct cxlmi_cmd_memdev_get_alert_config {
 	uint8_t valid_alerts;
 	uint8_t programmable_alerts;
@@ -116,7 +140,7 @@ struct cxlmi_cmd_memdev_get_alert_config {
 	uint16_t device_under_temperature_programmable_warning_threshold;
 	uint16_t corrected_volatile_mem_error_programmable_warning_threshold;
 	uint16_t corrected_persistent_mem_error_programmable_warning_threshold;
-};  
+};
    ```
 
 Command name:
@@ -131,7 +155,7 @@ int cxlmi_cmd_memdev_get_alert_config(struct cxlmi_endpoint *ep,
 
 Output payload:
 
-   ```C 
+   ```C
 struct cxlmi_cmd_memdev_get_alert_config {
 	uint8_t valid_alert_actions;
 	uint8_t enable_alert_actions;
@@ -141,7 +165,7 @@ struct cxlmi_cmd_memdev_get_alert_config {
 	uint16_t device_under_temperature_programmable_warning_threshold;
 	uint16_t corrected_volatile_mem_error_programmable_warning_threshold;
 	uint16_t corrected_persistent_mem_error_programmable_warning_threshold;
-};  
+};
    ```
 
 Command name:
@@ -187,7 +211,7 @@ Output payload:
    ```C
 struct cxlmi_cmd_memdev_get_security_state {
 	uint32_t security_state;
-};   
+};
    ```
 
 Command name:
