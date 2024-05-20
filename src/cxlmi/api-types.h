@@ -133,7 +133,7 @@ struct cxlmi_cmd_get_fw_info {
 	char fw_rev4[0x10];
 } __attribute__((packed));
 
-/* CXL r3.1 Section 8.2.9.3.2: Transfer FW (Opcode 02001) */
+/* CXL r3.1 Section 8.2.9.3.2: Transfer FW (Opcode 0201) */
 struct cxlmi_cmd_transfer_fw {
 	uint8_t action;
 	uint8_t slot;

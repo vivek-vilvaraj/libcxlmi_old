@@ -10,13 +10,17 @@ command set, as per the latest specification.
    * [Request Abort Background Operation (0005h)](#request-abort-background-operation-0005h)
 * [Events (01h)](#events-01h)
 * [Firmware Update (02h)](#firmware-update-02h)
+   * [Get FW Info (0200h)](#get-fw-info-0200h)
+   * [Transfer FW (0201)](#transfer-fw-0201)
+   * [Activate FW (0202h)](#activate-fw-0202h)
 * [Timestamp (03h)](#timestamp-03h)
    * [Get Timestamp (Opcode 0300h)](#get-timestamp-opcode-0300h)
    * [Set Timestamp (Opcode 0301h)](#set-timestamp-opcode-0301h)
 * [Logs (04h)](#logs-04h)
+   * [Get Supported Logs (0400h)](#get-supported-logs-0400h)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: dave, at: Sat May 18 11:57:48 AM PDT 2024 -->
+<!-- Added by: dave, at: Sun May 19 07:23:19 PM PDT 2024 -->
 
 <!--te-->
 
@@ -112,6 +116,72 @@ int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep, struct cxlmi_tunnel
 
 # Firmware Update (02h)
 
+## Get FW Info (0200h)
+
+Output payload:
+
+   ```C
+
+struct cxlmi_cmd_get_fw_info {
+	uint8_t slots_supported;
+	uint8_t slot_info;
+	uint8_t caps;
+	uint8_t rsvd[0xd];
+	char fw_rev1[0x10];
+	char fw_rev2[0x10];
+	char fw_rev3[0x10];
+	char fw_rev4[0x10];
+};
+   ```
+
+Command Name:
+
+   ```C
+int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep, struct cxlmi_tunnel_info *ti);
+   ```
+
+## Transfer FW (0201)
+
+Input payload:
+
+   ```C
+struct cxlmi_cmd_transfer_fw {
+	uint8_t action;
+	uint8_t slot;
+	uint8_t rsvd1[2];
+	uint32_t offset;
+	uint8_t rsvd2[0x78];
+	uint8_t data[];
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_transfer_fw(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_transfer_fw *in);
+   ```
+
+## Activate FW (0202h)
+
+Input payload:
+
+   ```C
+struct cxlmi_cmd_activate_fw {
+	uint8_t action;
+	uint8_t slot;
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_activate_fw(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_activate_fw *in);
+   ```
+
 # Timestamp (03h)
 
 ## Get Timestamp (Opcode 0300h)
@@ -150,3 +220,28 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
    ```
 
 # Logs (04h)
+
+## Get Supported Logs (0400h)
+
+Output payload:
+
+  ```C
+struct cxlmi_supported_log_entry {
+	uint8_t uuid[0x10];
+	uint32_t log_size;
+};
+
+struct cxlmi_cmd_get_supported_logs {
+	uint16_t num_supported_log_entries;
+	uint8_t reserved[6];
+	struct cxlmi_supported_log_entry entries[];
+};
+  ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
+				 struct cxlmi_tunnel_info *ti,
+				 struct cxlmi_cmd_get_supported_logs *ret);
+   ```
