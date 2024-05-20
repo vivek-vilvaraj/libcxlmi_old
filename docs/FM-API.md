@@ -49,7 +49,7 @@ Input payload:
 struct cxlmi_cmd_fmapi_get_phys_port_state_req {
 	uint8_t num_ports;
 	uint8_t ports[];
-} __attribute__((packed));
+};
    ```
 
 Output payload:
