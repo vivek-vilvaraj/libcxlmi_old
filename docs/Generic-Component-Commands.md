@@ -368,7 +368,7 @@ The latest specification defines the following possible log entries:
 - `f1720d60-a7a9-4306-a003-11948f9e077c` – DDR5 Error Check Scrub (ECS) Log
 - `e6dfa32c-d13e-4a5c-8ca8-99bebbf731a4` – Media Test Capability Log
 - `2c255522-8ce4-11ec-b909-0242ac120002` – Media Test Results Short Log
-
+- `c1fe0b3e-7a00-448e-a24e-a6aabbfe587a` – Media Test Results Long Log
 ## Get Supported Logs (0400h)
 
 Return payload:
