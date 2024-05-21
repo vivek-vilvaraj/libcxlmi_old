@@ -124,6 +124,15 @@ int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep, struct cxlmi_tunnel
 
 # Events (01h)
 
+- `fbcd0a77-c260-417f-85a9-088b1621eba6` – General Media Event Record
+- `601dcbb3-9c06-4eab-b8af-4e9bfb5c9624` – DRAM Event Record
+- `fe927475-dd59-4339-a586-79bab113b774` – Memory Module Event Record
+- `e71f3a40-2d29-4092-8a39-4d1c966c7c65` - Memory Sparing Event Record
+- `77cf9271-9c02-470b-9fe4-bc7b75f2da97` – Physical Switch Event Record
+- `40d26425-3396-4c4d-a5da-3d47263af425` – Virtual Switch Event Record
+- `8dc44363-0c96-4710-b7bf-04bb99534c3f` – MLD Port Event Record
+- `ca95afa7-f183-4018-8c2f-95268e101a2a` - Dynamic Capacity Event Record
+
 ## Clear Event Records (0101h)
 
 Input payload:
