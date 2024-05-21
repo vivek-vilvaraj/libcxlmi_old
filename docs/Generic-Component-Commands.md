@@ -360,6 +360,15 @@ struct cxlmi_supported_log_entry {
 };
    ```
 
+The latest specification defines the following possible log entries:
+
+- `0da9c0b5-bf41-4b78-8f79-96b1623b3f17` – Command Effects Log (CEL)
+- `5e1819d9-11a9-400c-811f-d60719403d86` – Vendor Debug Log
+- `b3fab4cf-01b6-4332-943e-5e9962f23567` – Component State Dump Log
+- `f1720d60-a7a9-4306-a003-11948f9e077c` – DDR5 Error Check Scrub (ECS) Log
+- `e6dfa32c-d13e-4a5c-8ca8-99bebbf731a4` – Media Test Capability Log
+- `2c255522-8ce4-11ec-b909-0242ac120002` – Media Test Results Short Log
+
 ## Get Supported Logs (0400h)
 
 Return payload:

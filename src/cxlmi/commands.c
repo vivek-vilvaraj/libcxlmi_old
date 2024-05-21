@@ -555,6 +555,51 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 	return rc;
 }
 
+CXLMI_EXPORT int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep,
+				   struct cxlmi_tunnel_info *ti,
+				   struct cxlmi_cmd_get_log *in,
+				   void *ret)
+{
+	struct cxlmi_cmd_get_log *req_pl;
+	struct cxlmi_cmd_get_log_cel_rsp *rsp_pl;
+	_cleanup_free_ struct cxlmi_cci_msg  *req = NULL;
+	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
+	ssize_t req_sz, rsp_sz;
+	int i, rc = -1;
+
+	req_sz = sizeof(*req) + sizeof(*in);
+	req = calloc(1, req_sz);
+	if (!req)
+		return -1;
+
+	arm_cci_request(ep, req, sizeof(*req_pl), LOGS, GET_LOG);
+	req_pl = (struct cxlmi_cmd_get_log *)req->payload;
+
+	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
+	req_pl->offset = cpu_to_le32(in->offset);
+	req_pl->length = cpu_to_le32(in->length);
+
+	rsp_sz = sizeof(*rsp) + in->length;
+	rsp = calloc(1, rsp_sz);
+	if (!rsp)
+		return rc;
+
+	rc = send_cmd_cci(ep, ti, req, req_sz, rsp, rsp_sz, rsp_sz);
+	if (rc)
+		return rc;
+
+	rsp_pl = (struct cxlmi_cmd_get_log_cel_rsp *)rsp->payload;
+	memset(ret, 0, sizeof(*ret));
+
+	for (i = 0; i < in->length / sizeof(*rsp_pl); i++) {
+		ret[i].opcode = le16_to_cpu(rsp_pl[i].opcode);
+		ret[i].command_effect =
+			le16_to_cpu(rsp_pl[i].command_effect);
+	}
+
+	return rc;
+}
+
 CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 				       struct cxlmi_tunnel_info *ti,
 				       struct cxlmi_cmd_get_log *in,
@@ -575,9 +620,9 @@ CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 	arm_cci_request(ep, req, sizeof(*req_pl), LOGS, GET_LOG);
 	req_pl = (struct cxlmi_cmd_get_log *)req->payload;
 
+	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
 	req_pl->offset = cpu_to_le32(in->offset);
 	req_pl->length = cpu_to_le32(in->length);
-	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
 
 	rsp_sz = sizeof(*rsp) + in->length;
 	rsp = calloc(1, rsp_sz);
