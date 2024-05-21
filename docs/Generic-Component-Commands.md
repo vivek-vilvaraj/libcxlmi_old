@@ -9,6 +9,7 @@ command set, as per the latest specification.
    * [Set Response Message Limit (0004h)](#set-response-message-limit-0004h)
    * [Request Abort Background Operation (0005h)](#request-abort-background-operation-0005h)
 * [Events (01h)](#events-01h)
+* [Get Event Records (0100h)](#get-event-records-0100h)
    * [Clear Event Records (0101h)](#clear-event-records-0101h)
    * [Get Event Interrupt Policy (0102h)](#get-event-interrupt-policy-0102h)
    * [Set Event Interrupt Policy (0103h)](#set-event-interrupt-policy-0103h)
@@ -30,7 +31,7 @@ command set, as per the latest specification.
    * [Get Supported Logs Sub-List (0405h)](#get-supported-logs-sub-list-0405h)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: dave, at: Mon May 20 02:23:37 PM PDT 2024 -->
+<!-- Added by: dave, at: Tue May 21 04:40:51 PM PDT 2024 -->
 
 <!--te-->
 
