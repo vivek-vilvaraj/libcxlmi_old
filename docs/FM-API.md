@@ -6,10 +6,10 @@ command set, as per the latest specification.
    * [Identify Switch Device (5100h)](#identify-switch-device-5100h)
    * [Get Physical Port State (5101h)](#get-physical-port-state-5101h)
 * [MLD Port (53h)](#mld-port-53h)
-   * [Tunnel Management Command](#tunnel-management-command)
+   * [Tunnel Management Command (5300h)](#tunnel-management-command-5300h)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
-<!-- Added by: dave, at: Mon May 20 01:11:58 PM PDT 2024 -->
+<!-- Added by: dave, at: Tue May 21 04:45:59 PM PDT 2024 -->
 
 <!--te-->
 
@@ -91,7 +91,7 @@ int cxlmi_cmd_fmapi_get_phys_port_state(struct cxlmi_endpoint *ep,
 
 # MLD Port (53h)
 
-## Tunnel Management Command
+## Tunnel Management Command (5300h)
 
 Tunneling is supported through `struct cxlmi_tunnel_info`, passed as needed by the
 user when sending a command.  When sent to an MLD, the provided command is tunneled
