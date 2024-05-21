@@ -165,14 +165,14 @@ buffer. Next are a few examples for sending commands directly.
 3. Input and output payloads
 
    ```C
-   struct cxlmi_cmd_get_log in = {
+   struct cxlmi_cmd_get_log_req in = {
 	   .offset = 0,
 	   .length = cel_size,
    };
    struct cxlmi_cmd_get_log_cel_rsp *ret = calloc(1, cel_size);
 
    memcpy(in.uuid, cel_uuid, sizeof(in.uuid));
-   err = cxlmi_cmd_get_log(ep, NULL, &in, ret);
+   err = cxlmi_cmd_get_log_cel(ep, NULL, &in, ret);
    if (err == 0) {
 	   /* do something with ret[i].opcode */
    }
