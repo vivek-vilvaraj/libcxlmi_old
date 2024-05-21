@@ -124,6 +124,26 @@ int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep, struct cxlmi_tunnel
 
 # Events (01h)
 
+Events reported by devices through the 0100h  command. The device shall use
+the Common Event Record format when generating events for any event log:
+
+   ```C
+struct cxlmi_event_record {
+	uint8_t uuid[0x10];
+	uint8_t length;
+	uint8_t flags[3];
+	uint16_t handle;
+	uint16_t related_handle;
+	uint64_t timestamp;
+	uint8_t maint_op_class;
+	uint8_t maint_op_subclass;
+	uint8_t reserved[0xe];
+	uint8_t data[0x50];
+};
+   ```
+
+The types of events can be any of:
+
 - `fbcd0a77-c260-417f-85a9-088b1621eba6` – General Media Event Record
 - `601dcbb3-9c06-4eab-b8af-4e9bfb5c9624` – DRAM Event Record
 - `fe927475-dd59-4339-a586-79bab113b774` – Memory Module Event Record
@@ -132,6 +152,32 @@ int cxlmi_cmd_request_bg_op_abort(struct cxlmi_endpoint *ep, struct cxlmi_tunnel
 - `40d26425-3396-4c4d-a5da-3d47263af425` – Virtual Switch Event Record
 - `8dc44363-0c96-4710-b7bf-04bb99534c3f` – MLD Port Event Record
 - `ca95afa7-f183-4018-8c2f-95268e101a2a` - Dynamic Capacity Event Record
+
+# Get Event Records (0100h)
+
+Return payload:
+
+   ```C
+struct cxlmi_cmd_get_event_records {
+	uint8_t event_log;
+	uint8_t flags;
+	uint8_t reserved1;
+	uint16_t overflow_err_count;
+	uint64_t first_overflow_timestamp;
+	uint64_t last_overflow_timestamp;
+	uint16_t record_count;
+	uint8_t reserved2[0xa];
+	struct cxlmi_event_record records[];
+};
+   ```
+
+Command name:
+
+   ```C
+int cxlmi_cmd_get_event_records(struct cxlmi_endpoint *ep,
+				struct cxlmi_tunnel_info *ti,
+				struct cxlmi_cmd_get_event_records *ret);
+   ```
 
 ## Clear Event Records (0101h)
 
