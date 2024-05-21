@@ -401,14 +401,14 @@ static int send_mctp_direct(struct cxlmi_endpoint *ep, bool fmapi,
 }
 
 /* CXL r3.1 Section 7.6.7.3.2: Tunnel Management Command (Opcode 5300h) */
-static struct cxlmi_cmd_fmapi_tunnel_command_req {
+struct cxlmi_cmd_fmapi_tunnel_command_req {
 	uint8_t id; /* Port or LD ID as appropriate */
 	uint8_t target_type;
 	uint16_t command_size;
 	struct cxlmi_cci_msg message[];
 } __attribute__((packed));
 
-static struct cxlmi_cmd_fmapi_tunnel_command_rsp {
+struct cxlmi_cmd_fmapi_tunnel_command_rsp {
 	uint16_t length;
 	uint16_t resv;
 	struct cxlmi_cci_msg message[]; /* only one but lets closs over that */

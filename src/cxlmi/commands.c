@@ -158,12 +158,9 @@ CXLMI_EXPORT int cxlmi_cmd_get_event_records(struct cxlmi_endpoint *ep,
 
 	/*
 	 * This command shall retrieve as many event records from the
-	 * event log that fit into the mailbox output payload.
+	 * event log that fit into the mailbox output payload (1mb).
 	 */
-	/* rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) + */
-	/*	in->num_ports * sizeof(*rsp_pl->ports); */
-
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl);
+	rsp_sz = sizeof(*rsp) + (1 << 20);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
 		return -1;
@@ -192,6 +189,8 @@ CXLMI_EXPORT int cxlmi_cmd_get_event_records(struct cxlmi_endpoint *ep,
 			rsp_pl->records[i].maint_op_class;
 		ret->records[i].maint_op_subclass =
 			rsp_pl->records[i].maint_op_subclass;
+		memcpy(ret->records[i].data, rsp_pl->records[i].data,
+		       sizeof(rsp_pl->records[i].data));
 	}
 
 	return rc;
@@ -652,6 +651,9 @@ int cxlmi_cmd_get_log_capabilities(struct cxlmi_endpoint *ep,
 	ssize_t req_sz, rsp_sz;
 	int rc = -1;
 
+	CXLMI_BUILD_BUG_ON(sizeof(*in) != 0x10);
+	CXLMI_BUILD_BUG_ON(sizeof(*ret) != 4);	
+
 	req_sz = sizeof(*req_pl) + sizeof(*req);
 	req = calloc(1, req_sz);
 	if (!req)
@@ -868,6 +870,8 @@ CXLMI_EXPORT int cxlmi_cmd_memdev_set_partition_info(struct cxlmi_endpoint *ep,
 	struct cxlmi_cci_msg rsp;
 	size_t req_sz;
 
+	CXLMI_BUILD_BUG_ON(sizeof(*in) != 9);
+	
 	req_sz = sizeof(*req) + sizeof(*in);
 	req = calloc(1, req_sz);
 	if (!req)
