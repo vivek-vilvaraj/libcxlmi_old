@@ -394,6 +394,7 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 			    struct cxlmi_tunnel_info *ti,
 			    struct cxlmi_cmd_set_timestamp *in);
 
+#define CXLMI_MAX_SUPPORTED_LOGS 7
 int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				 struct cxlmi_tunnel_info *ti,
 				 struct cxlmi_cmd_get_supported_logs *ret);

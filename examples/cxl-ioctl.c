@@ -166,7 +166,6 @@ static const uint8_t c_s_dump[0x10] = { 0xb3, 0xfa, 0xb4, 0xcf,
 					0x94, 0x3e,
 					0x5e, 0x99, 0x62, 0xf2, 0x35, 0x67 };
 
-static const int maxlogs = 10; /* Only 7 in CXL r3.1, but let us leave room */
 static int parse_supported_logs(struct cxlmi_cmd_get_supported_logs *pl,
 				size_t *cel_size)
 {
@@ -245,7 +244,8 @@ static int get_device_logs(struct cxlmi_endpoint *ep)
 	size_t cel_size;
 	struct cxlmi_cmd_get_supported_logs *gsl;
 
-	gsl = calloc(1, sizeof(*gsl) + maxlogs * sizeof(*gsl->entries));
+	gsl = calloc(1, sizeof(*gsl) +
+		     CXLMI_MAX_SUPPORTED_LOGS * sizeof(*gsl->entries));
 	if (!gsl)
 		return -1;
 

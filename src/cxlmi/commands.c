@@ -516,7 +516,6 @@ CXLMI_EXPORT int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 			    &rsp, sizeof(rsp), sizeof(rsp));
 }
 
-static const int maxlogs = 10; /* Only 7 in CXL r3.1 but let leave room */
 CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				      struct cxlmi_tunnel_info *ti,
 				      struct cxlmi_cmd_get_supported_logs *ret)
@@ -529,7 +528,8 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 
 	arm_cci_request(ep, &req, 0, LOGS, GET_SUPPORTED);
 
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) + maxlogs * sizeof(*rsp_pl->entries);
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) +
+		CXLMI_MAX_SUPPORTED_LOGS * sizeof(*rsp_pl->entries);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
 		return -1;
@@ -710,7 +710,8 @@ cxlmi_cmd_get_supported_logs_sublist(struct cxlmi_endpoint *ep,
 	req_pl->max_supported_log_entries = in->max_supported_log_entries;
 	req_pl->start_log_entry_index = in->start_log_entry_index;
 
-	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) + maxlogs * sizeof(*rsp_pl->entries);
+	rsp_sz = sizeof(*rsp) + sizeof(*rsp_pl) +
+		CXLMI_MAX_SUPPORTED_LOGS * sizeof(*rsp_pl->entries);
 	rsp = calloc(1, rsp_sz);
 	if (!rsp)
 		return -1;
