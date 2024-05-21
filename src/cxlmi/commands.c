@@ -565,7 +565,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep,
 	_cleanup_free_ struct cxlmi_cci_msg  *req = NULL;
 	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
 	ssize_t req_sz, rsp_sz;
-	int i, rc = -1;
+	int rc = -1;
 
 	req_sz = sizeof(*req) + sizeof(*in);
 	req = calloc(1, req_sz);
@@ -589,13 +589,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep,
 		return rc;
 
 	rsp_pl = (struct cxlmi_cmd_get_log_cel_rsp *)rsp->payload;
-	memset(ret, 0, sizeof(*ret));
-
-	for (i = 0; i < in->length / sizeof(*rsp_pl); i++) {
-		ret[i].opcode = le16_to_cpu(rsp_pl[i].opcode);
-		ret[i].command_effect =
-			le16_to_cpu(rsp_pl[i].command_effect);
-	}
+	memcpy(ret, rsp_pl, in->length * sizeof(*rsp_pl));
 
 	return rc;
 }
