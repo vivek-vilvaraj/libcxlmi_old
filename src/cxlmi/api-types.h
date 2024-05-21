@@ -172,10 +172,15 @@ struct cxlmi_cmd_get_supported_logs {
 } __attribute__((packed));
 
 /* CXL r3.1 Section 8.2.9.5.2: Get Log (Opcode 0401h) */
-struct cxlmi_cmd_get_log {
+struct cxlmi_cmd_get_log_req {
 	uint8_t uuid[0x10];
 	uint32_t offset;
 	uint32_t length;
+} __attribute__((packed));
+
+struct cxlmi_cmd_get_log_rsp {
+	uint16_t opcode;
+	uint16_t command_effect;
 } __attribute__((packed));
 
 struct cxlmi_cmd_get_log_cel_rsp {

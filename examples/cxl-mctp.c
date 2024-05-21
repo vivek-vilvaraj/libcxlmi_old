@@ -227,7 +227,7 @@ static int parse_supported_logs(struct cxlmi_cmd_get_supported_logs *pl,
 
 static int show_cel(struct cxlmi_endpoint *ep, int cel_size)
 {
-	struct cxlmi_cmd_get_log in = {
+	struct cxlmi_cmd_get_log_req in = {
 		.offset = 0,
 		.length = cel_size,
 	};

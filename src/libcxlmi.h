@@ -398,9 +398,13 @@ int cxlmi_cmd_set_timestamp(struct cxlmi_endpoint *ep,
 int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				 struct cxlmi_tunnel_info *ti,
 				 struct cxlmi_cmd_get_supported_logs *ret);
+int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep,
+		      struct cxlmi_tunnel_info *ti,
+		      struct cxlmi_cmd_get_log_req *in,
+		      void *ret);
 int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 			  struct cxlmi_tunnel_info *ti,
-			  struct cxlmi_cmd_get_log *in,
+			  struct cxlmi_cmd_get_log_req *in,
 			  struct cxlmi_cmd_get_log_cel_rsp *ret);
 int cxlmi_cmd_get_log_capabilities(struct cxlmi_endpoint *ep,
 			   struct cxlmi_tunnel_info *ti,

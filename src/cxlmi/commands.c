@@ -557,11 +557,11 @@ CXLMI_EXPORT int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 
 CXLMI_EXPORT int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep,
 				   struct cxlmi_tunnel_info *ti,
-				   struct cxlmi_cmd_get_log *in,
+				   struct cxlmi_cmd_get_log_req *in,
 				   void *ret)
 {
-	struct cxlmi_cmd_get_log *req_pl;
-	struct cxlmi_cmd_get_log_cel_rsp *rsp_pl;
+	struct cxlmi_cmd_get_log_req *req_pl;
+	struct cxlmi_cmd_get_log_rsp *rsp_pl;
 	_cleanup_free_ struct cxlmi_cci_msg  *req = NULL;
 	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
 	ssize_t req_sz, rsp_sz;
@@ -573,7 +573,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep,
 		return -1;
 
 	arm_cci_request(ep, req, sizeof(*req_pl), LOGS, GET_LOG);
-	req_pl = (struct cxlmi_cmd_get_log *)req->payload;
+	req_pl = (struct cxlmi_cmd_get_log_req *)req->payload;
 
 	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
 	req_pl->offset = cpu_to_le32(in->offset);
@@ -588,7 +588,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep,
 	if (rc)
 		return rc;
 
-	rsp_pl = (struct cxlmi_cmd_get_log_cel_rsp *)rsp->payload;
+	rsp_pl = (void *)rsp->payload;
 	memcpy(ret, rsp_pl, in->length * sizeof(*rsp_pl));
 
 	return rc;
@@ -596,10 +596,10 @@ CXLMI_EXPORT int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep,
 
 CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 				       struct cxlmi_tunnel_info *ti,
-				       struct cxlmi_cmd_get_log *in,
+				       struct cxlmi_cmd_get_log_req *in,
 				       struct cxlmi_cmd_get_log_cel_rsp *ret)
 {
-	struct cxlmi_cmd_get_log *req_pl;
+	struct cxlmi_cmd_get_log_req *req_pl;
 	struct cxlmi_cmd_get_log_cel_rsp *rsp_pl;
 	_cleanup_free_ struct cxlmi_cci_msg  *req = NULL;
 	_cleanup_free_ struct cxlmi_cci_msg *rsp = NULL;
@@ -612,7 +612,7 @@ CXLMI_EXPORT int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
 		return -1;
 
 	arm_cci_request(ep, req, sizeof(*req_pl), LOGS, GET_LOG);
-	req_pl = (struct cxlmi_cmd_get_log *)req->payload;
+	req_pl = (struct cxlmi_cmd_get_log_req *)req->payload;
 
 	memcpy(req_pl->uuid, in->uuid, sizeof(in->uuid));
 	req_pl->offset = cpu_to_le32(in->offset);
