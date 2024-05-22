@@ -156,6 +156,9 @@ The types of events can be any of:
 
 ## Get Event Records (0100h)
 
+This command shall retrieve as many event records from the
+event log that fit into the mailbox output payload (1Mb).
+
 Return payload:
 
    ```C
@@ -171,7 +174,6 @@ struct cxlmi_cmd_get_event_records {
 	struct cxlmi_event_record records[];
 };
    ```
-
 Command name:
 
    ```C
@@ -416,7 +418,8 @@ struct cxlmi_supported_log_entry {
 };
    ```
 
-The latest specification defines the following possible log entries:
+The latest specification defines the following possible log entries, capped
+by `CXLMI_MAX_SUPPORTED_LOGS`:
 
 - `0da9c0b5-bf41-4b78-8f79-96b1623b3f17` – Command Effects Log (CEL)
 - `5e1819d9-11a9-400c-811f-d60719403d86` – Vendor Debug Log
@@ -425,6 +428,7 @@ The latest specification defines the following possible log entries:
 - `e6dfa32c-d13e-4a5c-8ca8-99bebbf731a4` – Media Test Capability Log
 - `2c255522-8ce4-11ec-b909-0242ac120002` – Media Test Results Short Log
 - `c1fe0b3e-7a00-448e-a24e-a6aabbfe587a` – Media Test Results Long Log
+
 ## Get Supported Logs (0400h)
 
 Return payload:
@@ -444,6 +448,27 @@ int cxlmi_cmd_get_supported_logs(struct cxlmi_endpoint *ep,
 				 struct cxlmi_tunnel_info *ti,
 				 struct cxlmi_cmd_get_supported_logs *ret);
    ```
+
+## Get Log (0401h)
+
+General command name:
+
+   ```C
+int cxlmi_cmd_get_log(struct cxlmi_endpoint *ep,
+		      struct cxlmi_tunnel_info *ti,
+		      struct cxlmi_cmd_get_log_req *in,
+		      void *ret);
+   ```
+
+CEL-specific command name:
+
+   ```C
+int cxlmi_cmd_get_log_cel(struct cxlmi_endpoint *ep,
+			  struct cxlmi_tunnel_info *ti,
+			  struct cxlmi_cmd_get_log_req *in,
+			  struct cxlmi_cmd_get_log_cel_rsp *ret);
+   ```
+
 
 ## Get Log Capabilities (0402h)
 
