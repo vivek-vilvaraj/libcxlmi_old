@@ -58,6 +58,7 @@ static int show_device_info(struct cxlmi_endpoint *ep)
 {
 	int rc = 0;
 	struct cxlmi_cmd_identify id;
+	struct cxlmi_cmd_get_fw_info fw_info;
 
 	rc = cxlmi_cmd_identify(ep, NULL, &id);
 	if (rc)
@@ -86,6 +87,14 @@ static int show_device_info(struct cxlmi_endpoint *ep)
 	default:
 		break;
 	}
+
+	rc = cxlmi_cmd_get_fw_info(ep, NULL, &fw_info);
+	if (rc)
+		return rc;
+
+	printf("Fimware info:\n");
+	printf("\tslots supported: %d\n", fw_info.slots_supported);
+	printf("\trevision: %s\n", fw_info.fw_rev1);
 
 	return rc;
 }
