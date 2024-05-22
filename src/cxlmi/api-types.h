@@ -1,5 +1,9 @@
-#ifndef _LIBCXLMI_TYPES_H
-#define _LIBCXLMI_TYPES_H
+// SPDX-License-Identifier: LGPL-2.1-or-later
+/*
+ * This file is part of libcxlmi.
+ */
+#ifndef _LIBCXLMI_API_TYPES_H
+#define _LIBCXLMI_API_TYPES_H
 
 #include <stdint.h>
 #include <stdbool.h>
